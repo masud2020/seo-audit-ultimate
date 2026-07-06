@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApiSettings, saveApiSettings } from "@/lib/misc.functions";
-import { checkIsAdmin, getConnectorStatus } from "@/lib/admin.functions";
+import { checkIsAdmin, getConnectorStatus, testConnector } from "@/lib/admin.functions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { ShieldAlert, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { ShieldAlert, CheckCircle2, XCircle, ExternalLink, PlugZap, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({ component: Settings });
 
@@ -59,7 +59,26 @@ function StatusBadge({ ok }: { ok: boolean }) {
 
 function ConnectorsPanel() {
   const get = useServerFn(getConnectorStatus);
+  const test = useServerFn(testConnector);
+  const qc = useQueryClient();
   const { data, isLoading } = useQuery({ queryKey: ["connector-status"], queryFn: () => get() });
+  const [results, setResults] = useState<Record<string, { ok: boolean; message: string; detail?: string; latencyMs: number; at: number }>>({});
+  const [pending, setPending] = useState<string | null>(null);
+  const runTest = async (key: "gsc" | "semrush" | "brevo" | "dataforseo") => {
+    setPending(key);
+    try {
+      const r = await test({ data: { key } });
+      setResults((prev) => ({ ...prev, [key]: { ok: r.ok, message: r.message, detail: r.detail, latencyMs: r.latencyMs, at: Date.now() } }));
+      qc.invalidateQueries({ queryKey: ["connector-status"] });
+      (r.ok ? toast.success : toast.error)(r.message);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Test failed";
+      setResults((prev) => ({ ...prev, [key]: { ok: false, message: msg, latencyMs: 0, at: Date.now() } }));
+      toast.error(msg);
+    } finally {
+      setPending(null);
+    }
+  };
   const rows = [
     { key: "gsc" as const, name: "Google Search Console", hint: "OAuth via Workspace Connectors. Powers /gsc verification & site data.", managed: "connector" as const },
     { key: "semrush" as const, name: "Semrush", hint: "Workspace Connector preferred; API key below is a fallback. Powers Competitors, Backlinks, Gap Analysis, Disavow.", managed: "connector" as const },
@@ -77,6 +96,8 @@ function ConnectorsPanel() {
       <div className="grid gap-3">
         {rows.map((r) => {
           const st = data?.[r.key];
+          const tr = results[r.key];
+          const isPending = pending === r.key;
           return (
             <div key={r.key} className="flex items-start justify-between gap-3 rounded-lg border p-3">
               <div className="min-w-0">
@@ -89,16 +110,31 @@ function ConnectorsPanel() {
                   {r.key === "brevo" && data?.brevo?.connected && !data.brevo.senderConfigured && (
                     <Badge variant="secondary">Sender email missing</Badge>
                   )}
+                  {tr && (
+                    <Badge variant={tr.ok ? "default" : "destructive"} className="gap-1">
+                      {tr.ok ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
+                      Test {tr.ok ? "passed" : "failed"} · {tr.latencyMs}ms
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">{r.hint}</p>
+                {tr?.detail && !tr.ok && (
+                  <p className="text-xs text-destructive mt-1 break-all font-mono">{tr.detail}</p>
+                )}
               </div>
-              {r.managed === "connector" && (
-                <Button asChild variant="outline" size="sm" className="shrink-0">
-                  <a href="/projects/connectors" target="_blank" rel="noreferrer">
-                    Manage <ExternalLink className="ml-1 h-3 w-3" />
-                  </a>
+              <div className="flex flex-col gap-2 shrink-0">
+                <Button variant="secondary" size="sm" onClick={() => runTest(r.key)} disabled={isPending}>
+                  {isPending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <PlugZap className="mr-1 h-3 w-3" />}
+                  {isPending ? "Testing…" : "Test connection"}
                 </Button>
-              )}
+                {r.managed === "connector" && (
+                  <Button asChild variant="outline" size="sm">
+                    <a href="/projects/connectors" target="_blank" rel="noreferrer">
+                      Manage <ExternalLink className="ml-1 h-3 w-3" />
+                    </a>
+                  </Button>
+                )}
+              </div>
             </div>
           );
         })}
