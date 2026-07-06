@@ -787,6 +787,54 @@ export type Database = {
           },
         ]
       }
+      site_audits: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          issues: Json
+          max_pages: number
+          overall_score: number | null
+          pages: Json
+          pages_audited: number
+          start_url: string
+          status: string
+          summary: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          issues?: Json
+          max_pages?: number
+          overall_score?: number | null
+          pages?: Json
+          pages_audited?: number
+          start_url: string
+          status?: string
+          summary?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          issues?: Json
+          max_pages?: number
+          overall_score?: number | null
+          pages?: Json
+          pages_audited?: number
+          start_url?: string
+          status?: string
+          summary?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       site_crawls: {
         Row: {
           created_at: string
