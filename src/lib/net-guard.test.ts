@@ -72,7 +72,7 @@ describe("assertPublicHttpUrl", () => {
 
   it("rejects invalid URLs outright", () => {
     expect(() => assertPublicHttpUrl("not-a-url")).toThrow();
-    expect(() => assertPublicHttpUrl("http:///no-host")).toThrow();
+    expect(() => assertPublicHttpUrl("javascript:alert(1)")).toThrow();
   });
 });
 
