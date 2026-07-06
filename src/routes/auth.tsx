@@ -11,6 +11,17 @@ import { Search } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
+  head: () => ({
+    meta: [
+      { title: "Sign in — SEO Audit Tool" },
+      { name: "description", content: "Sign in or create a free SEO Audit Tool account to run AI-powered website audits, track keyword rankings and crawl your site." },
+      { property: "og:title", content: "Sign in — SEO Audit Tool" },
+      { property: "og:description", content: "Sign in or create a free SEO Audit Tool account to run AI-powered website audits." },
+      { property: "og:url", content: "https://seo-audittool.lovable.app/auth" },
+      { property: "og:type", content: "website" },
+    ],
+    links: [{ rel: "canonical", href: "https://seo-audittool.lovable.app/auth" }],
+  }),
 });
 
 function AuthPage() {
@@ -64,6 +75,9 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-sm p-6">
+        <h1 className="sr-only">
+          {mode === "login" ? "Sign in to SEO Audit Tool" : mode === "signup" ? "Create your SEO Audit Tool account" : "Reset your SEO Audit Tool password"}
+        </h1>
         <div className="flex items-center gap-2 mb-6">
           <div className="grid h-8 w-8 place-items-center rounded bg-primary text-primary-foreground"><Search className="h-4 w-4" /></div>
           <div>
