@@ -16,11 +16,15 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
+import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
+import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrawlerRouteImport } from './routes/_authenticated/crawler'
+import { Route as AuthenticatedContentOptimizerRouteImport } from './routes/_authenticated/content-optimizer'
 import { Route as AuthenticatedCompetitorsRouteImport } from './routes/_authenticated/competitors'
 import { Route as AuthenticatedChecklistRouteImport } from './routes/_authenticated/checklist'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
@@ -64,6 +68,22 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedScheduledRoute = AuthenticatedScheduledRouteImport.update({
+  id: '/scheduled',
+  path: '/scheduled',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedRankTrackingRoute =
+  AuthenticatedRankTrackingRouteImport.update({
+    id: '/rank-tracking',
+    path: '/rank-tracking',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPingRoute = AuthenticatedPingRouteImport.update({
   id: '/ping',
   path: '/ping',
@@ -89,6 +109,12 @@ const AuthenticatedCrawlerRoute = AuthenticatedCrawlerRouteImport.update({
   path: '/crawler',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedContentOptimizerRoute =
+  AuthenticatedContentOptimizerRouteImport.update({
+    id: '/content-optimizer',
+    path: '/content-optimizer',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCompetitorsRoute =
   AuthenticatedCompetitorsRouteImport.update({
     id: '/competitors',
@@ -135,11 +161,15 @@ export interface FileRoutesByFullPath {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
   '/competitors': typeof AuthenticatedCompetitorsRoute
+  '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/scheduled': typeof AuthenticatedScheduledRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
@@ -155,11 +185,15 @@ export interface FileRoutesByTo {
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
   '/competitors': typeof AuthenticatedCompetitorsRoute
+  '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
+  '/projects': typeof AuthenticatedProjectsRoute
+  '/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/scheduled': typeof AuthenticatedScheduledRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
@@ -177,11 +211,15 @@ export interface FileRoutesById {
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/checklist': typeof AuthenticatedChecklistRoute
   '/_authenticated/competitors': typeof AuthenticatedCompetitorsRoute
+  '/_authenticated/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/_authenticated/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
+  '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
@@ -199,11 +237,15 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/checklist'
     | '/competitors'
+    | '/content-optimizer'
     | '/crawler'
     | '/dashboard'
     | '/history'
     | '/keywords'
     | '/ping'
+    | '/projects'
+    | '/rank-tracking'
+    | '/scheduled'
     | '/settings'
     | '/tools'
     | '/word-counter'
@@ -219,11 +261,15 @@ export interface FileRouteTypes {
     | '/calendar'
     | '/checklist'
     | '/competitors'
+    | '/content-optimizer'
     | '/crawler'
     | '/dashboard'
     | '/history'
     | '/keywords'
     | '/ping'
+    | '/projects'
+    | '/rank-tracking'
+    | '/scheduled'
     | '/settings'
     | '/tools'
     | '/word-counter'
@@ -240,11 +286,15 @@ export interface FileRouteTypes {
     | '/_authenticated/calendar'
     | '/_authenticated/checklist'
     | '/_authenticated/competitors'
+    | '/_authenticated/content-optimizer'
     | '/_authenticated/crawler'
     | '/_authenticated/dashboard'
     | '/_authenticated/history'
     | '/_authenticated/keywords'
     | '/_authenticated/ping'
+    | '/_authenticated/projects'
+    | '/_authenticated/rank-tracking'
+    | '/_authenticated/scheduled'
     | '/_authenticated/settings'
     | '/_authenticated/tools'
     | '/_authenticated/word-counter'
@@ -311,6 +361,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/scheduled': {
+      id: '/_authenticated/scheduled'
+      path: '/scheduled'
+      fullPath: '/scheduled'
+      preLoaderRoute: typeof AuthenticatedScheduledRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/rank-tracking': {
+      id: '/_authenticated/rank-tracking'
+      path: '/rank-tracking'
+      fullPath: '/rank-tracking'
+      preLoaderRoute: typeof AuthenticatedRankTrackingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/projects': {
+      id: '/_authenticated/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ping': {
       id: '/_authenticated/ping'
       path: '/ping'
@@ -344,6 +415,13 @@ declare module '@tanstack/react-router' {
       path: '/crawler'
       fullPath: '/crawler'
       preLoaderRoute: typeof AuthenticatedCrawlerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/content-optimizer': {
+      id: '/_authenticated/content-optimizer'
+      path: '/content-optimizer'
+      fullPath: '/content-optimizer'
+      preLoaderRoute: typeof AuthenticatedContentOptimizerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/competitors': {
@@ -414,11 +492,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChecklistRoute: typeof AuthenticatedChecklistRoute
   AuthenticatedCompetitorsRoute: typeof AuthenticatedCompetitorsRoute
+  AuthenticatedContentOptimizerRoute: typeof AuthenticatedContentOptimizerRoute
   AuthenticatedCrawlerRoute: typeof AuthenticatedCrawlerRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
+  AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
+  AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
@@ -431,11 +513,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChecklistRoute: AuthenticatedChecklistRoute,
   AuthenticatedCompetitorsRoute: AuthenticatedCompetitorsRoute,
+  AuthenticatedContentOptimizerRoute: AuthenticatedContentOptimizerRoute,
   AuthenticatedCrawlerRoute: AuthenticatedCrawlerRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
+  AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
+  AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
