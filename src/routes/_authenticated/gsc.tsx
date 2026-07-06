@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Copy, Trash2, RefreshCw, ExternalLink } from "lucide-react";
+import { CheckCircle2, Copy, Trash2, RefreshCw, ExternalLink, XCircle, AlertCircle, Plug, ShieldCheck, Activity } from "lucide-react";
 import {
   listGscVerifications,
   requestGscToken,
   verifyGscSite,
   deleteGscVerification,
+  getGscStatus,
 } from "@/lib/gsc.functions";
 
 export const Route = createFileRoute("/_authenticated/gsc")({
@@ -27,23 +28,25 @@ function GscPage() {
   const request = useServerFn(requestGscToken);
   const verify = useServerFn(verifyGscSite);
   const remove = useServerFn(deleteGscVerification);
+  const status = useServerFn(getGscStatus);
 
   const { data: rows = [], isLoading } = useQuery({ queryKey: ["gsc"], queryFn: () => list() });
+  const { data: st, isLoading: stLoading } = useQuery({ queryKey: ["gsc-status"], queryFn: () => status(), refetchInterval: 60_000 });
   const [siteUrl, setSiteUrl] = useState("");
 
   const reqMut = useMutation({
     mutationFn: (url: string) => request({ data: { site_url: url } }),
-    onSuccess: () => { toast.success("Verification token generated"); setSiteUrl(""); qc.invalidateQueries({ queryKey: ["gsc"] }); },
+    onSuccess: () => { toast.success("Verification token generated"); setSiteUrl(""); qc.invalidateQueries({ queryKey: ["gsc"] }); qc.invalidateQueries({ queryKey: ["gsc-status"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const verMut = useMutation({
     mutationFn: (id: string) => verify({ data: { id } }),
-    onSuccess: () => { toast.success("Site verified & added to Search Console"); qc.invalidateQueries({ queryKey: ["gsc"] }); },
+    onSuccess: () => { toast.success("Site verified & added to Search Console"); qc.invalidateQueries({ queryKey: ["gsc"] }); qc.invalidateQueries({ queryKey: ["gsc-status"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const delMut = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
-    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["gsc"] }); },
+    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["gsc"] }); qc.invalidateQueries({ queryKey: ["gsc-status"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -53,6 +56,8 @@ function GscPage() {
         <h1 className="text-2xl font-bold">Google Search Console</h1>
         <p className="text-sm text-muted-foreground">Verify your website with Google using a meta tag. Tokens are embedded automatically into your published site's HTML head.</p>
       </div>
+
+      <StatusDashboard st={st} loading={stLoading} />
 
       <Card>
         <CardHeader>
