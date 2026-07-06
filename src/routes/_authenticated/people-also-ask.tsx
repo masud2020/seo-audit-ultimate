@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, HelpCircle } from "lucide-react";
 import { peopleAlsoAsk } from "@/lib/keyword-tools.functions";
+import type { PaaItem } from "@/lib/keyword-tools.functions";
+import { RecentRuns } from "@/components/recent-runs";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +19,13 @@ function Page() {
   const run = useServerFn(peopleAlsoAsk);
   const [seed, setSeed] = useState("");
   const [country, setCountry] = useState("US");
+  const [loaded, setLoaded] = useState<{ items: PaaItem[] } | null>(null);
   const mut = useMutation({
     mutationFn: () => run({ data: { seed, country, limit: 15 } }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => setLoaded(null),
   });
+  const view = mut.data ?? loaded;
   return (
     <div className="space-y-4 max-w-4xl">
       <div>
@@ -34,10 +39,19 @@ function Page() {
           {mut.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Asking…</> : "Get questions"}
         </Button>
       </Card>
-      {mut.data && (
+      <RecentRuns<{ items: PaaItem[] }>
+        tool="people_also_ask"
+        onLoad={({ input, result }) => {
+          const i = input as { seed?: string; country?: string };
+          if (i?.seed) setSeed(i.seed);
+          if (i?.country) setCountry(i.country);
+          setLoaded(result);
+        }}
+      />
+      {view && (
         <Card className="p-2">
           <Accordion type="multiple" className="w-full">
-            {mut.data.items.map((it, i) => (
+            {view.items.map((it, i) => (
               <AccordionItem key={i} value={`q-${i}`}>
                 <AccordionTrigger className="text-left">{it.question}</AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground">{it.answer}</AccordionContent>
