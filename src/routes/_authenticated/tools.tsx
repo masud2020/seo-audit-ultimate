@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Feather, Type as TypeIcon, Radio, TrendingUp, Bot } from "lucide-react";
+import { Feather, Type as TypeIcon, Radio, TrendingUp, Bot, FileCode } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/tools")({ component: Tools });
 
@@ -27,6 +27,7 @@ function Tools() {
         <Tool icon={Radio} title="Ping Sites" desc="Notify Google, Bing and IndexNow of updates." to="/ping" />
         <Tool icon={TrendingUp} title="Keyword Rank Tracker" desc="Track keyword positions over time." to="/keywords" />
         <Tool icon={Bot} title="AI Visibility" desc="How your content shows up in AI answers." to="/ai-visibility" />
+        <Tool icon={FileCode} title="Robots.txt Generator" desc="Build Allow / Disallow rules and download robots.txt." to="/tools/robots-txt-generator" />
       </div>
       <Card className="p-6">
         <h3 className="text-sm font-semibold">Coming next</h3>
