@@ -14,6 +14,86 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_citation_results: {
+        Row: {
+          cited: boolean
+          created_at: string
+          error: string | null
+          id: string
+          mentions: number
+          model: string
+          prompt: string
+          response: string | null
+          run_id: string
+          snippet: string | null
+          user_id: string
+        }
+        Insert: {
+          cited?: boolean
+          created_at?: string
+          error?: string | null
+          id?: string
+          mentions?: number
+          model: string
+          prompt: string
+          response?: string | null
+          run_id: string
+          snippet?: string | null
+          user_id: string
+        }
+        Update: {
+          cited?: boolean
+          created_at?: string
+          error?: string | null
+          id?: string
+          mentions?: number
+          model?: string
+          prompt?: string
+          response?: string | null
+          run_id?: string
+          snippet?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_citation_results_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "ai_citation_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_citation_runs: {
+        Row: {
+          created_at: string
+          hits: number
+          id: string
+          models_count: number
+          prompts_count: number
+          target_domain: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hits?: number
+          id?: string
+          models_count?: number
+          prompts_count?: number
+          target_domain: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hits?: number
+          id?: string
+          models_count?: number
+          prompts_count?: number
+          target_domain?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       api_settings: {
         Row: {
           claude_key: string | null
@@ -114,6 +194,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      blog_sources: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          name: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          name?: string
+          url?: string
+        }
+        Relationships: []
       }
       checklist_progress: {
         Row: {
@@ -339,6 +443,137 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      link_check_items: {
+        Row: {
+          check_id: string
+          checked_at: string
+          error: string | null
+          id: string
+          is_external: boolean
+          source_url: string
+          status_bucket: string
+          status_code: number | null
+          target_url: string
+          user_id: string
+        }
+        Insert: {
+          check_id: string
+          checked_at?: string
+          error?: string | null
+          id?: string
+          is_external?: boolean
+          source_url: string
+          status_bucket: string
+          status_code?: number | null
+          target_url: string
+          user_id: string
+        }
+        Update: {
+          check_id?: string
+          checked_at?: string
+          error?: string | null
+          id?: string
+          is_external?: boolean
+          source_url?: string
+          status_bucket?: string
+          status_code?: number | null
+          target_url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "link_check_items_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "link_checks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      link_checks: {
+        Row: {
+          created_at: string
+          finished_at: string | null
+          id: string
+          links_broken: number
+          links_total: number
+          pages_scanned: number
+          root_url: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          links_broken?: number
+          links_total?: number
+          pages_scanned?: number
+          root_url: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          links_broken?: number
+          links_total?: number
+          pages_scanned?: number
+          root_url?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      monitored_backlinks: {
+        Row: {
+          anchor: string | null
+          created_at: string
+          first_seen_at: string
+          id: string
+          last_seen_at: string
+          last_status: string
+          lost_at: string | null
+          source: string
+          source_authority: number | null
+          source_url: string
+          target_domain: string
+          target_url: string
+          user_id: string
+        }
+        Insert: {
+          anchor?: string | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          last_status?: string
+          lost_at?: string | null
+          source?: string
+          source_authority?: number | null
+          source_url: string
+          target_domain: string
+          target_url: string
+          user_id: string
+        }
+        Update: {
+          anchor?: string | null
+          created_at?: string
+          first_seen_at?: string
+          id?: string
+          last_seen_at?: string
+          last_status?: string
+          lost_at?: string | null
+          source?: string
+          source_authority?: number | null
+          source_url?: string
+          target_domain?: string
+          target_url?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       ping_history: {
         Row: {
