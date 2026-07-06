@@ -23,8 +23,8 @@ export const startAudit = createServerFn({ method: "POST" })
       await supabase.from("audits").update({
         status: "complete",
         overall_score: report.overall_score,
-        sections: report as unknown as Record<string, unknown>,
-        ai_recommendations: aiRecommendations as unknown as Record<string, unknown>,
+        sections: report as never,
+        ai_recommendations: aiRecommendations as never,
         updated_at: new Date().toISOString(),
       }).eq("id", auditId);
       return { id: auditId };
