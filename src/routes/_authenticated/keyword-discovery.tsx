@@ -5,6 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Search } from "lucide-react";
 import { discoverKeywords } from "@/lib/keyword-tools.functions";
+import type { KeywordIdea } from "@/lib/keyword-tools.functions";
+import { RecentRuns } from "@/components/recent-runs";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,11 +21,13 @@ function Page() {
   const [seed, setSeed] = useState("");
   const [country, setCountry] = useState("US");
   const [limit, setLimit] = useState(20);
+  const [loaded, setLoaded] = useState<{ ideas: KeywordIdea[] } | null>(null);
   const mut = useMutation({
     mutationFn: () => run({ data: { seed, country, limit } }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
-    onSuccess: (r) => toast.success(`${r.ideas.length} keyword ideas`),
+    onSuccess: (r) => { setLoaded(null); toast.success(`${r.ideas.length} keyword ideas`); },
   });
+  const view = mut.data ?? loaded;
   return (
     <div className="space-y-4 max-w-5xl">
       <div>
@@ -38,14 +42,24 @@ function Page() {
           {mut.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Generating…</> : "Discover"}
         </Button>
       </Card>
-      {mut.data && (
+      <RecentRuns<{ ideas: KeywordIdea[] }>
+        tool="keyword_discovery"
+        onLoad={({ input, result }) => {
+          const i = input as { seed?: string; country?: string; limit?: number };
+          if (i?.seed) setSeed(i.seed);
+          if (i?.country) setCountry(i.country);
+          if (i?.limit) setLimit(i.limit);
+          setLoaded(result);
+        }}
+      />
+      {view && (
         <Card className="p-0">
           <Table>
             <TableHeader><TableRow>
               <TableHead>Keyword</TableHead><TableHead>Intent</TableHead><TableHead>Volume</TableHead><TableHead>Difficulty</TableHead><TableHead>Why</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {mut.data.ideas.map((i, idx) => (
+              {view.ideas.map((i, idx) => (
                 <TableRow key={idx}>
                   <TableCell className="font-medium">{i.keyword}</TableCell>
                   <TableCell><Badge variant="secondary">{i.intent}</Badge></TableCell>
