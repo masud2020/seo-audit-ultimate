@@ -22,25 +22,6 @@ function extractLinks(html: string, base: string): string[] {
   return [...out];
 }
 
-async function checkStatus(url: string): Promise<{ code: number | null; bucket: string; error?: string }> {
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 10_000);
-  try {
-    // HEAD first, then GET fallback (some servers reject HEAD)
-    let r = await fetch(url, { method: "HEAD", redirect: "follow", signal: ctrl.signal });
-    if (r.status === 405 || r.status === 501) {
-      r = await fetch(url, { method: "GET", redirect: "follow", signal: ctrl.signal });
-    }
-    const c = r.status;
-    const bucket = c >= 500 ? "5xx" : c >= 400 ? "4xx" : c >= 300 ? "3xx" : "2xx";
-    return { code: c, bucket };
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    const bucket = /aborted|timeout/i.test(msg) ? "timeout" : "network-error";
-    return { code: null, bucket, error: msg.slice(0, 200) };
-  } finally { clearTimeout(t); }
-}
-
 const startInput = z.object({
   url: z.string().url(),
   max_links: z.number().int().min(1).max(2000).optional().default(150),
