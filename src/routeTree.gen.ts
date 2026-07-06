@@ -15,12 +15,15 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
+import { Route as AuthenticatedWebsiteSpeedRouteImport } from './routes/_authenticated/website-speed'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenticated/tool-history'
 import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authenticated/site-audit'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
+import { Route as AuthenticatedSchemaValidatorRouteImport } from './routes/_authenticated/schema-validator'
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
+import { Route as AuthenticatedResponsiveCheckRouteImport } from './routes/_authenticated/responsive-check'
 import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
@@ -29,6 +32,7 @@ import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_aut
 import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
+import { Route as AuthenticatedHtmlValidatorRouteImport } from './routes/_authenticated/html-validator'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gsc'
 import { Route as AuthenticatedGapsRouteImport } from './routes/_authenticated/gaps'
@@ -41,6 +45,7 @@ import { Route as AuthenticatedChecklistRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenticated/broken-links'
 import { Route as AuthenticatedBacklinkMonitorRouteImport } from './routes/_authenticated/backlink-monitor'
+import { Route as AuthenticatedBacklinkCheckerRouteImport } from './routes/_authenticated/backlink-checker'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
 import { Route as AuthenticatedAiSearchRankRouteImport } from './routes/_authenticated/ai-search-rank'
 import { Route as AuthenticatedAiSearchComparisonRouteImport } from './routes/_authenticated/ai-search-comparison'
@@ -85,6 +90,12 @@ const AuthenticatedWordCounterRoute =
     path: '/word-counter',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedWebsiteSpeedRoute =
+  AuthenticatedWebsiteSpeedRouteImport.update({
+    id: '/website-speed',
+    path: '/website-speed',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
@@ -111,11 +122,23 @@ const AuthenticatedSeoNewsRoute = AuthenticatedSeoNewsRouteImport.update({
   path: '/seo-news',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSchemaValidatorRoute =
+  AuthenticatedSchemaValidatorRouteImport.update({
+    id: '/schema-validator',
+    path: '/schema-validator',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedScheduledRoute = AuthenticatedScheduledRouteImport.update({
   id: '/scheduled',
   path: '/scheduled',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResponsiveCheckRoute =
+  AuthenticatedResponsiveCheckRouteImport.update({
+    id: '/responsive-check',
+    path: '/responsive-check',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRankTrackingRoute =
   AuthenticatedRankTrackingRouteImport.update({
     id: '/rank-tracking',
@@ -159,6 +182,12 @@ const AuthenticatedKeywordDiscoveryRoute =
   AuthenticatedKeywordDiscoveryRouteImport.update({
     id: '/keyword-discovery',
     path: '/keyword-discovery',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHtmlValidatorRoute =
+  AuthenticatedHtmlValidatorRouteImport.update({
+    id: '/html-validator',
+    path: '/html-validator',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
@@ -223,6 +252,12 @@ const AuthenticatedBacklinkMonitorRoute =
   AuthenticatedBacklinkMonitorRouteImport.update({
     id: '/backlink-monitor',
     path: '/backlink-monitor',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBacklinkCheckerRoute =
+  AuthenticatedBacklinkCheckerRouteImport.update({
+    id: '/backlink-checker',
+    path: '/backlink-checker',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAiVisibilityRoute =
@@ -311,6 +346,7 @@ export interface FileRoutesByFullPath {
   '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -323,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -331,12 +368,15 @@ export interface FileRoutesByFullPath {
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
+  '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
@@ -357,6 +397,7 @@ export interface FileRoutesByTo {
   '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -369,6 +410,7 @@ export interface FileRoutesByTo {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -377,12 +419,15 @@ export interface FileRoutesByTo {
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
+  '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
@@ -405,6 +450,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/_authenticated/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/_authenticated/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/_authenticated/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/_authenticated/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
@@ -417,6 +463,7 @@ export interface FileRoutesById {
   '/_authenticated/gaps': typeof AuthenticatedGapsRoute
   '/_authenticated/gsc': typeof AuthenticatedGscRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -425,12 +472,15 @@ export interface FileRoutesById {
   '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/_authenticated/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
+  '/_authenticated/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
+  '/_authenticated/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
@@ -453,6 +503,7 @@ export interface FileRouteTypes {
     | '/ai-search-comparison'
     | '/ai-search-rank'
     | '/ai-visibility'
+    | '/backlink-checker'
     | '/backlink-monitor'
     | '/broken-links'
     | '/calendar'
@@ -465,6 +516,7 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
     | '/people-also-ask'
@@ -473,12 +525,15 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/projects'
     | '/rank-tracking'
+    | '/responsive-check'
     | '/scheduled'
+    | '/schema-validator'
     | '/seo-news'
     | '/settings'
     | '/site-audit'
     | '/tool-history'
     | '/tools'
+    | '/website-speed'
     | '/word-counter'
     | '/audit/$id'
     | '/audit/bulk'
@@ -499,6 +554,7 @@ export interface FileRouteTypes {
     | '/ai-search-comparison'
     | '/ai-search-rank'
     | '/ai-visibility'
+    | '/backlink-checker'
     | '/backlink-monitor'
     | '/broken-links'
     | '/calendar'
@@ -511,6 +567,7 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
     | '/people-also-ask'
@@ -519,12 +576,15 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/projects'
     | '/rank-tracking'
+    | '/responsive-check'
     | '/scheduled'
+    | '/schema-validator'
     | '/seo-news'
     | '/settings'
     | '/site-audit'
     | '/tool-history'
     | '/tools'
+    | '/website-speed'
     | '/word-counter'
     | '/audit/$id'
     | '/audit/bulk'
@@ -546,6 +606,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-search-comparison'
     | '/_authenticated/ai-search-rank'
     | '/_authenticated/ai-visibility'
+    | '/_authenticated/backlink-checker'
     | '/_authenticated/backlink-monitor'
     | '/_authenticated/broken-links'
     | '/_authenticated/calendar'
@@ -558,6 +619,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gaps'
     | '/_authenticated/gsc'
     | '/_authenticated/history'
+    | '/_authenticated/html-validator'
     | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
     | '/_authenticated/people-also-ask'
@@ -566,12 +628,15 @@ export interface FileRouteTypes {
     | '/_authenticated/preferences'
     | '/_authenticated/projects'
     | '/_authenticated/rank-tracking'
+    | '/_authenticated/responsive-check'
     | '/_authenticated/scheduled'
+    | '/_authenticated/schema-validator'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
     | '/_authenticated/site-audit'
     | '/_authenticated/tool-history'
     | '/_authenticated/tools'
+    | '/_authenticated/website-speed'
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/bulk'
@@ -634,6 +699,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWordCounterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/website-speed': {
+      id: '/_authenticated/website-speed'
+      path: '/website-speed'
+      fullPath: '/website-speed'
+      preLoaderRoute: typeof AuthenticatedWebsiteSpeedRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/tools': {
       id: '/_authenticated/tools'
       path: '/tools'
@@ -669,11 +741,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSeoNewsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/schema-validator': {
+      id: '/_authenticated/schema-validator'
+      path: '/schema-validator'
+      fullPath: '/schema-validator'
+      preLoaderRoute: typeof AuthenticatedSchemaValidatorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/scheduled': {
       id: '/_authenticated/scheduled'
       path: '/scheduled'
       fullPath: '/scheduled'
       preLoaderRoute: typeof AuthenticatedScheduledRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/responsive-check': {
+      id: '/_authenticated/responsive-check'
+      path: '/responsive-check'
+      fullPath: '/responsive-check'
+      preLoaderRoute: typeof AuthenticatedResponsiveCheckRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rank-tracking': {
@@ -730,6 +816,13 @@ declare module '@tanstack/react-router' {
       path: '/keyword-discovery'
       fullPath: '/keyword-discovery'
       preLoaderRoute: typeof AuthenticatedKeywordDiscoveryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/html-validator': {
+      id: '/_authenticated/html-validator'
+      path: '/html-validator'
+      fullPath: '/html-validator'
+      preLoaderRoute: typeof AuthenticatedHtmlValidatorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/history': {
@@ -814,6 +907,13 @@ declare module '@tanstack/react-router' {
       path: '/backlink-monitor'
       fullPath: '/backlink-monitor'
       preLoaderRoute: typeof AuthenticatedBacklinkMonitorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/backlink-checker': {
+      id: '/_authenticated/backlink-checker'
+      path: '/backlink-checker'
+      fullPath: '/backlink-checker'
+      preLoaderRoute: typeof AuthenticatedBacklinkCheckerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ai-visibility': {
@@ -943,6 +1043,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiSearchComparisonRoute: typeof AuthenticatedAiSearchComparisonRoute
   AuthenticatedAiSearchRankRoute: typeof AuthenticatedAiSearchRankRoute
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
+  AuthenticatedBacklinkCheckerRoute: typeof AuthenticatedBacklinkCheckerRoute
   AuthenticatedBacklinkMonitorRoute: typeof AuthenticatedBacklinkMonitorRoute
   AuthenticatedBrokenLinksRoute: typeof AuthenticatedBrokenLinksRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
@@ -955,6 +1056,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGapsRoute: typeof AuthenticatedGapsRoute
   AuthenticatedGscRoute: typeof AuthenticatedGscRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedHtmlValidatorRoute: typeof AuthenticatedHtmlValidatorRoute
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
@@ -963,12 +1065,15 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
+  AuthenticatedResponsiveCheckRoute: typeof AuthenticatedResponsiveCheckRoute
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
+  AuthenticatedSchemaValidatorRoute: typeof AuthenticatedSchemaValidatorRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
   AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
+  AuthenticatedWebsiteSpeedRoute: typeof AuthenticatedWebsiteSpeedRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
   AuthenticatedAuditBulkRoute: typeof AuthenticatedAuditBulkRoute
@@ -983,6 +1088,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiSearchComparisonRoute: AuthenticatedAiSearchComparisonRoute,
   AuthenticatedAiSearchRankRoute: AuthenticatedAiSearchRankRoute,
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
+  AuthenticatedBacklinkCheckerRoute: AuthenticatedBacklinkCheckerRoute,
   AuthenticatedBacklinkMonitorRoute: AuthenticatedBacklinkMonitorRoute,
   AuthenticatedBrokenLinksRoute: AuthenticatedBrokenLinksRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
@@ -995,6 +1101,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGapsRoute: AuthenticatedGapsRoute,
   AuthenticatedGscRoute: AuthenticatedGscRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedHtmlValidatorRoute: AuthenticatedHtmlValidatorRoute,
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
@@ -1003,12 +1110,15 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
+  AuthenticatedResponsiveCheckRoute: AuthenticatedResponsiveCheckRoute,
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
+  AuthenticatedSchemaValidatorRoute: AuthenticatedSchemaValidatorRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
   AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
+  AuthenticatedWebsiteSpeedRoute: AuthenticatedWebsiteSpeedRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,
   AuthenticatedAuditBulkRoute: AuthenticatedAuditBulkRoute,
