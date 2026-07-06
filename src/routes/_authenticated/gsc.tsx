@@ -22,6 +22,54 @@ export const Route = createFileRoute("/_authenticated/gsc")({
   notFoundComponent: () => <div className="p-6">Not found</div>,
 });
 
+type StatusData = Awaited<ReturnType<typeof getGscStatus>>;
+
+function StatusPill({ ok, label, pendingLabel, loading }: { ok: boolean; label: string; pendingLabel?: string; loading?: boolean }) {
+  if (loading) return <Badge variant="secondary" className="gap-1"><AlertCircle className="h-3 w-3" />Checking…</Badge>;
+  return ok
+    ? <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" />{label}</Badge>
+    : <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />{pendingLabel ?? `Not ${label.toLowerCase()}`}</Badge>;
+}
+
+function StatusDashboard({ st, loading }: { st: StatusData | undefined; loading: boolean }) {
+  const connected = !!st?.connectorConnected;
+  const reachable = !!st?.apiReachable;
+  const anyVerified = (st?.verifiedCount ?? 0) > 0;
+  const ready = !!st?.readyForAudit;
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <CardTitle>Status</CardTitle>
+            <CardDescription>Live view of your Google Search Console integration.</CardDescription>
+          </div>
+          <StatusPill ok={ready} label="Ready for audits" pendingLabel="Not ready" loading={loading} />
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium"><Plug className="h-4 w-4" /> Connector</div>
+          <StatusPill ok={connected} label="Connected" pendingLabel="Not connected" loading={loading} />
+          <p className="mt-2 text-xs text-muted-foreground">Google Search Console credentials linked to this project.</p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium"><Activity className="h-4 w-4" /> API reachable</div>
+          <StatusPill ok={reachable} label="Live" pendingLabel="Unavailable" loading={loading} />
+          <p className="mt-2 text-xs text-muted-foreground">
+            {st?.apiError ? st.apiError : reachable ? `${st?.googleSites.length ?? 0} site(s) visible in Google.` : "Waiting for a successful call to Google."}
+          </p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium"><ShieldCheck className="h-4 w-4" /> Verified sites</div>
+          <StatusPill ok={anyVerified} label={`${st?.verifiedCount ?? 0} verified`} pendingLabel="0 verified" loading={loading} />
+          <p className="mt-2 text-xs text-muted-foreground">{st?.pendingCount ?? 0} pending · {st?.totalSites ?? 0} total</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function GscPage() {
   const qc = useQueryClient();
   const list = useServerFn(listGscVerifications);
