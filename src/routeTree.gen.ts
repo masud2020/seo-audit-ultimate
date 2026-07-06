@@ -36,6 +36,7 @@ import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenti
 import { Route as AuthenticatedBacklinkMonitorRouteImport } from './routes/_authenticated/backlink-monitor'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
+import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
@@ -184,6 +185,12 @@ const AuthenticatedAiDetectionRoute =
     path: '/ai-detection',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAiCitationsRoute =
+  AuthenticatedAiCitationsRouteImport.update({
+    id: '/ai-citations',
+    path: '/ai-citations',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCrawlerIdRoute = AuthenticatedCrawlerIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -216,6 +223,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
@@ -249,6 +257,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
@@ -284,6 +293,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/_authenticated/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/_authenticated/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/_authenticated/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
@@ -319,6 +329,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/ai-citations'
     | '/ai-detection'
     | '/ai-visibility'
     | '/backlink-monitor'
@@ -352,6 +363,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/ai-citations'
     | '/ai-detection'
     | '/ai-visibility'
     | '/backlink-monitor'
@@ -386,6 +398,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/_authenticated/ai-citations'
     | '/_authenticated/ai-detection'
     | '/_authenticated/ai-visibility'
     | '/_authenticated/backlink-monitor'
@@ -615,6 +628,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiDetectionRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-citations': {
+      id: '/_authenticated/ai-citations'
+      path: '/ai-citations'
+      fullPath: '/ai-citations'
+      preLoaderRoute: typeof AuthenticatedAiCitationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/crawler/$id': {
       id: '/_authenticated/crawler/$id'
       path: '/$id'
@@ -665,6 +685,7 @@ const AuthenticatedCrawlerRouteWithChildren =
   AuthenticatedCrawlerRoute._addFileChildren(AuthenticatedCrawlerRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAiCitationsRoute: typeof AuthenticatedAiCitationsRoute
   AuthenticatedAiDetectionRoute: typeof AuthenticatedAiDetectionRoute
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
   AuthenticatedBacklinkMonitorRoute: typeof AuthenticatedBacklinkMonitorRoute
@@ -693,6 +714,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAiCitationsRoute: AuthenticatedAiCitationsRoute,
   AuthenticatedAiDetectionRoute: AuthenticatedAiDetectionRoute,
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
   AuthenticatedBacklinkMonitorRoute: AuthenticatedBacklinkMonitorRoute,
