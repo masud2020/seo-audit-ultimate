@@ -3,7 +3,8 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal } from "lucide-react";
+import { useBrand } from "@/components/brand-provider";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -44,6 +45,7 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
   ]},
   { label: "Settings", items: [
     { title: "API Settings", url: "/settings", icon: Settings },
+    { title: "Preferences & Branding", url: "/preferences", icon: SlidersHorizontal },
     { title: "Search Console", url: "/gsc", icon: ShieldCheck },
   ]},
 ];
@@ -55,6 +57,7 @@ export function AppSidebar() {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const brand = useBrand();
 
   const filtered = groups.map(g => ({ ...g, items: g.items.filter(i => i.title.toLowerCase().includes(q.toLowerCase())) })).filter(g => g.items.length);
 
@@ -69,8 +72,12 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-1">
-          <div className="grid h-7 w-7 place-items-center rounded bg-primary text-primary-foreground shrink-0"><Search className="h-4 w-4" /></div>
-          {!collapsed && <span className="text-sm font-semibold truncate">SEO Audit</span>}
+          {brand.logo_url ? (
+            <img src={brand.logo_url} alt="" className="h-7 w-7 rounded object-cover shrink-0" />
+          ) : (
+            <div className="grid h-7 w-7 place-items-center rounded bg-primary text-primary-foreground shrink-0"><Search className="h-4 w-4" /></div>
+          )}
+          {!collapsed && <span className="text-sm font-semibold truncate">{brand.app_name ?? "SEO Audit"}</span>}
         </div>
         {!collapsed && (
           <div className="px-2 pb-2">

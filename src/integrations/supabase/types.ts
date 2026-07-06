@@ -219,6 +219,51 @@ export type Database = {
         }
         Relationships: []
       }
+      brand_settings: {
+        Row: {
+          accent_color: string | null
+          app_name: string | null
+          company_address: string | null
+          favicon_url: string | null
+          footer_text: string | null
+          logo_url: string | null
+          primary_color: string | null
+          privacy_url: string | null
+          support_email: string | null
+          terms_url: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accent_color?: string | null
+          app_name?: string | null
+          company_address?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          privacy_url?: string | null
+          support_email?: string | null
+          terms_url?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accent_color?: string | null
+          app_name?: string | null
+          company_address?: string | null
+          favicon_url?: string | null
+          footer_text?: string | null
+          logo_url?: string | null
+          primary_color?: string | null
+          privacy_url?: string | null
+          support_email?: string | null
+          terms_url?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       checklist_progress: {
         Row: {
           checked: boolean
@@ -571,6 +616,72 @@ export type Database = {
           source_url?: string
           target_domain?: string
           target_url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notification_prefs: {
+        Row: {
+          id: string
+          in_app: boolean
+          notify_error: boolean
+          notify_success: boolean
+          tool: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          in_app?: boolean
+          notify_error?: boolean
+          notify_success?: boolean
+          tool: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          in_app?: boolean
+          notify_error?: boolean
+          notify_success?: boolean
+          tool?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          label: string | null
+          message: string
+          read: boolean
+          run_id: string | null
+          status: string
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          message: string
+          read?: boolean
+          run_id?: string | null
+          status: string
+          tool: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string | null
+          message?: string
+          read?: boolean
+          run_id?: string | null
+          status?: string
+          tool?: string
           user_id?: string
         }
         Relationships: []

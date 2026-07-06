@@ -36,9 +36,53 @@ export async function logToolRun(a: LogRunArgs): Promise<string | null> {
       finished_at: new Date().toISOString(),
     }).select("id").single();
     if (error) { console.warn("[tool_runs] log failed", error.message); return null; }
-    return (data as { id: string }).id;
+    const runId = (data as { id: string }).id;
+    await maybeNotify(a, runId);
+    return runId;
   } catch (e) {
     console.warn("[tool_runs] log threw", e instanceof Error ? e.message : String(e));
     return null;
+  }
+}
+
+const TOOL_LABELS: Record<string, string> = {
+  broken_links: "Broken Link Checker",
+  backlink_monitor: "Backlink Monitor",
+  ai_detection: "AI Content Detection",
+  ai_citations: "AI Citation Checker",
+  ai_potential: "AI Citation Potential",
+  seo_news: "SEO Blog Feed",
+};
+
+async function maybeNotify(a: LogRunArgs, runId: string): Promise<void> {
+  const status = a.status ?? "success";
+  if (status !== "success" && status !== "error") return;
+  try {
+    const { data: pref } = await a.supabase
+      .from("notification_prefs")
+      .select("in_app,notify_success,notify_error")
+      .eq("user_id", a.userId)
+      .eq("tool", a.tool)
+      .maybeSingle();
+    const p = (pref as { in_app: boolean; notify_success: boolean; notify_error: boolean } | null) ?? {
+      in_app: true, notify_success: false, notify_error: true,
+    };
+    if (!p.in_app) return;
+    if (status === "success" && !p.notify_success) return;
+    if (status === "error" && !p.notify_error) return;
+    const label = a.label ?? TOOL_LABELS[a.tool] ?? a.tool;
+    const message = status === "success"
+      ? `${TOOL_LABELS[a.tool] ?? a.tool} finished successfully.`
+      : `${TOOL_LABELS[a.tool] ?? a.tool} failed${a.error ? `: ${a.error.slice(0, 200)}` : ""}`;
+    await a.supabase.from("notifications").insert({
+      user_id: a.userId,
+      tool: a.tool,
+      status,
+      label,
+      message,
+      run_id: runId,
+    });
+  } catch (e) {
+    console.warn("[notifications] emit failed", e instanceof Error ? e.message : String(e));
   }
 }

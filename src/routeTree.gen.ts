@@ -22,6 +22,7 @@ import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
 import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
@@ -113,6 +114,12 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPreferencesRoute =
+  AuthenticatedPreferencesRouteImport.update({
+    id: '/preferences',
+    path: '/preferences',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPingRoute = AuthenticatedPingRouteImport.update({
   id: '/ping',
   path: '/ping',
@@ -261,6 +268,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
+  '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
@@ -298,6 +306,7 @@ export interface FileRoutesByTo {
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
+  '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
@@ -337,6 +346,7 @@ export interface FileRoutesById {
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
+  '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
@@ -376,6 +386,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/keywords'
     | '/ping'
+    | '/preferences'
     | '/projects'
     | '/rank-tracking'
     | '/scheduled'
@@ -413,6 +424,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/keywords'
     | '/ping'
+    | '/preferences'
     | '/projects'
     | '/rank-tracking'
     | '/scheduled'
@@ -451,6 +463,7 @@ export interface FileRouteTypes {
     | '/_authenticated/history'
     | '/_authenticated/keywords'
     | '/_authenticated/ping'
+    | '/_authenticated/preferences'
     | '/_authenticated/projects'
     | '/_authenticated/rank-tracking'
     | '/_authenticated/scheduled'
@@ -566,6 +579,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/preferences': {
+      id: '/_authenticated/preferences'
+      path: '/preferences'
+      fullPath: '/preferences'
+      preLoaderRoute: typeof AuthenticatedPreferencesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/ping': {
@@ -762,6 +782,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
+  AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
@@ -794,6 +815,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
+  AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
