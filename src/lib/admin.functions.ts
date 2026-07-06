@@ -5,9 +5,11 @@ import { z } from "zod";
 async function getAdminClient() {
   const { createClient } = await import("@supabase/supabase-js");
   const url = process.env.SUPABASE_URL!;
+  // Supabase Auth Admin API requires the true service role key.
+  // SUPABASE_SECRET_KEYS (new sb_secret_* format) is rejected with "User not allowed".
   const key =
-    process.env.SUPABASE_SECRET_KEYS ||
-    process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_SECRET_KEYS!;
   const isNewKey = key.startsWith("sb_secret_") || key.startsWith("sb_publishable_");
   return createClient(url, key, {
     auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
