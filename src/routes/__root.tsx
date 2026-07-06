@@ -81,10 +81,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "SEO Audit Tool — Advanced AI-Powered Website Audits" },
       { name: "description", content: "Comprehensive AI-powered SEO audits covering technical SEO, on-page, links, performance, and AI search visibility." },
-      { property: "og:title", content: "SEO Audit Tool" },
-      { property: "og:description", content: "Comprehensive AI-powered SEO audits for modern websites." },
+      { property: "og:title", content: "SEO Audit Tool — Advanced AI-Powered Website Audits" },
+      { property: "og:description", content: "Comprehensive AI-powered SEO audits covering technical SEO, on-page, links, performance, and AI search visibility." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "SEO Audit Tool — Advanced AI-Powered Website Audits" },
+      { name: "twitter:description", content: "Comprehensive AI-powered SEO audits covering technical SEO, on-page, links, performance, and AI search visibility." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/838d5b74-041d-4169-af79-fc5dccdfb9f4/id-preview-36aefab8--b12e4287-881c-4d9a-85fe-22a97c824700.lovable.app-1783341201714.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/838d5b74-041d-4169-af79-fc5dccdfb9f4/id-preview-36aefab8--b12e4287-881c-4d9a-85fe-22a97c824700.lovable.app-1783341201714.png" },
     ],
     links: [
       {
