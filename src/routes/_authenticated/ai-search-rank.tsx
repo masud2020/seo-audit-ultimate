@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Trophy, Check, X } from "lucide-react";
 import { runAiSearchRank } from "@/lib/ai-search.functions";
+import { RecentRuns } from "@/components/recent-runs";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,17 +16,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export const Route = createFileRoute("/_authenticated/ai-search-rank")({ component: Page });
 
+type RankResult = { brand: string; hits: number; total: number; visibility: number; results: Array<{ query: string; model: string; mentioned: boolean; position: number | null; snippet: string | null; response: string; error?: string }> };
+
 function Page() {
   const run = useServerFn(runAiSearchRank);
   const [brand, setBrand] = useState("");
   const [queries, setQueries] = useState("");
   const list = queries.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  const [loaded, setLoaded] = useState<RankResult | null>(null);
   const mut = useMutation({
     mutationFn: () => run({ data: { brand, queries: list } }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
-    onSuccess: (r) => toast.success(`${r.visibility}% AI visibility (${r.hits}/${r.total})`),
+    onSuccess: (r) => { setLoaded(null); toast.success(`${r.visibility}% AI visibility (${r.hits}/${r.total})`); },
   });
-  const d = mut.data;
+  const d = mut.data ?? loaded;
   return (
     <div className="space-y-4 max-w-6xl">
       <div>
@@ -44,6 +48,15 @@ function Page() {
           </Button>
         </div>
       </Card>
+      <RecentRuns<RankResult>
+        tool="ai_search_rank"
+        onLoad={({ input, result }) => {
+          const i = input as { brand?: string; queries?: string[] };
+          if (i?.brand) setBrand(i.brand);
+          if (i?.queries) setQueries(i.queries.join("\n"));
+          setLoaded(result);
+        }}
+      />
       {d && (
         <>
           <div className="grid gap-3 md:grid-cols-3">
