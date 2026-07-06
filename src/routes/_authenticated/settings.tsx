@@ -17,8 +17,8 @@ function Settings() {
   const save = useServerFn(saveApiSettings);
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["api-settings"], queryFn: () => get() });
-  const [form, setForm] = useState({ provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "" });
-  useEffect(() => { if (data) setForm({ provider: data.provider ?? "lovable", groq_key: data.groq_key ?? "", gemini_key: data.gemini_key ?? "", openai_key: data.openai_key ?? "", perplexity_key: data.perplexity_key ?? "", claude_key: data.claude_key ?? "" }); }, [data]);
+  const [form, setForm] = useState({ provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "", serpapi_key: "", semrush_key: "" });
+  useEffect(() => { if (data) setForm({ provider: data.provider ?? "lovable", groq_key: data.groq_key ?? "", gemini_key: data.gemini_key ?? "", openai_key: data.openai_key ?? "", perplexity_key: data.perplexity_key ?? "", claude_key: data.claude_key ?? "", serpapi_key: (data as { serpapi_key?: string }).serpapi_key ?? "", semrush_key: (data as { semrush_key?: string }).semrush_key ?? "" }); }, [data]);
   const m = useMutation({ mutationFn: () => save({ data: form }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["api-settings"] }); toast.success("Saved"); }, onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed") });
 
   return (
@@ -39,12 +39,24 @@ function Settings() {
             </SelectContent>
           </Select>
         </div>
+        <div className="pt-2"><h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">AI Providers</h3></div>
         {[["Groq","groq_key"],["Gemini","gemini_key"],["OpenAI","openai_key"],["Perplexity","perplexity_key"],["Claude","claude_key"]].map(([label, k]) => (
           <div key={k}>
             <Label>{label} API key</Label>
             <Input type="password" value={(form as Record<string,string>)[k]} onChange={(e) => setForm({ ...form, [k]: e.target.value })} placeholder="••••••••" />
           </div>
         ))}
+        <div className="pt-2"><h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">SEO Data Providers</h3></div>
+        <div>
+          <Label>SerpAPI key</Label>
+          <Input type="password" value={form.serpapi_key} onChange={(e) => setForm({ ...form, serpapi_key: e.target.value })} placeholder="••••••••" />
+          <p className="text-xs text-muted-foreground mt-1">Used by Keyword Rank Tracker for live Google positions. Get one at serpapi.com — falls back to simulated positions if unset.</p>
+        </div>
+        <div>
+          <Label>Semrush API key</Label>
+          <Input type="password" value={form.semrush_key} onChange={(e) => setForm({ ...form, semrush_key: e.target.value })} placeholder="••••••••" />
+          <p className="text-xs text-muted-foreground mt-1">Used by Competitors & Backlinks. Get one at semrush.com/api.</p>
+        </div>
         <Button onClick={() => m.mutate()} disabled={m.isPending}>{m.isPending ? "Saving…" : "Save API Keys"}</Button>
       </Card>
     </div>

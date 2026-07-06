@@ -22,6 +22,8 @@ export type Database = {
           openai_key: string | null
           perplexity_key: string | null
           provider: string
+          semrush_key: string | null
+          serpapi_key: string | null
           updated_at: string
           user_id: string
         }
@@ -32,6 +34,8 @@ export type Database = {
           openai_key?: string | null
           perplexity_key?: string | null
           provider?: string
+          semrush_key?: string | null
+          serpapi_key?: string | null
           updated_at?: string
           user_id: string
         }
@@ -42,6 +46,8 @@ export type Database = {
           openai_key?: string | null
           perplexity_key?: string | null
           provider?: string
+          semrush_key?: string | null
+          serpapi_key?: string | null
           updated_at?: string
           user_id?: string
         }

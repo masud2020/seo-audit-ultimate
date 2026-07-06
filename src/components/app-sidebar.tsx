@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -15,6 +15,8 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
   ]},
   { label: "Tools", items: [
     { title: "Keyword Rank Tracker", url: "/keywords", icon: TrendingUp },
+    { title: "Site Crawler", url: "/crawler", icon: Network },
+    { title: "Competitors & Backlinks", url: "/competitors", icon: Users },
     { title: "SEO Checklist 2026", url: "/checklist", icon: ListChecks },
     { title: "Algorithm Calendar", url: "/calendar", icon: CalendarDays },
     { title: "Word Counter", url: "/word-counter", icon: TypeIcon },
