@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-async function getKey(context: { supabase: { from: (t: string) => { select: (c: string) => { eq: (a: string, b: string) => { maybeSingle: () => Promise<{ data: unknown }> } } } }; userId: string }): Promise<string> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function getKey(context: any): Promise<string> {
   const { data } = await context.supabase.from("api_settings").select("semrush_key").eq("user_id", context.userId).maybeSingle();
   const key = (data as { semrush_key?: string } | null)?.semrush_key;
   if (!key) throw new Error("Semrush API key missing. Add it in Settings → SEO Data Providers.");
