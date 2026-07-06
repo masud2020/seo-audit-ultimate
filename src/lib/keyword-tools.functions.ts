@@ -52,7 +52,7 @@ Include a mix of head, mid-tail, and long-tail terms. No duplicates. No commenta
       supabase, userId, tool: "keyword_discovery", status: "success",
       label: `${data.seed} · ${ideas.length} ideas`,
       input: data as unknown as Record<string, unknown>,
-      output: { ideas } as unknown as Record<string, unknown>,
+      result: { ideas } as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
     return { seed: data.seed, country, ideas };
@@ -78,7 +78,7 @@ Order by likelihood. No duplicates. No commentary outside JSON.`,
       supabase, userId, tool: "people_also_search", status: "success",
       label: `${data.seed} · ${items.length} related`,
       input: data as unknown as Record<string, unknown>,
-      output: { items } as unknown as Record<string, unknown>,
+      result: { items } as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
     return { seed: data.seed, country, items };
@@ -104,7 +104,7 @@ Cover different angles (what/why/how/best/vs). No duplicates. No commentary outs
       supabase, userId, tool: "people_also_ask", status: "success",
       label: `${data.seed} · ${items.length} questions`,
       input: data as unknown as Record<string, unknown>,
-      output: { items } as unknown as Record<string, unknown>,
+      result: { items } as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
     return { seed: data.seed, country, items };
