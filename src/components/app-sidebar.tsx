@@ -14,6 +14,7 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "New Audit", url: "/audit/new", icon: PlayCircle },
     { title: "Bulk Audit", url: "/audit/bulk", icon: Layers },
     { title: "Audit History", url: "/history", icon: History },
+    { title: "Tool Run History", url: "/tool-history", icon: History },
     { title: "Scheduled Audits", url: "/scheduled", icon: CalendarClock },
   ]},
   { label: "Tools", items: [
