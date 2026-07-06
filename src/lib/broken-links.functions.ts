@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 import { logToolRun } from "./tool-runs.server";
+import { assertPublicHttpUrl } from "./net-guard.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseCtx = { supabase: any; userId: string };
@@ -34,6 +35,9 @@ const startInput = z.object({
 });
 
 async function checkStatusWith(url: string, timeoutMs: number) {
+  try { assertPublicHttpUrl(url); } catch (e) {
+    return { code: null as number | null, bucket: "blocked", error: (e as Error).message };
+  }
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -73,6 +77,7 @@ export const runBrokenLinkCheck = createServerFn({ method: "POST" })
       const t = setTimeout(() => ctrl.abort(), data.timeout_ms + 5000);
       let html = "";
       try {
+        assertPublicHttpUrl(pageUrl);
         const r = await fetch(pageUrl, { signal: ctrl.signal, redirect: "follow", headers: { "User-Agent": "LovableSEOBot/1.0" } });
         if (!r.ok) {
           if (visitedPages.size === 1) throw new Error(`Root URL ${r.status}`);
