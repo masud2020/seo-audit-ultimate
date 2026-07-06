@@ -271,12 +271,13 @@ export const runHtmlValidator = createServerFn({ method: "POST" })
 // ============================================================
 // 5) Schema Validator — JSON-LD / microdata / RDFa / OpenGraph / Twitter
 // ============================================================
+type JsonValue = string | number | boolean | null | JsonValue[] | { [k: string]: JsonValue };
 export type SchemaBlock = {
   format: "json-ld" | "microdata" | "rdfa" | "opengraph" | "twitter";
   type: string;
   valid: boolean;
   error?: string;
-  raw?: unknown;
+  raw?: JsonValue;
 };
 export type SchemaResult = {
   url: string;
