@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
+import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -47,6 +48,11 @@ const AuthenticatedWordCounterRoute =
     path: '/word-counter',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedPingRoute = AuthenticatedPingRouteImport.update({
+  id: '/ping',
+  path: '/ping',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedKeywordsRoute = AuthenticatedKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/ping': typeof AuthenticatedPingRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
@@ -105,6 +112,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/ping': typeof AuthenticatedPingRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
@@ -120,6 +128,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
+  '/_authenticated/ping': typeof AuthenticatedPingRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/history'
     | '/keywords'
+    | '/ping'
     | '/word-counter'
     | '/audit/$id'
     | '/audit/new'
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/history'
     | '/keywords'
+    | '/ping'
     | '/word-counter'
     | '/audit/$id'
     | '/audit/new'
@@ -162,6 +173,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/history'
     | '/_authenticated/keywords'
+    | '/_authenticated/ping'
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/new'
@@ -209,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/word-counter'
       fullPath: '/word-counter'
       preLoaderRoute: typeof AuthenticatedWordCounterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ping': {
+      id: '/_authenticated/ping'
+      path: '/ping'
+      fullPath: '/ping'
+      preLoaderRoute: typeof AuthenticatedPingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/keywords': {
@@ -269,6 +288,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
+  AuthenticatedPingRoute: typeof AuthenticatedPingRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
   AuthenticatedAuditNewRoute: typeof AuthenticatedAuditNewRoute
@@ -280,6 +300,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
+  AuthenticatedPingRoute: AuthenticatedPingRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,
   AuthenticatedAuditNewRoute: AuthenticatedAuditNewRoute,
