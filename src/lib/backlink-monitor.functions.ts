@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logToolRun } from "./tool-runs.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Ctx = { supabase: any; userId: string };
@@ -63,6 +64,7 @@ export const recheckBacklinks = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { supabase, userId } = context as unknown as Ctx;
+    const startedAt = Date.now();
     const { data: rows } = await supabase.from("monitored_backlinks").select("*").eq("user_id", userId).limit(200);
     const list = (rows ?? []) as Array<{ id: string; source_url: string; target_domain: string; last_status: string }>;
     let live = 0, lost = 0;
@@ -81,7 +83,9 @@ export const recheckBacklinks = createServerFn({ method: "POST" })
         }
       }
     }
-    return { checked: list.length, live, lost };
+    const res = { checked: list.length, live, lost };
+    await logToolRun({ supabase, userId, tool: "backlink_monitor", status: "success", label: `Recheck · ${list.length} links`, input: { action: "recheck" }, result: res, duration_ms: Date.now() - startedAt });
+    return res;
   });
 
 export const importFromSemrush = createServerFn({ method: "POST" })
@@ -89,6 +93,8 @@ export const importFromSemrush = createServerFn({ method: "POST" })
   .inputValidator((d: { domain: string; limit?: number }) => z.object({ domain: z.string().min(3), limit: z.number().int().min(1).max(200).optional().default(50) }).parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as unknown as Ctx;
+    const startedAt = Date.now();
+    try {
     const { data: s } = await supabase.from("api_settings").select("semrush_key").eq("user_id", userId).maybeSingle();
     const key = (s as { semrush_key?: string } | null)?.semrush_key;
     if (!key) throw new Error("Semrush API key missing. Add it in Settings.");
@@ -109,5 +115,11 @@ export const importFromSemrush = createServerFn({ method: "POST" })
       }, { onConflict: "user_id,source_url,target_url", ignoreDuplicates: false });
       if (!error) inserted++;
     }
-    return { imported: inserted, total: rows.length };
+    const res = { imported: inserted, total: rows.length };
+    await logToolRun({ supabase, userId, tool: "backlink_monitor", status: "success", label: `Semrush import · ${target}`, input: { action: "semrush_import", domain: target, limit: data.limit }, result: res, duration_ms: Date.now() - startedAt });
+    return res;
+    } catch (e) {
+      await logToolRun({ supabase, userId, tool: "backlink_monitor", status: "error", label: `Semrush import · ${data.domain}`, input: { action: "semrush_import", domain: data.domain }, error: e instanceof Error ? e.message : String(e), duration_ms: Date.now() - startedAt });
+      throw e;
+    }
   });
