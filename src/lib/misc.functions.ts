@@ -182,6 +182,8 @@ export const saveApiSettings = createServerFn({ method: "POST" })
     claude_key: z.string().max(500).optional().default(""),
     serpapi_key: z.string().max(500).optional().default(""),
     semrush_key: z.string().max(500).optional().default(""),
+    sender_email: z.string().email().optional().or(z.literal("")),
+    sender_name: z.string().max(200).optional().default(""),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("api_settings").upsert({
