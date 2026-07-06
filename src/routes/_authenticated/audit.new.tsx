@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { startAudit } from "@/lib/audit.functions";
@@ -24,9 +24,12 @@ function NewAudit() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">New Audit</h1>
-        <p className="text-sm text-muted-foreground">Enter a URL to run a full technical + on-page audit.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">New Audit</h1>
+          <p className="text-sm text-muted-foreground">Enter a URL to run a full technical + on-page audit.</p>
+        </div>
+        <Button variant="outline" asChild><Link to="/audit/bulk">Bulk audit</Link></Button>
       </div>
       <Card className="p-6">
         <form onSubmit={(e) => { e.preventDefault(); if (url) m.mutate(url); }} className="space-y-4">
