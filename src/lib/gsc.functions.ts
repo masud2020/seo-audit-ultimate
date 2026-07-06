@@ -42,6 +42,53 @@ export const listGscVerifications = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const getGscStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const connectorConnected = Boolean(process.env.LOVABLE_API_KEY && process.env.GOOGLE_SEARCH_CONSOLE_API_KEY);
+    const { data, error } = await context.supabase
+      .from("gsc_verifications").select("id, site_url, verified, verified_at, created_at")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    const sites = data ?? [];
+    const verifiedCount = sites.filter((s) => s.verified).length;
+    const pendingCount = sites.length - verifiedCount;
+
+    // Probe the connector so we can report live reachability, not just env presence.
+    let apiReachable = false;
+    let apiError: string | null = null;
+    let googleSites: string[] = [];
+    if (connectorConnected) {
+      try {
+        const res = await fetch(`${GATEWAY}/webmasters/v3/sites`, { headers: gscHeaders() });
+        const text = await res.text();
+        if (!res.ok) throw new Error(`[${res.status}] ${text.slice(0, 200)}`);
+        const parsed = text ? JSON.parse(text) : {};
+        googleSites = (parsed.siteEntry ?? []).map((e: { siteUrl: string }) => e.siteUrl);
+        apiReachable = true;
+      } catch (e) {
+        apiError = (e as Error).message;
+      }
+    }
+
+    const sitesWithGoogle = sites.map((s) => ({
+      ...s,
+      inSearchConsole: googleSites.includes(s.site_url),
+    }));
+
+    return {
+      connectorConnected,
+      apiReachable,
+      apiError,
+      totalSites: sites.length,
+      verifiedCount,
+      pendingCount,
+      readyForAudit: connectorConnected && apiReachable && verifiedCount > 0,
+      sites: sitesWithGoogle,
+      googleSites,
+    };
+  });
+
 export const requestGscToken = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { site_url: string }) =>

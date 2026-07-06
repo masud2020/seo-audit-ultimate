@@ -7,12 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, Copy, Trash2, RefreshCw, ExternalLink } from "lucide-react";
+import { CheckCircle2, Copy, Trash2, RefreshCw, ExternalLink, XCircle, AlertCircle, Plug, ShieldCheck, Activity } from "lucide-react";
 import {
   listGscVerifications,
   requestGscToken,
   verifyGscSite,
   deleteGscVerification,
+  getGscStatus,
 } from "@/lib/gsc.functions";
 
 export const Route = createFileRoute("/_authenticated/gsc")({
@@ -21,29 +22,79 @@ export const Route = createFileRoute("/_authenticated/gsc")({
   notFoundComponent: () => <div className="p-6">Not found</div>,
 });
 
+type StatusData = Awaited<ReturnType<typeof getGscStatus>>;
+
+function StatusPill({ ok, label, pendingLabel, loading }: { ok: boolean; label: string; pendingLabel?: string; loading?: boolean }) {
+  if (loading) return <Badge variant="secondary" className="gap-1"><AlertCircle className="h-3 w-3" />Checking…</Badge>;
+  return ok
+    ? <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" />{label}</Badge>
+    : <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />{pendingLabel ?? `Not ${label.toLowerCase()}`}</Badge>;
+}
+
+function StatusDashboard({ st, loading }: { st: StatusData | undefined; loading: boolean }) {
+  const connected = !!st?.connectorConnected;
+  const reachable = !!st?.apiReachable;
+  const anyVerified = (st?.verifiedCount ?? 0) > 0;
+  const ready = !!st?.readyForAudit;
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <CardTitle>Status</CardTitle>
+            <CardDescription>Live view of your Google Search Console integration.</CardDescription>
+          </div>
+          <StatusPill ok={ready} label="Ready for audits" pendingLabel="Not ready" loading={loading} />
+        </div>
+      </CardHeader>
+      <CardContent className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium"><Plug className="h-4 w-4" /> Connector</div>
+          <StatusPill ok={connected} label="Connected" pendingLabel="Not connected" loading={loading} />
+          <p className="mt-2 text-xs text-muted-foreground">Google Search Console credentials linked to this project.</p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium"><Activity className="h-4 w-4" /> API reachable</div>
+          <StatusPill ok={reachable} label="Live" pendingLabel="Unavailable" loading={loading} />
+          <p className="mt-2 text-xs text-muted-foreground">
+            {st?.apiError ? st.apiError : reachable ? `${st?.googleSites.length ?? 0} site(s) visible in Google.` : "Waiting for a successful call to Google."}
+          </p>
+        </div>
+        <div className="rounded-lg border p-3">
+          <div className="mb-2 flex items-center gap-2 text-sm font-medium"><ShieldCheck className="h-4 w-4" /> Verified sites</div>
+          <StatusPill ok={anyVerified} label={`${st?.verifiedCount ?? 0} verified`} pendingLabel="0 verified" loading={loading} />
+          <p className="mt-2 text-xs text-muted-foreground">{st?.pendingCount ?? 0} pending · {st?.totalSites ?? 0} total</p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function GscPage() {
   const qc = useQueryClient();
   const list = useServerFn(listGscVerifications);
   const request = useServerFn(requestGscToken);
   const verify = useServerFn(verifyGscSite);
   const remove = useServerFn(deleteGscVerification);
+  const status = useServerFn(getGscStatus);
 
   const { data: rows = [], isLoading } = useQuery({ queryKey: ["gsc"], queryFn: () => list() });
+  const { data: st, isLoading: stLoading } = useQuery({ queryKey: ["gsc-status"], queryFn: () => status(), refetchInterval: 60_000 });
   const [siteUrl, setSiteUrl] = useState("");
 
   const reqMut = useMutation({
     mutationFn: (url: string) => request({ data: { site_url: url } }),
-    onSuccess: () => { toast.success("Verification token generated"); setSiteUrl(""); qc.invalidateQueries({ queryKey: ["gsc"] }); },
+    onSuccess: () => { toast.success("Verification token generated"); setSiteUrl(""); qc.invalidateQueries({ queryKey: ["gsc"] }); qc.invalidateQueries({ queryKey: ["gsc-status"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const verMut = useMutation({
     mutationFn: (id: string) => verify({ data: { id } }),
-    onSuccess: () => { toast.success("Site verified & added to Search Console"); qc.invalidateQueries({ queryKey: ["gsc"] }); },
+    onSuccess: () => { toast.success("Site verified & added to Search Console"); qc.invalidateQueries({ queryKey: ["gsc"] }); qc.invalidateQueries({ queryKey: ["gsc-status"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
   const delMut = useMutation({
     mutationFn: (id: string) => remove({ data: { id } }),
-    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["gsc"] }); },
+    onSuccess: () => { toast.success("Removed"); qc.invalidateQueries({ queryKey: ["gsc"] }); qc.invalidateQueries({ queryKey: ["gsc-status"] }); },
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -53,6 +104,8 @@ function GscPage() {
         <h1 className="text-2xl font-bold">Google Search Console</h1>
         <p className="text-sm text-muted-foreground">Verify your website with Google using a meta tag. Tokens are embedded automatically into your published site's HTML head.</p>
       </div>
+
+      <StatusDashboard st={st} loading={stLoading} />
 
       <Card>
         <CardHeader>
