@@ -8,4 +8,3 @@ SEO Audit Tool helps site owners, marketers and SEO agencies audit any website, 
 
 - [Home](/): Overview of the SEO Audit Tool platform and its capabilities.
 - [Sign in](/auth): Create an account or sign in to run audits.
-*** End Patch
