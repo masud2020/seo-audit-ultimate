@@ -79,7 +79,19 @@ function GscPage() {
   const status = useServerFn(getGscStatus);
 
   const { data: rows = [], isLoading } = useQuery({ queryKey: ["gsc"], queryFn: () => list() });
-  const { data: st, isLoading: stLoading } = useQuery({ queryKey: ["gsc-status"], queryFn: () => status(), refetchInterval: 60_000 });
+  const { data: st, isLoading: stLoading, isFetching: stFetching } = useQuery({ queryKey: ["gsc-status"], queryFn: () => status(), refetchInterval: 60_000 });
+  const refreshStatus = async () => {
+    const t = toast.loading("Refreshing status…");
+    try {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["gsc-status"] }),
+        qc.invalidateQueries({ queryKey: ["gsc"] }),
+      ]);
+      toast.success("Status refreshed", { id: t });
+    } catch (e) {
+      toast.error((e as Error).message, { id: t });
+    }
+  };
   const [siteUrl, setSiteUrl] = useState("");
 
   const reqMut = useMutation({
@@ -105,6 +117,12 @@ function GscPage() {
         <p className="text-sm text-muted-foreground">Verify your website with Google using a meta tag. Tokens are embedded automatically into your published site's HTML head.</p>
       </div>
 
+      <div className="flex justify-end">
+        <Button size="sm" variant="outline" onClick={refreshStatus} disabled={stFetching}>
+          <RefreshCw className={`mr-1 h-3 w-3 ${stFetching ? "animate-spin" : ""}`} />
+          {stFetching ? "Refreshing…" : "Refresh status"}
+        </Button>
+      </div>
       <StatusDashboard st={st} loading={stLoading} />
 
       <Card>
