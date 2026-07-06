@@ -23,6 +23,7 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
+import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gsc'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrawlerRouteImport } from './routes/_authenticated/crawler'
 import { Route as AuthenticatedContentOptimizerRouteImport } from './routes/_authenticated/content-optimizer'
@@ -107,6 +108,11 @@ const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   path: '/history',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedGscRoute = AuthenticatedGscRouteImport.update({
+  id: '/gsc',
+  path: '/gsc',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -211,6 +218,7 @@ export interface FileRoutesByTo {
   '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/_authenticated/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/_authenticated/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/gsc': typeof AuthenticatedGscRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/content-optimizer'
     | '/crawler'
     | '/dashboard'
+    | '/gsc'
     | '/history'
     | '/keywords'
     | '/ping'
@@ -296,6 +306,7 @@ export interface FileRouteTypes {
     | '/content-optimizer'
     | '/crawler'
     | '/dashboard'
+    | '/gsc'
     | '/history'
     | '/keywords'
     | '/ping'
@@ -324,6 +335,7 @@ export interface FileRouteTypes {
     | '/_authenticated/content-optimizer'
     | '/_authenticated/crawler'
     | '/_authenticated/dashboard'
+    | '/_authenticated/gsc'
     | '/_authenticated/history'
     | '/_authenticated/keywords'
     | '/_authenticated/ping'
@@ -449,6 +461,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/gsc': {
+      id: '/_authenticated/gsc'
+      path: '/gsc'
+      fullPath: '/gsc'
+      preLoaderRoute: typeof AuthenticatedGscRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -555,6 +574,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContentOptimizerRoute: typeof AuthenticatedContentOptimizerRoute
   AuthenticatedCrawlerRoute: typeof AuthenticatedCrawlerRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedGscRoute: typeof AuthenticatedGscRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
@@ -577,6 +597,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContentOptimizerRoute: AuthenticatedContentOptimizerRoute,
   AuthenticatedCrawlerRoute: AuthenticatedCrawlerRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedGscRoute: AuthenticatedGscRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
