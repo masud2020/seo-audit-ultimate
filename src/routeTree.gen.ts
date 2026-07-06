@@ -24,7 +24,10 @@ import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authent
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
+import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_authenticated/people-also-search'
+import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
+import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gsc'
 import { Route as AuthenticatedGapsRouteImport } from './routes/_authenticated/gaps'
@@ -38,6 +41,8 @@ import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenticated/broken-links'
 import { Route as AuthenticatedBacklinkMonitorRouteImport } from './routes/_authenticated/backlink-monitor'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
+import { Route as AuthenticatedAiSearchRankRouteImport } from './routes/_authenticated/ai-search-rank'
+import { Route as AuthenticatedAiSearchComparisonRouteImport } from './routes/_authenticated/ai-search-comparison'
 import { Route as AuthenticatedAiPotentialRouteImport } from './routes/_authenticated/ai-potential'
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
 import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
@@ -126,11 +131,29 @@ const AuthenticatedPingRoute = AuthenticatedPingRouteImport.update({
   path: '/ping',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPeopleAlsoSearchRoute =
+  AuthenticatedPeopleAlsoSearchRouteImport.update({
+    id: '/people-also-search',
+    path: '/people-also-search',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPeopleAlsoAskRoute =
+  AuthenticatedPeopleAlsoAskRouteImport.update({
+    id: '/people-also-ask',
+    path: '/people-also-ask',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKeywordsRoute = AuthenticatedKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKeywordDiscoveryRoute =
+  AuthenticatedKeywordDiscoveryRouteImport.update({
+    id: '/keyword-discovery',
+    path: '/keyword-discovery',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -201,6 +224,18 @@ const AuthenticatedAiVisibilityRoute =
     path: '/ai-visibility',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAiSearchRankRoute =
+  AuthenticatedAiSearchRankRouteImport.update({
+    id: '/ai-search-rank',
+    path: '/ai-search-rank',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedAiSearchComparisonRoute =
+  AuthenticatedAiSearchComparisonRouteImport.update({
+    id: '/ai-search-comparison',
+    path: '/ai-search-comparison',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiPotentialRoute =
   AuthenticatedAiPotentialRouteImport.update({
     id: '/ai-potential',
@@ -260,6 +295,8 @@ export interface FileRoutesByFullPath {
   '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-potential': typeof AuthenticatedAiPotentialRoute
+  '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
+  '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
@@ -273,7 +310,10 @@ export interface FileRoutesByFullPath {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
+  '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -299,6 +339,8 @@ export interface FileRoutesByTo {
   '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-potential': typeof AuthenticatedAiPotentialRoute
+  '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
+  '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
@@ -312,7 +354,10 @@ export interface FileRoutesByTo {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
+  '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -340,6 +385,8 @@ export interface FileRoutesById {
   '/_authenticated/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/_authenticated/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/_authenticated/ai-potential': typeof AuthenticatedAiPotentialRoute
+  '/_authenticated/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
+  '/_authenticated/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/_authenticated/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/_authenticated/broken-links': typeof AuthenticatedBrokenLinksRoute
@@ -353,7 +400,10 @@ export interface FileRoutesById {
   '/_authenticated/gaps': typeof AuthenticatedGapsRoute
   '/_authenticated/gsc': typeof AuthenticatedGscRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
+  '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
+  '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
   '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -381,6 +431,8 @@ export interface FileRouteTypes {
     | '/ai-citations'
     | '/ai-detection'
     | '/ai-potential'
+    | '/ai-search-comparison'
+    | '/ai-search-rank'
     | '/ai-visibility'
     | '/backlink-monitor'
     | '/broken-links'
@@ -394,7 +446,10 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/keyword-discovery'
     | '/keywords'
+    | '/people-also-ask'
+    | '/people-also-search'
     | '/ping'
     | '/preferences'
     | '/projects'
@@ -420,6 +475,8 @@ export interface FileRouteTypes {
     | '/ai-citations'
     | '/ai-detection'
     | '/ai-potential'
+    | '/ai-search-comparison'
+    | '/ai-search-rank'
     | '/ai-visibility'
     | '/backlink-monitor'
     | '/broken-links'
@@ -433,7 +490,10 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/keyword-discovery'
     | '/keywords'
+    | '/people-also-ask'
+    | '/people-also-search'
     | '/ping'
     | '/preferences'
     | '/projects'
@@ -460,6 +520,8 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-citations'
     | '/_authenticated/ai-detection'
     | '/_authenticated/ai-potential'
+    | '/_authenticated/ai-search-comparison'
+    | '/_authenticated/ai-search-rank'
     | '/_authenticated/ai-visibility'
     | '/_authenticated/backlink-monitor'
     | '/_authenticated/broken-links'
@@ -473,7 +535,10 @@ export interface FileRouteTypes {
     | '/_authenticated/gaps'
     | '/_authenticated/gsc'
     | '/_authenticated/history'
+    | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
+    | '/_authenticated/people-also-ask'
+    | '/_authenticated/people-also-search'
     | '/_authenticated/ping'
     | '/_authenticated/preferences'
     | '/_authenticated/projects'
@@ -607,11 +672,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/people-also-search': {
+      id: '/_authenticated/people-also-search'
+      path: '/people-also-search'
+      fullPath: '/people-also-search'
+      preLoaderRoute: typeof AuthenticatedPeopleAlsoSearchRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people-also-ask': {
+      id: '/_authenticated/people-also-ask'
+      path: '/people-also-ask'
+      fullPath: '/people-also-ask'
+      preLoaderRoute: typeof AuthenticatedPeopleAlsoAskRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/keywords': {
       id: '/_authenticated/keywords'
       path: '/keywords'
       fullPath: '/keywords'
       preLoaderRoute: typeof AuthenticatedKeywordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/keyword-discovery': {
+      id: '/_authenticated/keyword-discovery'
+      path: '/keyword-discovery'
+      fullPath: '/keyword-discovery'
+      preLoaderRoute: typeof AuthenticatedKeywordDiscoveryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/history': {
@@ -705,6 +791,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiVisibilityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-search-rank': {
+      id: '/_authenticated/ai-search-rank'
+      path: '/ai-search-rank'
+      fullPath: '/ai-search-rank'
+      preLoaderRoute: typeof AuthenticatedAiSearchRankRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ai-search-comparison': {
+      id: '/_authenticated/ai-search-comparison'
+      path: '/ai-search-comparison'
+      fullPath: '/ai-search-comparison'
+      preLoaderRoute: typeof AuthenticatedAiSearchComparisonRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-potential': {
       id: '/_authenticated/ai-potential'
       path: '/ai-potential'
@@ -787,6 +887,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiCitationsRoute: typeof AuthenticatedAiCitationsRoute
   AuthenticatedAiDetectionRoute: typeof AuthenticatedAiDetectionRoute
   AuthenticatedAiPotentialRoute: typeof AuthenticatedAiPotentialRoute
+  AuthenticatedAiSearchComparisonRoute: typeof AuthenticatedAiSearchComparisonRoute
+  AuthenticatedAiSearchRankRoute: typeof AuthenticatedAiSearchRankRoute
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
   AuthenticatedBacklinkMonitorRoute: typeof AuthenticatedBacklinkMonitorRoute
   AuthenticatedBrokenLinksRoute: typeof AuthenticatedBrokenLinksRoute
@@ -800,7 +902,10 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGapsRoute: typeof AuthenticatedGapsRoute
   AuthenticatedGscRoute: typeof AuthenticatedGscRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
+  AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
+  AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
   AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -821,6 +926,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiCitationsRoute: AuthenticatedAiCitationsRoute,
   AuthenticatedAiDetectionRoute: AuthenticatedAiDetectionRoute,
   AuthenticatedAiPotentialRoute: AuthenticatedAiPotentialRoute,
+  AuthenticatedAiSearchComparisonRoute: AuthenticatedAiSearchComparisonRoute,
+  AuthenticatedAiSearchRankRoute: AuthenticatedAiSearchRankRoute,
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
   AuthenticatedBacklinkMonitorRoute: AuthenticatedBacklinkMonitorRoute,
   AuthenticatedBrokenLinksRoute: AuthenticatedBrokenLinksRoute,
@@ -834,7 +941,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGapsRoute: AuthenticatedGapsRoute,
   AuthenticatedGscRoute: AuthenticatedGscRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
+  AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
+  AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
   AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,

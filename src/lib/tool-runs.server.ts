@@ -1,7 +1,7 @@
 // Server-only helper to log a tool run into public.tool_runs.
 // Called from within createServerFn handlers that already have `supabase` + userId.
 
-export type ToolKey = "broken_links" | "backlink_monitor" | "ai_detection" | "ai_citations" | "ai_potential" | "seo_news";
+export type ToolKey = "broken_links" | "backlink_monitor" | "ai_detection" | "ai_citations" | "ai_potential" | "seo_news" | "keyword_discovery" | "people_also_search" | "people_also_ask" | "ai_search_rank" | "ai_search_comparison";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupaLike = any;
@@ -52,6 +52,11 @@ const TOOL_LABELS: Record<string, string> = {
   ai_citations: "AI Citation Checker",
   ai_potential: "AI Citation Potential",
   seo_news: "SEO Blog Feed",
+  keyword_discovery: "Keyword Discovery",
+  people_also_search: "People Also Search",
+  people_also_ask: "People Also Ask",
+  ai_search_rank: "AI Search Rank",
+  ai_search_comparison: "AI Search Comparison",
 };
 
 async function maybeNotify(a: LogRunArgs, runId: string): Promise<void> {
