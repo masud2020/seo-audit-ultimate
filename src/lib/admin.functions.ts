@@ -164,3 +164,99 @@ export const toggleUserBan = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+// -------------------- Legacy exports used by /settings and /seo-news --------------------
+
+export const checkIsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ isAdmin: boolean }> => {
+    const { data } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return { isAdmin: !!data };
+  });
+
+type ConnectorStatus = {
+  gsc: { connected: boolean };
+  semrush: { connected: boolean; keyFallback: boolean };
+  brevo: { connected: boolean; senderConfigured: boolean };
+  dataforseo: { connected: boolean };
+};
+
+export const getConnectorStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ConnectorStatus> => {
+    await assertAdmin(context);
+    const { data: s } = await context.supabase
+      .from("api_settings")
+      .select("semrush_key,dataforseo_login,dataforseo_password,sender_email")
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    const row = (s ?? {}) as {
+      semrush_key?: string;
+      dataforseo_login?: string;
+      dataforseo_password?: string;
+      sender_email?: string;
+    };
+    const hasEnv = (k: string) => !!process.env[k];
+    return {
+      gsc: { connected: hasEnv("GOOGLE_SEARCH_CONSOLE_API_KEY") },
+      semrush: {
+        connected: hasEnv("SEMRUSH_API_KEY") || !!row.semrush_key,
+        keyFallback: !!row.semrush_key && !hasEnv("SEMRUSH_API_KEY"),
+      },
+      brevo: {
+        connected: hasEnv("BREVO_API_KEY"),
+        senderConfigured: !!row.sender_email,
+      },
+      dataforseo: { connected: !!(row.dataforseo_login && row.dataforseo_password) },
+    };
+  });
+
+export const testConnector = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) =>
+    z.object({ key: z.enum(["gsc", "semrush", "brevo", "dataforseo"]) }).parse(v),
+  )
+  .handler(async ({ context, data }): Promise<{ ok: boolean; message: string; detail?: string; latencyMs: number }> => {
+    await assertAdmin(context);
+    const start = Date.now();
+    const latency = () => Date.now() - start;
+    try {
+      if (data.key === "gsc") {
+        const key = process.env.GOOGLE_SEARCH_CONSOLE_API_KEY;
+        if (!key) return { ok: false, message: "Google Search Console not connected", latencyMs: latency() };
+        return { ok: true, message: "Search Console credentials present", latencyMs: latency() };
+      }
+      if (data.key === "semrush") {
+        const { data: s } = await context.supabase
+          .from("api_settings").select("semrush_key").eq("user_id", context.userId).maybeSingle();
+        const key = process.env.SEMRUSH_API_KEY || (s as any)?.semrush_key;
+        if (!key) return { ok: false, message: "No Semrush API key configured", latencyMs: latency() };
+        const r = await fetch(`https://api.semrush.com/analytics/v1/?type=domain_ranks&key=${encodeURIComponent(key)}&domain=example.com&export_columns=Db,Dn`);
+        const text = await r.text();
+        if (!r.ok || text.startsWith("ERROR")) return { ok: false, message: "Semrush test failed", detail: text.slice(0, 200), latencyMs: latency() };
+        return { ok: true, message: "Semrush API reachable", latencyMs: latency() };
+      }
+      if (data.key === "brevo") {
+        const key = process.env.BREVO_API_KEY;
+        if (!key) return { ok: false, message: "Brevo API key not set", latencyMs: latency() };
+        const r = await fetch("https://api.brevo.com/v3/account", { headers: { "api-key": key } });
+        if (!r.ok) return { ok: false, message: "Brevo test failed", detail: (await r.text()).slice(0, 200), latencyMs: latency() };
+        return { ok: true, message: "Brevo account reachable", latencyMs: latency() };
+      }
+      // dataforseo
+      const { data: s } = await context.supabase
+        .from("api_settings").select("dataforseo_login,dataforseo_password").eq("user_id", context.userId).maybeSingle();
+      const login = (s as any)?.dataforseo_login as string | undefined;
+      const pw = (s as any)?.dataforseo_password as string | undefined;
+      if (!login || !pw) return { ok: false, message: "DataForSEO credentials not set", latencyMs: latency() };
+      const auth = Buffer.from(`${login}:${pw}`).toString("base64");
+      const r = await fetch("https://api.dataforseo.com/v3/appendix/user_data", { headers: { Authorization: `Basic ${auth}` } });
+      if (!r.ok) return { ok: false, message: "DataForSEO test failed", detail: (await r.text()).slice(0, 200), latencyMs: latency() };
+      return { ok: true, message: "DataForSEO reachable", latencyMs: latency() };
+    } catch (e) {
+      return { ok: false, message: "Test failed", detail: e instanceof Error ? e.message : String(e), latencyMs: latency() };
+    }
+  });
