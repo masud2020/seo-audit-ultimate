@@ -6,7 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog } from "lucide-react";
 import { useBrand } from "@/components/brand-provider";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { checkAdminStatus } from "@/lib/admin.functions";
 
 const groups: { label: string; items: { title: string; url: string; icon: React.ComponentType<{ className?: string }> }[] }[] = [
   { label: "Overview", items: [
@@ -59,8 +61,22 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const brand = useBrand();
+  const checkAdmin = useServerFn(checkAdminStatus);
+  const { data: adminStatus } = useQuery({
+    queryKey: ["admin-status"],
+    queryFn: () => checkAdmin(),
+    staleTime: 60_000,
+  });
+  const isAdmin = !!adminStatus?.isAdmin;
 
-  const filtered = groups.map(g => ({ ...g, items: g.items.filter(i => i.title.toLowerCase().includes(q.toLowerCase())) })).filter(g => g.items.length);
+  const filtered = groups
+    .map(g => ({
+      ...g,
+      items: g.items
+        .filter(i => i.url !== "/admin" || isAdmin)
+        .filter(i => i.title.toLowerCase().includes(q.toLowerCase())),
+    }))
+    .filter(g => g.items.length);
 
   const signOut = async () => {
     await qc.cancelQueries();
