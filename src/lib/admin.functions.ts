@@ -2,6 +2,28 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+async function getAdminClient() {
+  const { createClient } = await import("@supabase/supabase-js");
+  const url = process.env.SUPABASE_URL!;
+  const key =
+    process.env.SUPABASE_SECRET_KEYS ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  const isNewKey = key.startsWith("sb_secret_") || key.startsWith("sb_publishable_");
+  return createClient(url, key, {
+    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: (input, init) => {
+        const headers = new Headers(init?.headers);
+        if (isNewKey && headers.get("Authorization") === `Bearer ${key}`) {
+          headers.delete("Authorization");
+        }
+        headers.set("apikey", key);
+        return fetch(input as any, { ...init, headers });
+      },
+    },
+  });
+}
+
 export interface AdminUserRow {
   id: string;
   email: string | null;
@@ -45,7 +67,7 @@ export const claimAdminBootstrap = createServerFn({ method: "POST" })
       .select("*", { count: "exact", head: true })
       .eq("role", "admin");
     if ((count ?? 0) > 0) throw new Error("Admin already exists");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getAdminClient();
     const { error } = await supabaseAdmin
       .from("user_roles")
       .insert({ user_id: context.userId, role: "admin" });
@@ -57,7 +79,7 @@ export const listAllUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ users: AdminUserRow[] }> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getAdminClient();
     const users: AdminUserRow[] = [];
     let page = 1;
     // paginate up to 10 pages (1000 users) — sufficient for admin panels
@@ -98,7 +120,7 @@ export const setUserAdmin = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => setRoleInput.parse(v))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getAdminClient();
     if (data.makeAdmin) {
       const { error } = await supabaseAdmin
         .from("user_roles")
@@ -131,7 +153,7 @@ export const deleteUserAccount = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
     if (data.userId === context.userId) throw new Error("You cannot delete your own account");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getAdminClient();
     const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
@@ -142,7 +164,7 @@ export const sendPasswordResetForUser = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => z.object({ email: z.string().email() }).parse(v))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getAdminClient();
     const { error } = await supabaseAdmin.auth.admin.generateLink({
       type: "recovery",
       email: data.email,
@@ -157,7 +179,7 @@ export const toggleUserBan = createServerFn({ method: "POST" })
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
     if (data.userId === context.userId) throw new Error("You cannot ban yourself");
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const supabaseAdmin = await getAdminClient();
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
       ban_duration: data.ban ? "876000h" : "none",
     } as any);
