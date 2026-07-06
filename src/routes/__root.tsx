@@ -100,7 +100,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/838d5b74-041d-4169-af79-fc5dccdfb9f4/id-preview-36aefab8--b12e4287-881c-4d9a-85fe-22a97c824700.lovable.app-1783341201714.png" },
       ...((ctx?.loaderData?.gscTokens ?? []) as { token: string }[]).map((t) => ({
         name: "google-site-verification",
-        content: t.token.replace(/^<meta[^>]*content=["']|["'][^>]*\/?>$/g, ""),
+        content: t.token,
       })),
     ],
     links: [
