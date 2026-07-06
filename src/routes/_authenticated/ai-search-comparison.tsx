@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, GitCompareArrows, Check, X } from "lucide-react";
 import { runAiSearchComparison } from "@/lib/ai-search.functions";
+import { RecentRuns } from "@/components/recent-runs";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 
 export const Route = createFileRoute("/_authenticated/ai-search-comparison")({ component: Page });
 
+type CompareResult = { scoreboard: Array<{ brand: string; mentions: number; total: number; visibility: number; is_you: boolean }>; results: Array<{ query: string; model: string; per_brand: Record<string, boolean>; response: string; error?: string }> };
+
 function Page() {
   const run = useServerFn(runAiSearchComparison);
   const [you, setYou] = useState("");
@@ -22,11 +25,13 @@ function Page() {
   const [queries, setQueries] = useState("");
   const competitors = comp.split(/[,\n]+/).map((s) => s.trim()).filter(Boolean);
   const list = queries.split(/\n+/).map((s) => s.trim()).filter(Boolean);
+  const [loaded, setLoaded] = useState<CompareResult | null>(null);
   const mut = useMutation({
     mutationFn: () => run({ data: { your_brand: you, competitors, queries: list } }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+    onSuccess: () => setLoaded(null),
   });
-  const d = mut.data;
+  const d = mut.data ?? loaded;
   const brands = d ? d.scoreboard.map((s) => s.brand) : [];
   return (
     <div className="space-y-4 max-w-6xl">
@@ -47,6 +52,16 @@ function Page() {
           </Button>
         </div>
       </Card>
+      <RecentRuns<CompareResult>
+        tool="ai_search_comparison"
+        onLoad={({ input, result }) => {
+          const i = input as { your_brand?: string; competitors?: string[]; queries?: string[] };
+          if (i?.your_brand) setYou(i.your_brand);
+          if (i?.competitors) setComp(i.competitors.join(", "));
+          if (i?.queries) setQueries(i.queries.join("\n"));
+          setLoaded(result);
+        }}
+      />
       {d && (
         <>
           <Card className="p-0">
