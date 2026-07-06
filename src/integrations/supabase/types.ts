@@ -60,6 +60,7 @@ export type Database = {
           error: string | null
           id: string
           overall_score: number | null
+          project_id: string | null
           sections: Json
           status: string
           updated_at: string
@@ -72,6 +73,7 @@ export type Database = {
           error?: string | null
           id?: string
           overall_score?: number | null
+          project_id?: string | null
           sections?: Json
           status?: string
           updated_at?: string
@@ -84,13 +86,22 @@ export type Database = {
           error?: string | null
           id?: string
           overall_score?: number | null
+          project_id?: string | null
           sections?: Json
           status?: string
           updated_at?: string
           url?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checklist_progress: {
         Row: {
@@ -122,6 +133,7 @@ export type Database = {
           domain: string
           id: string
           notes: string | null
+          project_id: string | null
           user_id: string
         }
         Insert: {
@@ -129,6 +141,7 @@ export type Database = {
           domain: string
           id?: string
           notes?: string | null
+          project_id?: string | null
           user_id: string
         }
         Update: {
@@ -136,45 +149,112 @@ export type Database = {
           domain?: string
           id?: string
           notes?: string | null
+          project_id?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "competitors_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      content_optimizations: {
+        Row: {
+          analysis: Json
+          content: string
+          created_at: string
+          id: string
+          project_id: string | null
+          target_keyword: string
+          title: string | null
+          user_id: string
+        }
+        Insert: {
+          analysis?: Json
+          content: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          target_keyword: string
+          title?: string | null
+          user_id: string
+        }
+        Update: {
+          analysis?: Json
+          content?: string
+          created_at?: string
+          id?: string
+          project_id?: string | null
+          target_keyword?: string
+          title?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_optimizations_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       keywords: {
         Row: {
+          alert_threshold: number
           created_at: string
           current_position: number | null
           history: Json
           id: string
           keyword: string
+          last_alerted_at: string | null
           previous_position: number | null
+          project_id: string | null
           target_url: string
           updated_at: string
           user_id: string
         }
         Insert: {
+          alert_threshold?: number
           created_at?: string
           current_position?: number | null
           history?: Json
           id?: string
           keyword: string
+          last_alerted_at?: string | null
           previous_position?: number | null
+          project_id?: string | null
           target_url: string
           updated_at?: string
           user_id: string
         }
         Update: {
+          alert_threshold?: number
           created_at?: string
           current_position?: number | null
           history?: Json
           id?: string
           keyword?: string
+          last_alerted_at?: string | null
           previous_position?: number | null
+          project_id?: string | null
           target_url?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "keywords_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       ping_history: {
         Row: {
@@ -200,6 +280,83 @@ export type Database = {
         }
         Relationships: []
       }
+      projects: {
+        Row: {
+          created_at: string
+          domain: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          domain: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          domain?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scheduled_audits: {
+        Row: {
+          cadence: string
+          created_at: string
+          email: string | null
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          next_run_at: string
+          project_id: string | null
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          cadence?: string
+          created_at?: string
+          email?: string | null
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string
+          project_id?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          cadence?: string
+          created_at?: string
+          email?: string | null
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          next_run_at?: string
+          project_id?: string | null
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_audits_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_crawls: {
         Row: {
           created_at: string
@@ -209,6 +366,7 @@ export type Database = {
           max_pages: number
           pages: Json
           pages_crawled: number
+          project_id: string | null
           start_url: string
           status: string
           updated_at: string
@@ -222,6 +380,7 @@ export type Database = {
           max_pages?: number
           pages?: Json
           pages_crawled?: number
+          project_id?: string | null
           start_url: string
           status?: string
           updated_at?: string
@@ -235,12 +394,21 @@ export type Database = {
           max_pages?: number
           pages?: Json
           pages_crawled?: number
+          project_id?: string | null
           start_url?: string
           status?: string
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "site_crawls_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
