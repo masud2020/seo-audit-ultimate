@@ -41,6 +41,7 @@ import { Route as AuthenticatedChecklistRouteImport } from './routes/_authentica
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenticated/broken-links'
 import { Route as AuthenticatedBacklinkMonitorRouteImport } from './routes/_authenticated/backlink-monitor'
+import { Route as AuthenticatedBacklinkCheckerRouteImport } from './routes/_authenticated/backlink-checker'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
 import { Route as AuthenticatedAiSearchRankRouteImport } from './routes/_authenticated/ai-search-rank'
 import { Route as AuthenticatedAiSearchComparisonRouteImport } from './routes/_authenticated/ai-search-comparison'
@@ -225,6 +226,12 @@ const AuthenticatedBacklinkMonitorRoute =
     path: '/backlink-monitor',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBacklinkCheckerRoute =
+  AuthenticatedBacklinkCheckerRouteImport.update({
+    id: '/backlink-checker',
+    path: '/backlink-checker',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiVisibilityRoute =
   AuthenticatedAiVisibilityRouteImport.update({
     id: '/ai-visibility',
@@ -311,6 +318,7 @@ export interface FileRoutesByFullPath {
   '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -357,6 +365,7 @@ export interface FileRoutesByTo {
   '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
@@ -405,6 +414,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/_authenticated/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/_authenticated/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/_authenticated/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
   '/_authenticated/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
@@ -453,6 +463,7 @@ export interface FileRouteTypes {
     | '/ai-search-comparison'
     | '/ai-search-rank'
     | '/ai-visibility'
+    | '/backlink-checker'
     | '/backlink-monitor'
     | '/broken-links'
     | '/calendar'
@@ -499,6 +510,7 @@ export interface FileRouteTypes {
     | '/ai-search-comparison'
     | '/ai-search-rank'
     | '/ai-visibility'
+    | '/backlink-checker'
     | '/backlink-monitor'
     | '/broken-links'
     | '/calendar'
@@ -546,6 +558,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-search-comparison'
     | '/_authenticated/ai-search-rank'
     | '/_authenticated/ai-visibility'
+    | '/_authenticated/backlink-checker'
     | '/_authenticated/backlink-monitor'
     | '/_authenticated/broken-links'
     | '/_authenticated/calendar'
@@ -816,6 +829,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBacklinkMonitorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/backlink-checker': {
+      id: '/_authenticated/backlink-checker'
+      path: '/backlink-checker'
+      fullPath: '/backlink-checker'
+      preLoaderRoute: typeof AuthenticatedBacklinkCheckerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-visibility': {
       id: '/_authenticated/ai-visibility'
       path: '/ai-visibility'
@@ -943,6 +963,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiSearchComparisonRoute: typeof AuthenticatedAiSearchComparisonRoute
   AuthenticatedAiSearchRankRoute: typeof AuthenticatedAiSearchRankRoute
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
+  AuthenticatedBacklinkCheckerRoute: typeof AuthenticatedBacklinkCheckerRoute
   AuthenticatedBacklinkMonitorRoute: typeof AuthenticatedBacklinkMonitorRoute
   AuthenticatedBrokenLinksRoute: typeof AuthenticatedBrokenLinksRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
@@ -983,6 +1004,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiSearchComparisonRoute: AuthenticatedAiSearchComparisonRoute,
   AuthenticatedAiSearchRankRoute: AuthenticatedAiSearchRankRoute,
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
+  AuthenticatedBacklinkCheckerRoute: AuthenticatedBacklinkCheckerRoute,
   AuthenticatedBacklinkMonitorRoute: AuthenticatedBacklinkMonitorRoute,
   AuthenticatedBrokenLinksRoute: AuthenticatedBrokenLinksRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
