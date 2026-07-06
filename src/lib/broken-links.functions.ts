@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-type SupabaseCtx = { supabase: ReturnType<typeof import("@supabase/supabase-js").createClient>; userId: string };
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SupabaseCtx = { supabase: any; userId: string };
 
 function normalizeUrl(base: string, href: string): string | null {
   try { return new URL(href, base).toString().split("#")[0]; } catch { return null; }
