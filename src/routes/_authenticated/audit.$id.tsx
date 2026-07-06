@@ -2,10 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { getAudit } from "@/lib/audit.functions";
+import { generateAuditPdf, emailAuditPdf } from "@/lib/pdf.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, AlertTriangle, Info, Download, ExternalLink, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, AlertTriangle, Info, Download, ExternalLink, Loader2, Mail } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { useMutation } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/audit/$id")({ component: AuditPage });
 
@@ -30,6 +38,8 @@ function scoreClass(s: number | null | undefined) {
 function AuditPage() {
   const { id } = Route.useParams();
   const fn = useServerFn(getAudit);
+  const pdf = useServerFn(generateAuditPdf);
+  const mail = useServerFn(emailAuditPdf);
   const { data, isLoading, refetch } = useQuery({
     queryKey: ["audit", id],
     queryFn: () => fn({ data: { id } }),
@@ -37,6 +47,25 @@ function AuditPage() {
       const d = q.state.data as { status?: string } | undefined;
       return d?.status === "running" || d?.status === "pending" ? 2500 : false;
     },
+  });
+
+  const mPdf = useMutation({
+    mutationFn: () => pdf({ data: { audit_id: id } }),
+    onSuccess: (d) => {
+      const bytes = Uint8Array.from(atob(d.base64), c => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = d.filename; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    },
+    onError: e => toast.error(e instanceof Error ? e.message : "PDF failed"),
+  });
+  const [emailOpen, setEmailOpen] = useState(false);
+  const [to, setTo] = useState("");
+  const [note, setNote] = useState("");
+  const mMail = useMutation({
+    mutationFn: () => mail({ data: { audit_id: id, to, note } }),
+    onSuccess: () => { toast.success(`Report sent to ${to}`); setEmailOpen(false); setTo(""); setNote(""); },
+    onError: e => toast.error(e instanceof Error ? e.message : "Email failed"),
   });
 
   if (isLoading || !data) return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading audit…</div>;
@@ -57,13 +86,6 @@ function AuditPage() {
   const report = data.sections as unknown as Report;
   const recs = (data.ai_recommendations ?? []) as unknown as AiRec[];
 
-  const download = () => {
-    const w = window.open("", "_blank");
-    if (!w) return;
-    const html = buildPrintable(report, recs);
-    w.document.write(html); w.document.close(); setTimeout(() => w.print(), 500);
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -79,7 +101,19 @@ function AuditPage() {
             <div className="text-xs text-muted-foreground">Overall score</div>
             <div className={`text-3xl font-bold ${scoreClass(report.overall_score)}`}>{report.overall_score}</div>
           </div>
-          <Button variant="outline" onClick={download}><Download className="h-4 w-4 mr-2" />Export PDF</Button>
+          <Button variant="outline" onClick={() => mPdf.mutate()} disabled={mPdf.isPending}>{mPdf.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}Export PDF</Button>
+          <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
+            <DialogTrigger asChild><Button variant="outline"><Mail className="h-4 w-4 mr-2" />Email PDF</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Email audit report</DialogTitle></DialogHeader>
+              <div className="space-y-3">
+                <div><Label>Recipient email</Label><Input type="email" value={to} onChange={e => setTo(e.target.value)} placeholder="client@example.com" /></div>
+                <div><Label>Note (optional)</Label><Textarea value={note} onChange={e => setNote(e.target.value)} placeholder="Here's your monthly SEO audit…" /></div>
+                <p className="text-xs text-muted-foreground">Sends via the Brevo connector using the sender email you configured in Settings.</p>
+              </div>
+              <DialogFooter><Button onClick={() => mMail.mutate()} disabled={!to || mMail.isPending}>{mMail.isPending ? "Sending…" : "Send"}</Button></DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -123,23 +157,4 @@ function AuditPage() {
       )}
     </div>
   );
-}
-
-function buildPrintable(r: Report, recs: AiRec[]): string {
-  const secHtml = r.sections.map(s => `
-    <section><h2>${s.title} <span style="float:right">${s.score}</span></h2>
-    <ul>${s.checks.map(c => `<li><b>[${c.status.toUpperCase()}]</b> ${c.label}${c.detail?` — ${c.detail}`:""}${c.value?` <em>${String(c.value).slice(0,120)}</em>`:""}</li>`).join("")}</ul></section>`).join("");
-  const recHtml = recs.map(rc => `<section><h3>${rc.title}</h3><ul>${rc.recommendations.map(x=>`<li>${x}</li>`).join("")}</ul></section>`).join("");
-  return `<!doctype html><html><head><title>SEO Audit — ${r.url}</title><style>
-    body{font-family:system-ui,sans-serif;max-width:900px;margin:2em auto;padding:0 1em;color:#111}
-    h1{margin:0} h2{border-bottom:1px solid #ccc;padding-bottom:.25em;margin-top:1.5em}
-    section{margin-bottom:1em} ul{margin:.25em 0 .5em 1.2em}
-    .score{font-size:2em;font-weight:700;color:#0a0}
-  </style></head><body>
-    <h1>SEO Audit Report</h1>
-    <p>${r.url}<br><small>Audited ${new Date(r.fetched_at).toLocaleString()}</small></p>
-    <div class="score">Overall: ${r.overall_score}/100</div>
-    ${secHtml}
-    <h2>AI Recommendations</h2>${recHtml}
-  </body></html>`;
 }

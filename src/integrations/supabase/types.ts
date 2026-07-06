@@ -23,6 +23,8 @@ export type Database = {
           perplexity_key: string | null
           provider: string
           semrush_key: string | null
+          sender_email: string | null
+          sender_name: string | null
           serpapi_key: string | null
           updated_at: string
           user_id: string
@@ -35,6 +37,8 @@ export type Database = {
           perplexity_key?: string | null
           provider?: string
           semrush_key?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
           serpapi_key?: string | null
           updated_at?: string
           user_id: string
@@ -47,6 +51,8 @@ export type Database = {
           perplexity_key?: string | null
           provider?: string
           semrush_key?: string | null
+          sender_email?: string | null
+          sender_name?: string | null
           serpapi_key?: string | null
           updated_at?: string
           user_id?: string
@@ -202,6 +208,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      disavow_entries: {
+        Row: {
+          created_at: string
+          id: string
+          reason: string | null
+          scope: string
+          source_domain: string
+          source_url: string | null
+          target_domain: string
+          toxicity_score: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          scope?: string
+          source_domain: string
+          source_url?: string | null
+          target_domain: string
+          toxicity_score?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reason?: string | null
+          scope?: string
+          source_domain?: string
+          source_url?: string | null
+          target_domain?: string
+          toxicity_score?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       gsc_verifications: {
         Row: {
