@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -32,6 +32,14 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
   { label: "AI", items: [
     { title: "AI Visibility", url: "/ai-visibility", icon: Bot },
     { title: "Content Optimizer", url: "/content-optimizer", icon: Sparkles },
+    { title: "AI Content Detection", url: "/ai-detection", icon: ScanText },
+    { title: "AI Citation Checker", url: "/ai-citations", icon: Quote },
+    { title: "AI Citation Potential", url: "/ai-potential", icon: Sparkles },
+  ]},
+  { label: "Monitoring", items: [
+    { title: "Broken Link Checker", url: "/broken-links", icon: Link2Off },
+    { title: "Backlink Monitor", url: "/backlink-monitor", icon: ShieldCheck },
+    { title: "SEO Blog Feed", url: "/seo-news", icon: Rss },
   ]},
   { label: "Settings", items: [
     { title: "API Settings", url: "/settings", icon: Settings },
