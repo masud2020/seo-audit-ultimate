@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logToolRun } from "./tool-runs.server";
 
 const inputSchema = z.object({ text: z.string().min(50).max(20000) });
 
@@ -15,7 +16,12 @@ type Result = {
 export const detectAiContent = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: z.input<typeof inputSchema>) => inputSchema.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { supabase, userId } = context as unknown as { supabase: any; userId: string };
+    const startedAt = Date.now();
+    const label = `${data.text.length} chars`;
+    try {
     const { callAi, extractJson } = await import("./ai.server");
     const prompt = `Analyze the following text and estimate the probability it was written by an AI language model.
 Return STRICT JSON only. Schema:
@@ -42,5 +48,10 @@ ${data.text}
     const parsed = extractJson<Result>(raw);
     if (!parsed) throw new Error("Model returned unparseable response");
     parsed.ai_probability = Math.max(0, Math.min(1, Number(parsed.ai_probability) || 0));
+    await logToolRun({ supabase, userId, tool: "ai_detection", status: "success", label, input: { chars: data.text.length }, result: parsed as unknown as Record<string, unknown>, duration_ms: Date.now() - startedAt });
     return parsed;
+    } catch (e) {
+      await logToolRun({ supabase, userId, tool: "ai_detection", status: "error", label, input: { chars: data.text.length }, error: e instanceof Error ? e.message : String(e), duration_ms: Date.now() - startedAt });
+      throw e;
+    }
   });
