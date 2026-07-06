@@ -15,7 +15,9 @@ export const discoverSiteUrls = createServerFn({ method: "POST" })
     const origin = start.origin;
     const limit = data.limit ?? 100;
     const UA = "SEOAuditToolBot/1.0 (+https://lovable.app)";
+    const { assertPublicHttpUrl } = await import("./net-guard.server");
     const safeFetch = async (u: string) => {
+      assertPublicHttpUrl(u);
       const ctrl = new AbortController();
       const t = setTimeout(() => ctrl.abort(), 12_000);
       try { return await fetch(u, { redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": UA } }); }
