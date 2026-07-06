@@ -6,7 +6,19 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/hooks/run-scheduled-audits")({
   server: {
     handlers: {
-      POST: async () => {
+      POST: async ({ request }) => {
+        // Require a shared secret. /api/public/* bypasses Lovable's auth at the
+        // edge, so this endpoint must verify the caller in code before doing
+        // service-role-privileged work.
+        const cronSecret = process.env.CRON_SECRET;
+        const apikey = request.headers.get("apikey") ?? "";
+        const provided = request.headers.get("x-cron-secret") ?? "";
+        const expectedApikey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.SUPABASE_ANON_KEY ?? "";
+        const okSecret = !!cronSecret && provided === cronSecret;
+        const okApikey = !!expectedApikey && apikey === expectedApikey;
+        if (!okSecret && !okApikey) {
+          return json({ ok: false, error: "unauthorized" }, 401);
+        }
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const now = new Date();
         const { data: due, error } = await supabaseAdmin
