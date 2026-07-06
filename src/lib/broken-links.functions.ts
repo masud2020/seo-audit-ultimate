@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logToolRun } from "./tool-runs.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseCtx = { supabase: any; userId: string };
@@ -55,6 +56,7 @@ export const runBrokenLinkCheck = createServerFn({ method: "POST" })
   .inputValidator((d: z.input<typeof startInput>) => startInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as unknown as SupabaseCtx;
+    const startedAt = Date.now();
     const rootHost = new URL(data.url).host;
 
     // BFS crawl of internal pages up to max_pages / max_depth
@@ -99,11 +101,17 @@ export const runBrokenLinkCheck = createServerFn({ method: "POST" })
 
     const links = [...linkSources.keys()].slice(0, data.max_links);
 
-    const { data: run, error } = await supabase.from("link_checks").insert({
-      user_id: userId, root_url: data.url, status: "running", links_total: links.length,
-    }).select().single();
-    if (error) throw new Error(error.message);
-    const runId = (run as { id: string }).id;
+    let runId = "";
+    try {
+      const { data: run, error } = await supabase.from("link_checks").insert({
+        user_id: userId, root_url: data.url, status: "running", links_total: links.length,
+      }).select().single();
+      if (error) throw new Error(error.message);
+      runId = (run as { id: string }).id;
+    } catch (e) {
+      await logToolRun({ supabase, userId, tool: "broken_links", status: "error", label: data.url, input: { url: data.url, max_pages: data.max_pages, max_links: data.max_links }, error: e instanceof Error ? e.message : String(e), duration_ms: Date.now() - startedAt });
+      throw e;
+    }
 
     // Check in chunks
     const chunkSize = data.concurrency;
@@ -126,6 +134,13 @@ export const runBrokenLinkCheck = createServerFn({ method: "POST" })
       status: "done", pages_scanned: visitedPages.size, links_broken: broken, finished_at: new Date().toISOString(),
     }).eq("id", runId);
 
+    await logToolRun({
+      supabase, userId, tool: "broken_links", status: "success",
+      label: data.url,
+      input: { url: data.url, max_pages: data.max_pages, max_links: data.max_links, max_depth: data.max_depth, timeout_ms: data.timeout_ms, concurrency: data.concurrency },
+      result: { total: links.length, broken, pages: visitedPages.size },
+      ref_table: "link_checks", ref_id: runId, duration_ms: Date.now() - startedAt,
+    });
     return { runId, total: links.length, broken, pages: visitedPages.size };
   });
 
