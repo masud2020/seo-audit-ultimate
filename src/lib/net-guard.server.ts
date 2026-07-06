@@ -64,13 +64,22 @@ export function assertPublicHttpUrl(rawUrl: string): URL {
     if (h === "::1" || h === "::" ) throw new Error("Blocked IPv6 loopback");
     if (/^fe[89ab][0-9a-f]:/i.test(h)) throw new Error("Blocked IPv6 link-local");
     if (/^f[cd][0-9a-f]{2}:/i.test(h)) throw new Error("Blocked IPv6 unique-local");
-    // IPv4-mapped IPv6 like ::ffff:169.254.169.254
-    const mapped = /::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(h);
-    if (mapped) {
-      const v = ipToInt(mapped[1]);
-      if (v != null && BLOCKED_V4.some((c) => inRange(v, c))) {
-        throw new Error(`Blocked private IPv4-mapped address: ${mapped[1]}`);
+    // IPv4-mapped IPv6, either dotted (::ffff:169.254.169.254) or
+    // normalized hex form (::ffff:a9fe:a9fe) as produced by `new URL`.
+    const mappedDotted = /::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(h);
+    const mappedHex = /::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/i.exec(h);
+    let mappedV4: number | null = null;
+    if (mappedDotted) {
+      mappedV4 = ipToInt(mappedDotted[1]);
+    } else if (mappedHex) {
+      const hi = parseInt(mappedHex[1], 16);
+      const lo = parseInt(mappedHex[2], 16);
+      if (Number.isFinite(hi) && Number.isFinite(lo)) {
+        mappedV4 = (((hi & 0xffff) << 16) | (lo & 0xffff)) >>> 0;
       }
+    }
+    if (mappedV4 != null && BLOCKED_V4.some((c) => inRange(mappedV4!, c))) {
+      throw new Error(`Blocked private IPv4-mapped address: ${h}`);
     }
     return u;
   }
