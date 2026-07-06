@@ -1,13 +1,16 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { startAudit } from "@/lib/audit.functions";
+import { discoverSiteUrls } from "@/lib/misc.functions";
+import { useMutation } from "@tanstack/react-query";
+import { Input } from "@/components/ui/input";
 import { useState, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import { Loader2, PlayCircle, Upload, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Loader2, PlayCircle, Upload, CheckCircle2, XCircle, FileText, Globe } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/audit/bulk")({ component: BulkAudit });
 
@@ -36,9 +39,22 @@ function BulkAudit() {
   const [rows, setRows] = useState<Row[]>([]);
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [siteUrl, setSiteUrl] = useState("");
+  const [siteLimit, setSiteLimit] = useState(50);
   const fileRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const fn = useServerFn(startAudit);
+  const discoverFn = useServerFn(discoverSiteUrls);
+
+  const discover = useMutation({
+    mutationFn: (v: { url: string; limit: number }) => discoverFn({ data: v }),
+    onSuccess: (r) => {
+      if (!r.urls.length) { toast.error("No URLs found on that site"); return; }
+      setText((prev) => (prev ? prev + "\n" : "") + r.urls.join("\n"));
+      toast.success(`Found ${r.count} URL${r.count === 1 ? "" : "s"} via ${r.source}`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Discover failed"),
+  });
 
   const parsed = parseUrls(text);
 
@@ -82,6 +98,17 @@ function BulkAudit() {
       </div>
 
       <Card className="p-6 space-y-4">
+        <div className="space-y-2">
+          <label className="text-xs text-muted-foreground flex items-center gap-1.5"><Globe className="h-3.5 w-3.5" />Discover URLs from a whole website (reads sitemap.xml / robots.txt)</label>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Input placeholder="https://example.com" value={siteUrl} onChange={(e) => setSiteUrl(e.target.value)} disabled={running || discover.isPending} className="flex-1" />
+            <Input type="number" min={1} max={500} value={siteLimit} onChange={(e) => setSiteLimit(Math.max(1, Math.min(500, Number(e.target.value) || 50)))} disabled={running || discover.isPending} className="sm:w-24" />
+            <Button type="button" variant="secondary" onClick={() => siteUrl && discover.mutate({ url: siteUrl, limit: siteLimit })} disabled={running || discover.isPending || !siteUrl}>
+              {discover.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Discovering…</> : <><Globe className="h-4 w-4 mr-2" />Discover</>}
+            </Button>
+          </div>
+        </div>
+        <div className="h-px bg-border" />
         <div className="flex items-center justify-between gap-3">
           <label className="text-xs text-muted-foreground">URLs — one per line, or comma / space separated (max 50)</label>
           <div className="flex items-center gap-2">
