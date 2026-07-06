@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
+import { getPublicGscTokens } from "@/lib/gsc.functions";
 
 function NotFoundComponent() {
   return (
@@ -75,7 +76,15 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
-  head: () => ({
+  loader: async () => {
+    try {
+      const tokens = await getPublicGscTokens();
+      return { gscTokens: tokens };
+    } catch {
+      return { gscTokens: [] as { token: string }[] };
+    }
+  },
+  head: (ctx) => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
@@ -89,6 +98,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "Comprehensive AI-powered SEO audits covering technical SEO, on-page, links, performance, and AI search visibility." },
       { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/838d5b74-041d-4169-af79-fc5dccdfb9f4/id-preview-36aefab8--b12e4287-881c-4d9a-85fe-22a97c824700.lovable.app-1783341201714.png" },
       { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/838d5b74-041d-4169-af79-fc5dccdfb9f4/id-preview-36aefab8--b12e4287-881c-4d9a-85fe-22a97c824700.lovable.app-1783341201714.png" },
+      ...((ctx?.loaderData?.gscTokens ?? []) as { token: string }[]).map((t) => ({
+        name: "google-site-verification",
+        content: t.token,
+      })),
     ],
     links: [
       {
