@@ -729,6 +729,54 @@ export type Database = {
           },
         ]
       }
+      tool_runs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          input: Json
+          label: string | null
+          ref_id: string | null
+          ref_table: string | null
+          result: Json
+          status: string
+          tool: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          label?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          result?: Json
+          status?: string
+          tool: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input?: Json
+          label?: string | null
+          ref_id?: string | null
+          ref_table?: string | null
+          result?: Json
+          status?: string
+          tool?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

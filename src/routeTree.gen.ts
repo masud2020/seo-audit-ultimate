@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
+import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenticated/tool-history'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
@@ -80,6 +81,12 @@ const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
   path: '/tools',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedToolHistoryRoute =
+  AuthenticatedToolHistoryRouteImport.update({
+    id: '/tool-history',
+    path: '/tool-history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -259,6 +266,7 @@ export interface FileRoutesByFullPath {
   '/scheduled': typeof AuthenticatedScheduledRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -295,6 +303,7 @@ export interface FileRoutesByTo {
   '/scheduled': typeof AuthenticatedScheduledRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -333,6 +342,7 @@ export interface FileRoutesById {
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/scheduled'
     | '/seo-news'
     | '/settings'
+    | '/tool-history'
     | '/tools'
     | '/word-counter'
     | '/audit/$id'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/scheduled'
     | '/seo-news'
     | '/settings'
+    | '/tool-history'
     | '/tools'
     | '/word-counter'
     | '/audit/$id'
@@ -444,6 +456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scheduled'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
+    | '/_authenticated/tool-history'
     | '/_authenticated/tools'
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
@@ -511,6 +524,13 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof AuthenticatedToolsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tool-history': {
+      id: '/_authenticated/tool-history'
+      path: '/tool-history'
+      fullPath: '/tool-history'
+      preLoaderRoute: typeof AuthenticatedToolHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -747,6 +767,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
@@ -778,6 +799,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,

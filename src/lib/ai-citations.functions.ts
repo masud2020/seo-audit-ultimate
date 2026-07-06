@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logToolRun } from "./tool-runs.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Ctx = { supabase: any; userId: string };
@@ -34,6 +35,7 @@ export const runCitationCheck = createServerFn({ method: "POST" })
   .inputValidator((d: z.input<typeof inputSchema>) => inputSchema.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as unknown as Ctx;
+    const startedAt = Date.now();
     const { callAi } = await import("./ai.server");
     const domain = cleanDomain(data.target_domain);
 
@@ -73,6 +75,13 @@ export const runCitationCheck = createServerFn({ method: "POST" })
     if (rows.length) await supabase.from("ai_citation_results").insert(rows);
     await supabase.from("ai_citation_runs").update({ hits }).eq("id", runId);
 
+    await logToolRun({
+      supabase, userId, tool: "ai_citations", status: "success",
+      label: `${domain} · ${data.prompts.length} prompts`,
+      input: { target_domain: domain, prompts: data.prompts },
+      result: { hits, total: data.prompts.length * MODELS.length, models: MODELS as unknown as string[], results },
+      ref_table: "ai_citation_runs", ref_id: runId, duration_ms: Date.now() - startedAt,
+    });
     return { runId, hits, total: data.prompts.length * MODELS.length, models: MODELS as unknown as string[], results };
   });
 

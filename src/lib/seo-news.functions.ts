@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logToolRun } from "./tool-runs.server";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Ctx = { supabase: any; userId: string };
@@ -79,7 +80,8 @@ export const fetchSeoNews = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { force?: boolean }) => z.object({ force: z.boolean().optional() }).parse(d ?? {}))
   .handler(async ({ data, context }) => {
-    const { supabase } = context as unknown as Ctx;
+    const { supabase, userId } = context as unknown as Ctx;
+    const startedAt = Date.now();
     const { data: sources } = await supabase.from("blog_sources").select("*").eq("enabled", true);
     const list = (sources ?? []) as Array<{ name: string; url: string }>;
     const cacheKey = list.map(s => s.url).sort().join("|");
@@ -95,6 +97,7 @@ export const fetchSeoNews = createServerFn({ method: "POST" })
       return tb - ta;
     }).slice(0, 200);
     cache.set(cacheKey, { at: now, items });
+    await logToolRun({ supabase, userId, tool: "seo_news", status: "success", label: `${items.length} items · ${list.length} feeds`, input: { sources: list.length, force: !!data?.force }, result: { count: items.length, cached: false, items: items.slice(0, 50) }, duration_ms: Date.now() - startedAt });
     return { items, cached: false, fetched_at: new Date(now).toISOString() };
   });
 
