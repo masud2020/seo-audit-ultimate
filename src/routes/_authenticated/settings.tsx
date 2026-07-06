@@ -17,8 +17,19 @@ function Settings() {
   const save = useServerFn(saveApiSettings);
   const qc = useQueryClient();
   const { data } = useQuery({ queryKey: ["api-settings"], queryFn: () => get() });
-  const [form, setForm] = useState({ provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "", serpapi_key: "", semrush_key: "" });
-  useEffect(() => { if (data) setForm({ provider: data.provider ?? "lovable", groq_key: data.groq_key ?? "", gemini_key: data.gemini_key ?? "", openai_key: data.openai_key ?? "", perplexity_key: data.perplexity_key ?? "", claude_key: data.claude_key ?? "", serpapi_key: (data as { serpapi_key?: string }).serpapi_key ?? "", semrush_key: (data as { semrush_key?: string }).semrush_key ?? "" }); }, [data]);
+  const [form, setForm] = useState({ provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "", serpapi_key: "", semrush_key: "", sender_email: "", sender_name: "" });
+  useEffect(() => { if (data) setForm({
+    provider: data.provider ?? "lovable",
+    groq_key: data.groq_key ?? "",
+    gemini_key: data.gemini_key ?? "",
+    openai_key: data.openai_key ?? "",
+    perplexity_key: data.perplexity_key ?? "",
+    claude_key: data.claude_key ?? "",
+    serpapi_key: (data as { serpapi_key?: string }).serpapi_key ?? "",
+    semrush_key: (data as { semrush_key?: string }).semrush_key ?? "",
+    sender_email: (data as { sender_email?: string }).sender_email ?? "",
+    sender_name: (data as { sender_name?: string }).sender_name ?? "",
+  }); }, [data]);
   const m = useMutation({ mutationFn: () => save({ data: form }), onSuccess: () => { qc.invalidateQueries({ queryKey: ["api-settings"] }); toast.success("Saved"); }, onError: (e) => toast.error(e instanceof Error ? e.message : "Save failed") });
 
   return (
@@ -56,6 +67,16 @@ function Settings() {
           <Label>Semrush API key</Label>
           <Input type="password" value={form.semrush_key} onChange={(e) => setForm({ ...form, semrush_key: e.target.value })} placeholder="••••••••" />
           <p className="text-xs text-muted-foreground mt-1">Used by Competitors & Backlinks. Get one at semrush.com/api.</p>
+        </div>
+        <div className="pt-2"><h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Email Report Delivery</h3></div>
+        <div>
+          <Label>Sender name</Label>
+          <Input value={form.sender_name} onChange={(e) => setForm({ ...form, sender_name: e.target.value })} placeholder="Acme SEO" />
+        </div>
+        <div>
+          <Label>Sender email</Label>
+          <Input type="email" value={form.sender_email} onChange={(e) => setForm({ ...form, sender_email: e.target.value })} placeholder="reports@yourdomain.com" />
+          <p className="text-xs text-muted-foreground mt-1">Must be a verified Brevo sender. Emails send through the Brevo connector; connect Brevo in Workspace Connectors first.</p>
         </div>
         <Button onClick={() => m.mutate()} disabled={m.isPending}>{m.isPending ? "Saving…" : "Save API Keys"}</Button>
       </Card>
