@@ -16,13 +16,23 @@ describe("assertAdmin (server-side admin guard)", () => {
     await expect(assertAdmin(mockCtx(true))).resolves.toBeUndefined();
   });
 
-  it("rejects with 'Forbidden' when has_role returns false", async () => {
-    await expect(assertAdmin(mockCtx(false))).rejects.toThrow(/Forbidden/i);
+  it("rejects with a 403 Response when has_role returns false", async () => {
+    // assertAdmin throws a Response (not an Error) so TanStack Start serves
+    // it as a proper HTTP 403 instead of a generic 500.
+    const rejection = await assertAdmin(mockCtx(false)).then(
+      () => null,
+      (e) => e,
+    );
+    expect(rejection).toBeInstanceOf(Response);
+    expect((rejection as Response).status).toBe(403);
+    expect(await (rejection as Response).text()).toMatch(/Forbidden/i);
   });
 
-  it("rejects when has_role returns null (no role row)", async () => {
+  it("rejects with 403 when has_role returns null (no role row)", async () => {
     const ctx = { supabase: { rpc: vi.fn(async () => ({ data: null, error: null })) }, userId: "u" };
-    await expect(assertAdmin(ctx)).rejects.toThrow(/Forbidden/i);
+    const rejection = await assertAdmin(ctx).then(() => null, (e) => e);
+    expect(rejection).toBeInstanceOf(Response);
+    expect((rejection as Response).status).toBe(403);
   });
 
   it("propagates database errors from has_role", async () => {

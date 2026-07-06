@@ -2,6 +2,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+// Wrap a Zod schema so validation failures throw an HTTP 400 Response instead
+// of a plain Error. Plain errors serialize as generic 500s, which the
+// SSR error reporter treats as unhandled runtime crashes; a 400 Response
+// is the correct semantic and doesn't page the error boundary.
+function validate<T extends z.ZodTypeAny>(schema: T) {
+  return (v: unknown): z.infer<T> => {
+    const parsed = schema.safeParse(v);
+    if (!parsed.success) {
+      throw new Response(
+        JSON.stringify({ error: "Invalid input", issues: parsed.error.issues }),
+        { status: 400, headers: { "content-type": "application/json" } },
+      );
+    }
+    return parsed.data;
+  };
+}
+
 async function getAdminClient() {
   const { createClient } = await import("@supabase/supabase-js");
   const url = process.env.SUPABASE_URL!;
@@ -42,7 +59,11 @@ export async function assertAdmin(ctx: { supabase: any; userId: string }) {
     _role: "admin",
   });
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden: admin role required");
+  if (!data) {
+    // 403 Response so the error reporter treats this as an expected
+    // authorization rejection rather than an unhandled runtime error.
+    throw new Response("Forbidden: admin role required", { status: 403 });
+  }
 }
 
 export const checkAdminStatus = createServerFn({ method: "GET" })
@@ -119,7 +140,7 @@ const setRoleInput = z.object({ userId: z.string().uuid(), makeAdmin: z.boolean(
 
 export const setUserAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => setRoleInput.parse(v))
+  .inputValidator(validate(setRoleInput))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
     const supabaseAdmin = await getAdminClient();
@@ -151,7 +172,7 @@ const userIdInput = z.object({ userId: z.string().uuid() });
 
 export const deleteUserAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => userIdInput.parse(v))
+  .inputValidator(validate(userIdInput))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
     if (data.userId === context.userId) throw new Error("You cannot delete your own account");
@@ -163,7 +184,7 @@ export const deleteUserAccount = createServerFn({ method: "POST" })
 
 export const sendPasswordResetForUser = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => z.object({ email: z.string().email() }).parse(v))
+  .inputValidator(validate(z.object({ email: z.string().email() })))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
     const supabaseAdmin = await getAdminClient();
@@ -177,7 +198,7 @@ export const sendPasswordResetForUser = createServerFn({ method: "POST" })
 
 export const toggleUserBan = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) => z.object({ userId: z.string().uuid(), ban: z.boolean() }).parse(v))
+  .inputValidator(validate(z.object({ userId: z.string().uuid(), ban: z.boolean() })))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
     if (data.userId === context.userId) throw new Error("You cannot ban yourself");
@@ -240,9 +261,7 @@ export const getConnectorStatus = createServerFn({ method: "GET" })
 
 export const testConnector = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((v: unknown) =>
-    z.object({ key: z.enum(["gsc", "semrush", "brevo", "dataforseo"]) }).parse(v),
-  )
+  .inputValidator(validate(z.object({ key: z.enum(["gsc", "semrush", "brevo", "dataforseo"]) })))
   .handler(async ({ context, data }): Promise<{ ok: boolean; message: string; detail?: string; latencyMs: number }> => {
     await assertAdmin(context);
     const start = Date.now();
