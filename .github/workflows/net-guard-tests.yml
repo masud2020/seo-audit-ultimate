@@ -22,5 +22,9 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Lint
+        run: bun run lint
+      - name: Typecheck
+        run: bunx tsgo --noEmit
       - name: Run net-guard test suite
         run: bunx vitest run src/lib/net-guard.test.ts
