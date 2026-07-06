@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy, Globe } from "lucide-react";
 import { useBrand } from "@/components/brand-provider";
 import { useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "New Audit", url: "/audit/new", icon: PlayCircle },
     { title: "Bulk Audit", url: "/audit/bulk", icon: Layers },
+    { title: "Whole Site Audit", url: "/site-audit", icon: Globe },
     { title: "Audit History", url: "/history", icon: History },
     { title: "Tool Run History", url: "/tool-history", icon: History },
     { title: "Scheduled Audits", url: "/scheduled", icon: CalendarClock },
