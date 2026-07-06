@@ -68,7 +68,7 @@ export const runAiSearchRank = createServerFn({ method: "POST" })
       supabase, userId, tool: "ai_search_rank", status: "success",
       label: `${data.brand} · ${visibility}% visibility`,
       input: data as unknown as Record<string, unknown>,
-      result: { hits, total, visibility } as unknown as Record<string, unknown>,
+      result: { brand: data.brand, hits, total, visibility, results: rows } as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
     return { brand: data.brand, hits, total, visibility, results: rows };
@@ -114,7 +114,7 @@ export const runAiSearchComparison = createServerFn({ method: "POST" })
       supabase, userId, tool: "ai_search_comparison", status: "success",
       label: `${data.your_brand} vs ${data.competitors.join(", ")}`,
       input: data as unknown as Record<string, unknown>,
-      result: { scoreboard } as unknown as Record<string, unknown>,
+      result: { scoreboard, results: rows } as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
     return { scoreboard, results: rows };
