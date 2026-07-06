@@ -52,6 +52,11 @@ const TOOL_LABELS: Record<string, string> = {
   ai_citations: "AI Citation Checker",
   ai_potential: "AI Citation Potential",
   seo_news: "SEO Blog Feed",
+  keyword_discovery: "Keyword Discovery",
+  people_also_search: "People Also Search",
+  people_also_ask: "People Also Ask",
+  ai_search_rank: "AI Search Rank",
+  ai_search_comparison: "AI Search Comparison",
 };
 
 async function maybeNotify(a: LogRunArgs, runId: string): Promise<void> {
