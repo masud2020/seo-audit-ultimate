@@ -35,13 +35,31 @@ export const refreshKeyword = createServerFn({ method: "POST" })
     const { data: k, error } = await context.supabase.from("keywords").select("*").eq("id", data.id).single();
     if (error || !k) throw new Error("Keyword not found");
     const prev = k.current_position;
-    const next = Math.max(1, Math.min(100, Math.round((prev ?? 50) + (Math.random() * 10 - 5))));
+    // Try SerpAPI first (user key from api_settings), fallback to simulated position.
+    const { data: settings } = await context.supabase.from("api_settings").select("serpapi_key").eq("user_id", context.userId).maybeSingle();
+    const serpKey = (settings as { serpapi_key?: string } | null)?.serpapi_key;
+    let next: number | null = null;
+    let source: "serpapi" | "simulated" = "simulated";
+    if (serpKey) {
+      try {
+        const params = new URLSearchParams({ engine: "google", q: k.keyword, num: "100", api_key: serpKey });
+        const r = await fetch(`https://serpapi.com/search.json?${params}`);
+        if (r.ok) {
+          const j = await r.json() as { organic_results?: { position: number; link: string }[] };
+          const targetHost = (() => { try { return new URL(k.target_url.startsWith("http") ? k.target_url : `https://${k.target_url}`).host.replace(/^www\./, ""); } catch { return k.target_url; } })();
+          const hit = (j.organic_results ?? []).find(r => { try { return new URL(r.link).host.replace(/^www\./, "").includes(targetHost); } catch { return false; } });
+          next = hit?.position ?? 101; // 101 = not found in top 100
+          source = "serpapi";
+        }
+      } catch (e) { console.error("SerpAPI failed", e); }
+    }
+    if (next == null) next = Math.max(1, Math.min(100, Math.round((prev ?? 50) + (Math.random() * 10 - 5))));
     const history = (Array.isArray(k.history) ? (k.history as unknown as { position: number; checked_at: string }[]) : []).concat({ position: next, checked_at: new Date().toISOString() });
     const { error: e2 } = await context.supabase.from("keywords").update({
       previous_position: prev, current_position: next, history: history as never, updated_at: new Date().toISOString(),
     }).eq("id", data.id);
     if (e2) throw new Error(e2.message);
-    return { current_position: next, previous_position: prev };
+    return { current_position: next, previous_position: prev, source };
   });
 
 export const listChecklist = createServerFn({ method: "GET" })
@@ -79,6 +97,8 @@ export const saveApiSettings = createServerFn({ method: "POST" })
     openai_key: z.string().max(500).optional().default(""),
     perplexity_key: z.string().max(500).optional().default(""),
     claude_key: z.string().max(500).optional().default(""),
+    serpapi_key: z.string().max(500).optional().default(""),
+    semrush_key: z.string().max(500).optional().default(""),
   }).parse(d))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("api_settings").upsert({
