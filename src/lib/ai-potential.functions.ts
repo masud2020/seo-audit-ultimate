@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { logToolRun } from "./tool-runs.server";
 
 const inputSchema = z.object({ url: z.string().url() });
 
@@ -25,7 +26,11 @@ function stripHtml(html: string) {
 export const scoreCitationPotential = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: z.input<typeof inputSchema>) => inputSchema.parse(d))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { supabase, userId } = context as unknown as { supabase: any; userId: string };
+    const startedAt = Date.now();
+    try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 15_000);
     let html = "";
@@ -67,5 +72,11 @@ ${text}
     const parsed = extractJson<Analysis>(raw);
     if (!parsed) throw new Error("Model returned unparseable response");
     parsed.overall_score = Math.max(0, Math.min(100, Math.round(Number(parsed.overall_score) || 0)));
-    return { title, url: data.url, ...parsed };
+    const out = { title, url: data.url, ...parsed };
+    await logToolRun({ supabase, userId, tool: "ai_potential", status: "success", label: data.url, input: { url: data.url }, result: out as unknown as Record<string, unknown>, duration_ms: Date.now() - startedAt });
+    return out;
+    } catch (e) {
+      await logToolRun({ supabase, userId, tool: "ai_potential", status: "error", label: data.url, input: { url: data.url }, error: e instanceof Error ? e.message : String(e), duration_ms: Date.now() - startedAt });
+      throw e;
+    }
   });
