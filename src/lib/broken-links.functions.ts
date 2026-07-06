@@ -22,11 +22,20 @@ function extractLinks(html: string, base: string): string[] {
   return [...out];
 }
 
-async function checkStatus(url: string): Promise<{ code: number | null; bucket: string; error?: string }> {
+const startInput = z.object({
+  url: z.string().url(),
+  max_links: z.number().int().min(1).max(2000).optional().default(150),
+  max_pages: z.number().int().min(1).max(50).optional().default(1),
+  max_depth: z.number().int().min(0).max(5).optional().default(0),
+  same_host_only: z.boolean().optional().default(true),
+  timeout_ms: z.number().int().min(2000).max(30000).optional().default(10000),
+  concurrency: z.number().int().min(1).max(20).optional().default(8),
+});
+
+async function checkStatusWith(url: string, timeoutMs: number) {
   const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 10_000);
+  const t = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
-    // HEAD first, then GET fallback (some servers reject HEAD)
     let r = await fetch(url, { method: "HEAD", redirect: "follow", signal: ctrl.signal });
     if (r.status === 405 || r.status === 501) {
       r = await fetch(url, { method: "GET", redirect: "follow", signal: ctrl.signal });
@@ -37,31 +46,58 @@ async function checkStatus(url: string): Promise<{ code: number | null; bucket: 
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     const bucket = /aborted|timeout/i.test(msg) ? "timeout" : "network-error";
-    return { code: null, bucket, error: msg.slice(0, 200) };
+    return { code: null as number | null, bucket, error: msg.slice(0, 200) };
   } finally { clearTimeout(t); }
 }
-
-const startInput = z.object({ url: z.string().url(), max_links: z.number().int().min(1).max(500).optional().default(150) });
 
 export const runBrokenLinkCheck = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: z.input<typeof startInput>) => startInput.parse(d))
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context as unknown as SupabaseCtx;
-    // Fetch root page
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 15_000);
-    let html = "";
-    try {
-      const r = await fetch(data.url, { signal: ctrl.signal, redirect: "follow", headers: { "User-Agent": "LovableSEOBot/1.0" } });
-      if (!r.ok) throw new Error(`Root URL ${r.status}`);
-      html = await r.text();
-    } catch (e) {
-      throw new Error(`Could not fetch root URL: ${e instanceof Error ? e.message : String(e)}`);
-    } finally { clearTimeout(t); }
-
     const rootHost = new URL(data.url).host;
-    const links = extractLinks(html, data.url).slice(0, data.max_links);
+
+    // BFS crawl of internal pages up to max_pages / max_depth
+    const visitedPages = new Set<string>();
+    const queue: Array<{ url: string; depth: number }> = [{ url: data.url, depth: 0 }];
+    // Map of target_url -> source_url (first page that linked to it)
+    const linkSources = new Map<string, string>();
+
+    while (queue.length && visitedPages.size < data.max_pages) {
+      const { url: pageUrl, depth } = queue.shift()!;
+      if (visitedPages.has(pageUrl)) continue;
+      visitedPages.add(pageUrl);
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), data.timeout_ms + 5000);
+      let html = "";
+      try {
+        const r = await fetch(pageUrl, { signal: ctrl.signal, redirect: "follow", headers: { "User-Agent": "LovableSEOBot/1.0" } });
+        if (!r.ok) {
+          if (visitedPages.size === 1) throw new Error(`Root URL ${r.status}`);
+          continue;
+        }
+        html = await r.text();
+      } catch (e) {
+        if (visitedPages.size === 1) throw new Error(`Could not fetch root URL: ${e instanceof Error ? e.message : String(e)}`);
+        continue;
+      } finally { clearTimeout(t); }
+
+      const found = extractLinks(html, pageUrl);
+      for (const l of found) {
+        if (linkSources.size >= data.max_links) break;
+        if (!linkSources.has(l)) {
+          const external = (() => { try { return new URL(l).host !== rootHost; } catch { return true; } })();
+          if (data.same_host_only === false || external || true) linkSources.set(l, pageUrl);
+          // enqueue internal pages for deeper crawl
+          if (!external && depth < data.max_depth && visitedPages.size + queue.length < data.max_pages && !visitedPages.has(l)) {
+            queue.push({ url: l, depth: depth + 1 });
+          }
+        }
+      }
+      if (linkSources.size >= data.max_links) break;
+    }
+
+    const links = [...linkSources.keys()].slice(0, data.max_links);
 
     const { data: run, error } = await supabase.from("link_checks").insert({
       user_id: userId, root_url: data.url, status: "running", links_total: links.length,
@@ -69,28 +105,28 @@ export const runBrokenLinkCheck = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     const runId = (run as { id: string }).id;
 
-    // Check in chunks of 8
-    const chunkSize = 8;
+    // Check in chunks
+    const chunkSize = data.concurrency;
     let broken = 0;
     const rows: Array<Record<string, unknown>> = [];
     for (let i = 0; i < links.length; i += chunkSize) {
       const batch = links.slice(i, i + chunkSize);
-      const results = await Promise.all(batch.map(async (u) => ({ u, res: await checkStatus(u) })));
+      const results = await Promise.all(batch.map(async (u) => ({ u, res: await checkStatusWith(u, data.timeout_ms) })));
       for (const { u, res } of results) {
         const isExternal = (() => { try { return new URL(u).host !== rootHost; } catch { return true; } })();
         if (res.bucket === "4xx" || res.bucket === "5xx" || res.bucket === "timeout" || res.bucket === "network-error") broken++;
         rows.push({
-          check_id: runId, user_id: userId, source_url: data.url, target_url: u,
+          check_id: runId, user_id: userId, source_url: linkSources.get(u) ?? data.url, target_url: u,
           status_code: res.code, status_bucket: res.bucket, is_external: isExternal, error: res.error ?? null,
         });
       }
     }
     if (rows.length) await supabase.from("link_check_items").insert(rows);
     await supabase.from("link_checks").update({
-      status: "done", pages_scanned: 1, links_broken: broken, finished_at: new Date().toISOString(),
+      status: "done", pages_scanned: visitedPages.size, links_broken: broken, finished_at: new Date().toISOString(),
     }).eq("id", runId);
 
-    return { runId, total: links.length, broken };
+    return { runId, total: links.length, broken, pages: visitedPages.size };
   });
 
 export const listBrokenLinkChecks = createServerFn({ method: "GET" })

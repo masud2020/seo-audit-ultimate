@@ -9,7 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Link2Off, Download, PlayCircle } from "lucide-react";
+import { Loader2, Link2Off, Download, PlayCircle, Settings2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 export const Route = createFileRoute("/_authenticated/broken-links")({ component: BrokenLinksPage });
 
@@ -27,6 +29,12 @@ function BrokenLinksPage() {
   const qc = useQueryClient();
   const [url, setUrl] = useState("");
   const [maxLinks, setMaxLinks] = useState(150);
+  const [maxPages, setMaxPages] = useState(1);
+  const [maxDepth, setMaxDepth] = useState(0);
+  const [timeoutMs, setTimeoutMs] = useState(10000);
+  const [concurrency, setConcurrency] = useState(8);
+  const [sameHostOnly, setSameHostOnly] = useState(true);
+  const [tuneOpen, setTuneOpen] = useState(false);
   const [activeRun, setActiveRun] = useState<string | null>(null);
   const [filter, setFilter] = useState<string>("broken");
 
@@ -34,8 +42,8 @@ function BrokenLinksPage() {
   const itemsQuery = useQuery({ queryKey: ["broken-link-items", activeRun], queryFn: () => getItems({ data: { runId: activeRun! } }), enabled: !!activeRun });
 
   const startMut = useMutation({
-    mutationFn: () => run({ data: { url, max_links: maxLinks } }),
-    onSuccess: (r) => { setActiveRun(r.runId); toast.success(`Checked ${r.total} links · ${r.broken} broken`); qc.invalidateQueries({ queryKey: ["broken-link-runs"] }); },
+    mutationFn: () => run({ data: { url, max_links: maxLinks, max_pages: maxPages, max_depth: maxDepth, timeout_ms: timeoutMs, concurrency, same_host_only: sameHostOnly } }),
+    onSuccess: (r) => { setActiveRun(r.runId); toast.success(`Scanned ${r.pages} page(s) · ${r.total} links · ${r.broken} broken`); qc.invalidateQueries({ queryKey: ["broken-link-runs"] }); },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
   });
 
@@ -68,6 +76,41 @@ function BrokenLinksPage() {
             {startMut.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Scanning…</> : <><PlayCircle className="h-4 w-4 mr-2" />Scan</>}
           </Button>
         </div>
+        <Collapsible open={tuneOpen} onOpenChange={setTuneOpen} className="mt-3">
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-muted-foreground">
+              <Settings2 className="h-3.5 w-3.5 mr-1" />{tuneOpen ? "Hide" : "Show"} advanced options
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid gap-3 md:grid-cols-4 mt-3 pt-3 border-t border-border">
+              <div>
+                <Label className="text-xs">Max pages to crawl</Label>
+                <Input type="number" min={1} max={50} value={maxPages} onChange={e => setMaxPages(Math.min(50, Math.max(1, Number(e.target.value) || 1)))} />
+                <p className="text-[10px] text-muted-foreground mt-1">Internal pages visited (BFS). 1 = only the given URL.</p>
+              </div>
+              <div>
+                <Label className="text-xs">Crawl depth</Label>
+                <Input type="number" min={0} max={5} value={maxDepth} onChange={e => setMaxDepth(Math.min(5, Math.max(0, Number(e.target.value) || 0)))} />
+                <p className="text-[10px] text-muted-foreground mt-1">Link-follow depth from start URL. 0 = single page.</p>
+              </div>
+              <div>
+                <Label className="text-xs">Request timeout (ms)</Label>
+                <Input type="number" min={2000} max={30000} step={500} value={timeoutMs} onChange={e => setTimeoutMs(Math.min(30000, Math.max(2000, Number(e.target.value) || 10000)))} />
+                <p className="text-[10px] text-muted-foreground mt-1">Per-link fetch timeout.</p>
+              </div>
+              <div>
+                <Label className="text-xs">Concurrency</Label>
+                <Input type="number" min={1} max={20} value={concurrency} onChange={e => setConcurrency(Math.min(20, Math.max(1, Number(e.target.value) || 8)))} />
+                <p className="text-[10px] text-muted-foreground mt-1">Parallel HTTP requests. Higher = faster but heavier.</p>
+              </div>
+              <div className="md:col-span-4 flex items-center gap-2">
+                <Switch id="same-host" checked={sameHostOnly} onCheckedChange={setSameHostOnly} />
+                <Label htmlFor="same-host" className="text-xs cursor-pointer">Only follow same-host links when crawling deeper (external links are still checked)</Label>
+              </div>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
