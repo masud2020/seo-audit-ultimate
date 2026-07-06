@@ -101,10 +101,17 @@ describe("URL tool entry points reject blocked targets", () => {
     it(`fetchPage rejects ${t}`, async () => {
       await expect(fetchPage(t)).rejects.toThrow(/Blocked/);
     });
-    it(`runCrawl rejects ${t}`, async () => {
-      await expect(runCrawl(t, 5)).rejects.toThrow(/Blocked/);
+    // runCrawl and runAudit swallow per-fetch errors and surface them as
+    // issues/checks in their reports. Prove the guard message shows up
+    // there — i.e. the tool never actually reached the blocked target.
+    it(`runCrawl surfaces a Blocked issue for ${t}`, async () => {
+      const out = await runCrawl(t, 5);
+      expect(out.pages).toEqual([]);
+      expect(out.issues.some((i) => /Blocked/.test(i.message))).toBe(true);
     });
     it(`runAudit rejects ${t}`, async () => {
+      // The initial fetch in runAudit is not wrapped in a try/catch, so
+      // a blocked target aborts the whole audit before any network I/O.
       await expect(runAudit(t)).rejects.toThrow(/Blocked/);
     });
   }
