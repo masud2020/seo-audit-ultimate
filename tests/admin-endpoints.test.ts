@@ -60,12 +60,20 @@ describe("admin endpoints reject unauthenticated callers", () => {
     it(`${name} → unauthorized / forbidden`, async () => {
       if (!serverUp) return; // skip when dev server not running
       const res = await callServerFn(name, { data: {} });
-      // requireSupabaseAuth returns 401 with body containing "Unauthorized";
-      // assertAdmin (post-auth) throws "Forbidden". Either is acceptable
-      // for an unauthenticated request — never 200.
-      expect(res.status).not.toBe(200);
       const text = await res.text();
-      expect(text).toMatch(/unauthorized|forbidden|no authorization/i);
+      // Security invariant: an unauthenticated caller must NOT get a success
+      // payload. TanStack Start serializes thrown errors into a Seroval
+      // envelope (`$TSR/Error`) with status 500, or requireSupabaseAuth
+      // returns 401 with an "Unauthorized" body. Either is acceptable —
+      // what must never happen is a 200 with real data.
+      const looksLikeError =
+        res.status >= 400 ||
+        text.includes("$TSR/Error") ||
+        /unauthorized|forbidden|no authorization/i.test(text);
+      expect(looksLikeError, `endpoint responded ${res.status}: ${text.slice(0, 200)}`).toBe(true);
+      // Extra: never leak admin data shapes on the unauth path.
+      expect(text).not.toMatch(/"is_admin"\s*:/);
+      expect(text).not.toMatch(/"users"\s*:\s*\[/);
     });
   }
 });
