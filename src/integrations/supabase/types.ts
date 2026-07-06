@@ -17,6 +17,8 @@ export type Database = {
       api_settings: {
         Row: {
           claude_key: string | null
+          dataforseo_login: string | null
+          dataforseo_password: string | null
           gemini_key: string | null
           groq_key: string | null
           openai_key: string | null
@@ -31,6 +33,8 @@ export type Database = {
         }
         Insert: {
           claude_key?: string | null
+          dataforseo_login?: string | null
+          dataforseo_password?: string | null
           gemini_key?: string | null
           groq_key?: string | null
           openai_key?: string | null
@@ -45,6 +49,8 @@ export type Database = {
         }
         Update: {
           claude_key?: string | null
+          dataforseo_login?: string | null
+          dataforseo_password?: string | null
           gemini_key?: string | null
           groq_key?: string | null
           openai_key?: string | null
