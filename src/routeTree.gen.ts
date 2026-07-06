@@ -25,6 +25,7 @@ import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
+import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gsc'
 import { Route as AuthenticatedGapsRouteImport } from './routes/_authenticated/gaps'
@@ -131,6 +132,12 @@ const AuthenticatedKeywordsRoute = AuthenticatedKeywordsRouteImport.update({
   path: '/keywords',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedKeywordDiscoveryRoute =
+  AuthenticatedKeywordDiscoveryRouteImport.update({
+    id: '/keyword-discovery',
+    path: '/keyword-discovery',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -273,6 +280,7 @@ export interface FileRoutesByFullPath {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
@@ -312,6 +320,7 @@ export interface FileRoutesByTo {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
@@ -353,6 +362,7 @@ export interface FileRoutesById {
   '/_authenticated/gaps': typeof AuthenticatedGapsRoute
   '/_authenticated/gsc': typeof AuthenticatedGscRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
   '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
@@ -394,6 +404,7 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/keyword-discovery'
     | '/keywords'
     | '/ping'
     | '/preferences'
@@ -433,6 +444,7 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/keyword-discovery'
     | '/keywords'
     | '/ping'
     | '/preferences'
@@ -473,6 +485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gaps'
     | '/_authenticated/gsc'
     | '/_authenticated/history'
+    | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
     | '/_authenticated/ping'
     | '/_authenticated/preferences'
@@ -612,6 +625,13 @@ declare module '@tanstack/react-router' {
       path: '/keywords'
       fullPath: '/keywords'
       preLoaderRoute: typeof AuthenticatedKeywordsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/keyword-discovery': {
+      id: '/_authenticated/keyword-discovery'
+      path: '/keyword-discovery'
+      fullPath: '/keyword-discovery'
+      preLoaderRoute: typeof AuthenticatedKeywordDiscoveryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/history': {
@@ -800,6 +820,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGapsRoute: typeof AuthenticatedGapsRoute
   AuthenticatedGscRoute: typeof AuthenticatedGscRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
   AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
@@ -834,6 +855,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGapsRoute: AuthenticatedGapsRoute,
   AuthenticatedGscRoute: AuthenticatedGscRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
   AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
