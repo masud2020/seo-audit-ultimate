@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -24,7 +24,25 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ShieldAlert, ShieldCheck, Trash2, KeyRound, Ban, CheckCircle2, Search, Loader2 } from "lucide-react";
 
-export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
+export const Route = createFileRoute("/_authenticated/admin")({
+  // Server-side gate: checkAdminStatus runs on the server and verifies
+  // has_role(auth.uid(), 'admin'). Non-admins are redirected before render.
+  // Every admin server function additionally re-checks admin via assertAdmin,
+  // so a tampered client cannot bypass authorization.
+  beforeLoad: async () => {
+    try {
+      const status = await checkAdminStatus();
+      if (!status.isAdmin && !status.canBootstrap) {
+        throw redirect({ to: "/dashboard" });
+      }
+    } catch (e) {
+      // rethrow router redirects
+      if (e && typeof e === "object" && "isRedirect" in (e as any)) throw e;
+      throw redirect({ to: "/dashboard" });
+    }
+  },
+  component: AdminPage,
+});
 
 function AdminPage() {
   return (
