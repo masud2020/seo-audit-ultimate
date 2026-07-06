@@ -22,6 +22,7 @@ import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
+import { Route as AuthenticatedResponsiveCheckRouteImport } from './routes/_authenticated/responsive-check'
 import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
@@ -124,6 +125,12 @@ const AuthenticatedScheduledRoute = AuthenticatedScheduledRouteImport.update({
   path: '/scheduled',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResponsiveCheckRoute =
+  AuthenticatedResponsiveCheckRouteImport.update({
+    id: '/responsive-check',
+    path: '/responsive-check',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRankTrackingRoute =
   AuthenticatedRankTrackingRouteImport.update({
     id: '/rank-tracking',
@@ -346,6 +353,7 @@ export interface FileRoutesByFullPath {
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -394,6 +402,7 @@ export interface FileRoutesByTo {
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
@@ -444,6 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
+  '/_authenticated/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/projects'
     | '/rank-tracking'
+    | '/responsive-check'
     | '/scheduled'
     | '/seo-news'
     | '/settings'
@@ -542,6 +553,7 @@ export interface FileRouteTypes {
     | '/preferences'
     | '/projects'
     | '/rank-tracking'
+    | '/responsive-check'
     | '/scheduled'
     | '/seo-news'
     | '/settings'
@@ -591,6 +603,7 @@ export interface FileRouteTypes {
     | '/_authenticated/preferences'
     | '/_authenticated/projects'
     | '/_authenticated/rank-tracking'
+    | '/_authenticated/responsive-check'
     | '/_authenticated/scheduled'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
@@ -707,6 +720,13 @@ declare module '@tanstack/react-router' {
       path: '/scheduled'
       fullPath: '/scheduled'
       preLoaderRoute: typeof AuthenticatedScheduledRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/responsive-check': {
+      id: '/_authenticated/responsive-check'
+      path: '/responsive-check'
+      fullPath: '/responsive-check'
+      preLoaderRoute: typeof AuthenticatedResponsiveCheckRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rank-tracking': {
@@ -1004,6 +1024,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
+  AuthenticatedResponsiveCheckRoute: typeof AuthenticatedResponsiveCheckRoute
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
@@ -1046,6 +1067,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
+  AuthenticatedResponsiveCheckRoute: AuthenticatedResponsiveCheckRoute,
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
