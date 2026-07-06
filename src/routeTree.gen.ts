@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
+import { Route as AuthenticatedWebsiteSpeedRouteImport } from './routes/_authenticated/website-speed'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenticated/tool-history'
 import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authenticated/site-audit'
@@ -84,6 +85,12 @@ const AuthenticatedWordCounterRoute =
   AuthenticatedWordCounterRouteImport.update({
     id: '/word-counter',
     path: '/word-counter',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWebsiteSpeedRoute =
+  AuthenticatedWebsiteSpeedRouteImport.update({
+    id: '/website-speed',
+    path: '/website-speed',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
@@ -345,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
@@ -392,6 +400,7 @@ export interface FileRoutesByTo {
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
+  '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
@@ -441,6 +450,7 @@ export interface FileRoutesById {
   '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
+  '/_authenticated/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
@@ -490,6 +500,7 @@ export interface FileRouteTypes {
     | '/site-audit'
     | '/tool-history'
     | '/tools'
+    | '/website-speed'
     | '/word-counter'
     | '/audit/$id'
     | '/audit/bulk'
@@ -537,6 +548,7 @@ export interface FileRouteTypes {
     | '/site-audit'
     | '/tool-history'
     | '/tools'
+    | '/website-speed'
     | '/word-counter'
     | '/audit/$id'
     | '/audit/bulk'
@@ -585,6 +597,7 @@ export interface FileRouteTypes {
     | '/_authenticated/site-audit'
     | '/_authenticated/tool-history'
     | '/_authenticated/tools'
+    | '/_authenticated/website-speed'
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/bulk'
@@ -645,6 +658,13 @@ declare module '@tanstack/react-router' {
       path: '/word-counter'
       fullPath: '/word-counter'
       preLoaderRoute: typeof AuthenticatedWordCounterRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/website-speed': {
+      id: '/_authenticated/website-speed'
+      path: '/website-speed'
+      fullPath: '/website-speed'
+      preLoaderRoute: typeof AuthenticatedWebsiteSpeedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/tools': {
@@ -990,6 +1010,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
   AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
+  AuthenticatedWebsiteSpeedRoute: typeof AuthenticatedWebsiteSpeedRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
   AuthenticatedAuditBulkRoute: typeof AuthenticatedAuditBulkRoute
@@ -1031,6 +1052,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
   AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
+  AuthenticatedWebsiteSpeedRoute: AuthenticatedWebsiteSpeedRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,
   AuthenticatedAuditBulkRoute: AuthenticatedAuditBulkRoute,
