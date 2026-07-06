@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -12,6 +12,7 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "New Audit", url: "/audit/new", icon: PlayCircle },
+    { title: "Bulk Audit", url: "/audit/bulk", icon: Layers },
     { title: "Audit History", url: "/history", icon: History },
     { title: "Scheduled Audits", url: "/scheduled", icon: CalendarClock },
   ]},
