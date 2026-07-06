@@ -310,7 +310,7 @@ export const runSchemaValidator = createServerFn({ method: "POST" })
         const items = Array.isArray(parsed) ? parsed : [parsed];
         for (const it of items) {
           const type = Array.isArray(it["@type"]) ? it["@type"].join(",") : (it["@type"] ?? "Unknown");
-          blocks.push({ format: "json-ld", type: String(type), valid: true, raw: it });
+          blocks.push({ format: "json-ld", type: String(type), valid: true, raw: it as JsonValue });
         }
       } catch (e) {
         blocks.push({ format: "json-ld", type: "InvalidJSON", valid: false, error: e instanceof Error ? e.message : String(e) });
