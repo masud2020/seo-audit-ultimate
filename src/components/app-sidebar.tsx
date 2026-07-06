@@ -3,18 +3,21 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart } from "lucide-react";
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 
 const groups: { label: string; items: { title: string; url: string; icon: React.ComponentType<{ className?: string }> }[] }[] = [
   { label: "Overview", items: [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+    { title: "Projects", url: "/projects", icon: FolderKanban },
     { title: "New Audit", url: "/audit/new", icon: PlayCircle },
     { title: "Audit History", url: "/history", icon: History },
+    { title: "Scheduled Audits", url: "/scheduled", icon: CalendarClock },
   ]},
   { label: "Tools", items: [
     { title: "Keyword Rank Tracker", url: "/keywords", icon: TrendingUp },
+    { title: "SERP Tracking", url: "/rank-tracking", icon: LineChart },
     { title: "Site Crawler", url: "/crawler", icon: Network },
     { title: "Competitors & Backlinks", url: "/competitors", icon: Users },
     { title: "SEO Checklist 2026", url: "/checklist", icon: ListChecks },
@@ -25,6 +28,7 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
   ]},
   { label: "AI", items: [
     { title: "AI Visibility", url: "/ai-visibility", icon: Bot },
+    { title: "Content Optimizer", url: "/content-optimizer", icon: Sparkles },
   ]},
   { label: "Settings", items: [
     { title: "API Settings", url: "/settings", icon: Settings },

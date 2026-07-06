@@ -32,6 +32,7 @@ import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authent
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
+import { Route as ApiPublicHooksRunScheduledAuditsRouteImport } from './routes/api/public/hooks/run-scheduled-audits'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
@@ -152,6 +153,12 @@ const AuthenticatedAuditIdRoute = AuthenticatedAuditIdRouteImport.update({
   path: '/audit/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicHooksRunScheduledAuditsRoute =
+  ApiPublicHooksRunScheduledAuditsRouteImport.update({
+    id: '/api/public/hooks/run-scheduled-audits',
+    path: '/api/public/hooks/run-scheduled-audits',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -200,6 +208,7 @@ export interface FileRoutesByTo {
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -226,6 +235,7 @@ export interface FileRoutesById {
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
   '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -252,6 +262,7 @@ export interface FileRouteTypes {
     | '/audit/$id'
     | '/audit/new'
     | '/crawler/$id'
+    | '/api/public/hooks/run-scheduled-audits'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/audit/$id'
     | '/audit/new'
     | '/crawler/$id'
+    | '/api/public/hooks/run-scheduled-audits'
   id:
     | '__root__'
     | '/'
@@ -301,6 +313,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/new'
     | '/_authenticated/crawler/$id'
+    | '/api/public/hooks/run-scheduled-audits'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -308,6 +321,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksRunScheduledAuditsRoute: typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -473,6 +487,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/hooks/run-scheduled-audits': {
+      id: '/api/public/hooks/run-scheduled-audits'
+      path: '/api/public/hooks/run-scheduled-audits'
+      fullPath: '/api/public/hooks/run-scheduled-audits'
+      preLoaderRoute: typeof ApiPublicHooksRunScheduledAuditsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -537,6 +558,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksRunScheduledAuditsRoute: ApiPublicHooksRunScheduledAuditsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
