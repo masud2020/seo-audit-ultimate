@@ -1,4 +1,5 @@
 // Server-only helpers for site inspection tools.
+import { assertPublicHttpUrl } from "./net-guard.server";
 
 export function normalizeUrl(u: string): string {
   let s = u.trim();
@@ -21,6 +22,7 @@ export interface FetchResult {
 
 export async function fetchPage(rawUrl: string, timeoutMs = 15000): Promise<FetchResult> {
   const url = normalizeUrl(rawUrl);
+  assertPublicHttpUrl(url);
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
   const start = Date.now();
