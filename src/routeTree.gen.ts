@@ -24,6 +24,7 @@ import { Route as AuthenticatedCrawlerRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedChecklistRouteImport } from './routes/_authenticated/checklist'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
+import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
 
@@ -103,6 +104,11 @@ const AuthenticatedAiVisibilityRoute =
     path: '/ai-visibility',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCrawlerIdRoute = AuthenticatedCrawlerIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => AuthenticatedCrawlerRoute,
+} as any)
 const AuthenticatedAuditNewRoute = AuthenticatedAuditNewRouteImport.update({
   id: '/audit/new',
   path: '/audit/new',
@@ -121,7 +127,7 @@ export interface FileRoutesByFullPath {
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
-  '/crawler': typeof AuthenticatedCrawlerRoute
+  '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
+  '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,7 +146,7 @@ export interface FileRoutesByTo {
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
-  '/crawler': typeof AuthenticatedCrawlerRoute
+  '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
+  '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -159,7 +167,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/checklist': typeof AuthenticatedChecklistRoute
-  '/_authenticated/crawler': typeof AuthenticatedCrawlerRoute
+  '/_authenticated/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
+  '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -189,6 +198,7 @@ export interface FileRouteTypes {
     | '/word-counter'
     | '/audit/$id'
     | '/audit/new'
+    | '/crawler/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -207,6 +217,7 @@ export interface FileRouteTypes {
     | '/word-counter'
     | '/audit/$id'
     | '/audit/new'
+    | '/crawler/$id'
   id:
     | '__root__'
     | '/'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/new'
+    | '/_authenticated/crawler/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -342,6 +354,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiVisibilityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/crawler/$id': {
+      id: '/_authenticated/crawler/$id'
+      path: '/$id'
+      fullPath: '/crawler/$id'
+      preLoaderRoute: typeof AuthenticatedCrawlerIdRouteImport
+      parentRoute: typeof AuthenticatedCrawlerRoute
+    }
     '/_authenticated/audit/new': {
       id: '/_authenticated/audit/new'
       path: '/audit/new'
@@ -359,11 +378,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedCrawlerRouteChildren {
+  AuthenticatedCrawlerIdRoute: typeof AuthenticatedCrawlerIdRoute
+}
+
+const AuthenticatedCrawlerRouteChildren: AuthenticatedCrawlerRouteChildren = {
+  AuthenticatedCrawlerIdRoute: AuthenticatedCrawlerIdRoute,
+}
+
+const AuthenticatedCrawlerRouteWithChildren =
+  AuthenticatedCrawlerRoute._addFileChildren(AuthenticatedCrawlerRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChecklistRoute: typeof AuthenticatedChecklistRoute
-  AuthenticatedCrawlerRoute: typeof AuthenticatedCrawlerRoute
+  AuthenticatedCrawlerRoute: typeof AuthenticatedCrawlerRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
@@ -379,7 +409,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChecklistRoute: AuthenticatedChecklistRoute,
-  AuthenticatedCrawlerRoute: AuthenticatedCrawlerRoute,
+  AuthenticatedCrawlerRoute: AuthenticatedCrawlerRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
