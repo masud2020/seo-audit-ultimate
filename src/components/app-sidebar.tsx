@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy } from "lucide-react";
 import { useBrand } from "@/components/brand-provider";
 import { useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -23,6 +23,9 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
   { label: "Tools", items: [
     { title: "Keyword Rank Tracker", url: "/keywords", icon: TrendingUp },
     { title: "SERP Tracking", url: "/rank-tracking", icon: LineChart },
+    { title: "Keyword Discovery", url: "/keyword-discovery", icon: Search },
+    { title: "People Also Search", url: "/people-also-search", icon: Users },
+    { title: "People Also Ask", url: "/people-also-ask", icon: HelpCircle },
     { title: "Site Crawler", url: "/crawler", icon: Network },
     { title: "Competitors & Backlinks", url: "/competitors", icon: Users },
     { title: "Gap Analysis", url: "/gaps", icon: GitCompareArrows },
@@ -39,6 +42,8 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "AI Content Detection", url: "/ai-detection", icon: ScanText },
     { title: "AI Citation Checker", url: "/ai-citations", icon: Quote },
     { title: "AI Citation Potential", url: "/ai-potential", icon: Sparkles },
+    { title: "AI Search Rank", url: "/ai-search-rank", icon: Trophy },
+    { title: "AI Search Comparison", url: "/ai-search-comparison", icon: GitCompareArrows },
   ]},
   { label: "Monitoring", items: [
     { title: "Broken Link Checker", url: "/broken-links", icon: Link2Off },

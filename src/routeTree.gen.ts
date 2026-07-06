@@ -42,6 +42,7 @@ import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenti
 import { Route as AuthenticatedBacklinkMonitorRouteImport } from './routes/_authenticated/backlink-monitor'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
 import { Route as AuthenticatedAiSearchRankRouteImport } from './routes/_authenticated/ai-search-rank'
+import { Route as AuthenticatedAiSearchComparisonRouteImport } from './routes/_authenticated/ai-search-comparison'
 import { Route as AuthenticatedAiPotentialRouteImport } from './routes/_authenticated/ai-potential'
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
 import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
@@ -229,6 +230,12 @@ const AuthenticatedAiSearchRankRoute =
     path: '/ai-search-rank',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAiSearchComparisonRoute =
+  AuthenticatedAiSearchComparisonRouteImport.update({
+    id: '/ai-search-comparison',
+    path: '/ai-search-comparison',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiPotentialRoute =
   AuthenticatedAiPotentialRouteImport.update({
     id: '/ai-potential',
@@ -288,6 +295,7 @@ export interface FileRoutesByFullPath {
   '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-potential': typeof AuthenticatedAiPotentialRoute
+  '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
@@ -331,6 +339,7 @@ export interface FileRoutesByTo {
   '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-potential': typeof AuthenticatedAiPotentialRoute
+  '/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
@@ -376,6 +385,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/_authenticated/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/_authenticated/ai-potential': typeof AuthenticatedAiPotentialRoute
+  '/_authenticated/ai-search-comparison': typeof AuthenticatedAiSearchComparisonRoute
   '/_authenticated/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/_authenticated/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
@@ -421,6 +431,7 @@ export interface FileRouteTypes {
     | '/ai-citations'
     | '/ai-detection'
     | '/ai-potential'
+    | '/ai-search-comparison'
     | '/ai-search-rank'
     | '/ai-visibility'
     | '/backlink-monitor'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/ai-citations'
     | '/ai-detection'
     | '/ai-potential'
+    | '/ai-search-comparison'
     | '/ai-search-rank'
     | '/ai-visibility'
     | '/backlink-monitor'
@@ -508,6 +520,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-citations'
     | '/_authenticated/ai-detection'
     | '/_authenticated/ai-potential'
+    | '/_authenticated/ai-search-comparison'
     | '/_authenticated/ai-search-rank'
     | '/_authenticated/ai-visibility'
     | '/_authenticated/backlink-monitor'
@@ -785,6 +798,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiSearchRankRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/ai-search-comparison': {
+      id: '/_authenticated/ai-search-comparison'
+      path: '/ai-search-comparison'
+      fullPath: '/ai-search-comparison'
+      preLoaderRoute: typeof AuthenticatedAiSearchComparisonRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-potential': {
       id: '/_authenticated/ai-potential'
       path: '/ai-potential'
@@ -867,6 +887,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiCitationsRoute: typeof AuthenticatedAiCitationsRoute
   AuthenticatedAiDetectionRoute: typeof AuthenticatedAiDetectionRoute
   AuthenticatedAiPotentialRoute: typeof AuthenticatedAiPotentialRoute
+  AuthenticatedAiSearchComparisonRoute: typeof AuthenticatedAiSearchComparisonRoute
   AuthenticatedAiSearchRankRoute: typeof AuthenticatedAiSearchRankRoute
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
   AuthenticatedBacklinkMonitorRoute: typeof AuthenticatedBacklinkMonitorRoute
@@ -905,6 +926,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiCitationsRoute: AuthenticatedAiCitationsRoute,
   AuthenticatedAiDetectionRoute: AuthenticatedAiDetectionRoute,
   AuthenticatedAiPotentialRoute: AuthenticatedAiPotentialRoute,
+  AuthenticatedAiSearchComparisonRoute: AuthenticatedAiSearchComparisonRoute,
   AuthenticatedAiSearchRankRoute: AuthenticatedAiSearchRankRoute,
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
   AuthenticatedBacklinkMonitorRoute: AuthenticatedBacklinkMonitorRoute,
