@@ -2,127 +2,261 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
-const GATEWAY = "https://connector-gateway.lovable.dev";
-
-async function gatewayFetch(connectorSlug: string, path: string, apiKey: string | undefined) {
-  const lovableKey = process.env.LOVABLE_API_KEY;
-  if (!lovableKey) return { ok: false, status: 0, error: "LOVABLE_API_KEY missing" };
-  if (!apiKey) return { ok: false, status: 0, error: "Connector not linked to this project" };
-  const ctrl = new AbortController();
-  const t = setTimeout(() => ctrl.abort(), 10_000);
-  try {
-    const r = await fetch(`${GATEWAY}/${connectorSlug}${path}`, {
-      headers: { Authorization: `Bearer ${lovableKey}`, "X-Connection-Api-Key": apiKey },
-      signal: ctrl.signal,
-    });
-    const body = await r.text();
-    if (!r.ok) return { ok: false, status: r.status, error: body.slice(0, 300) };
-    return { ok: true, status: r.status, sample: body.slice(0, 300) };
-  } catch (e) {
-    return { ok: false, status: 0, error: e instanceof Error ? e.message : String(e) };
-  } finally {
-    clearTimeout(t);
-  }
+export interface AdminUserRow {
+  id: string;
+  email: string | null;
+  created_at: string;
+  last_sign_in_at: string | null;
+  email_confirmed_at: string | null;
+  banned_until: string | null;
+  is_admin: boolean;
 }
 
-export const checkIsAdmin = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { data, error } = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (error) return { isAdmin: false };
-    return { isAdmin: !!data };
+async function assertAdmin(ctx: { supabase: any; userId: string }) {
+  const { data, error } = await ctx.supabase.rpc("has_role", {
+    _user_id: ctx.userId,
+    _role: "admin",
   });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden: admin role required");
+}
 
-export const getConnectorStatus = createServerFn({ method: "GET" })
+export const checkAdminStatus = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .handler(async ({ context }): Promise<{ isAdmin: boolean; canBootstrap: boolean }> => {
     const { data: isAdmin } = await context.supabase.rpc("has_role", {
       _user_id: context.userId,
       _role: "admin",
     });
-    if (!isAdmin) throw new Error("Forbidden");
+    if (isAdmin) return { isAdmin: true, canBootstrap: false };
+    // Bootstrap: if no admins exist yet, allow the current user to claim admin.
+    const { count } = await context.supabase
+      .from("user_roles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "admin");
+    return { isAdmin: false, canBootstrap: (count ?? 0) === 0 };
+  });
 
+export const claimAdminBootstrap = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ ok: true }> => {
+    const { count } = await context.supabase
+      .from("user_roles")
+      .select("*", { count: "exact", head: true })
+      .eq("role", "admin");
+    if ((count ?? 0) > 0) throw new Error("Admin already exists");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: context.userId, role: "admin" });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const listAllUsers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ users: AdminUserRow[] }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const users: AdminUserRow[] = [];
+    let page = 1;
+    // paginate up to 10 pages (1000 users) — sufficient for admin panels
+    while (page <= 10) {
+      const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 100 });
+      if (error) throw new Error(error.message);
+      const batch = data?.users ?? [];
+      if (!batch.length) break;
+      for (const u of batch) {
+        users.push({
+          id: u.id,
+          email: u.email ?? null,
+          created_at: u.created_at,
+          last_sign_in_at: u.last_sign_in_at ?? null,
+          email_confirmed_at: u.email_confirmed_at ?? null,
+          banned_until: (u as any).banned_until ?? null,
+          is_admin: false,
+        });
+      }
+      if (batch.length < 100) break;
+      page++;
+    }
+    // attach admin flag
+    const { data: roles } = await supabaseAdmin
+      .from("user_roles")
+      .select("user_id,role")
+      .eq("role", "admin");
+    const adminSet = new Set((roles ?? []).map((r: any) => r.user_id));
+    for (const u of users) u.is_admin = adminSet.has(u.id);
+    users.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+    return { users };
+  });
+
+const setRoleInput = z.object({ userId: z.string().uuid(), makeAdmin: z.boolean() });
+
+export const setUserAdmin = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => setRoleInput.parse(v))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    if (data.makeAdmin) {
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: data.userId, role: "admin" }, { onConflict: "user_id,role" });
+      if (error) throw new Error(error.message);
+    } else {
+      if (data.userId === context.userId) {
+        // prevent removing the last admin (self)
+        const { count } = await supabaseAdmin
+          .from("user_roles")
+          .select("*", { count: "exact", head: true })
+          .eq("role", "admin");
+        if ((count ?? 0) <= 1) throw new Error("Cannot remove the last admin");
+      }
+      const { error } = await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", data.userId)
+        .eq("role", "admin");
+      if (error) throw new Error(error.message);
+    }
+    return { ok: true };
+  });
+
+const userIdInput = z.object({ userId: z.string().uuid() });
+
+export const deleteUserAccount = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => userIdInput.parse(v))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) throw new Error("You cannot delete your own account");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.deleteUser(data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const sendPasswordResetForUser = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ email: z.string().email() }).parse(v))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email: data.email,
+    });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const toggleUserBan = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => z.object({ userId: z.string().uuid(), ban: z.boolean() }).parse(v))
+  .handler(async ({ context, data }): Promise<{ ok: true }> => {
+    await assertAdmin(context);
+    if (data.userId === context.userId) throw new Error("You cannot ban yourself");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      ban_duration: data.ban ? "876000h" : "none",
+    } as any);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// -------------------- Legacy exports used by /settings and /seo-news --------------------
+
+export const checkIsAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<{ isAdmin: boolean }> => {
+    const { data } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    return { isAdmin: !!data };
+  });
+
+type ConnectorStatus = {
+  gsc: { connected: boolean };
+  semrush: { connected: boolean; keyFallback: boolean };
+  brevo: { connected: boolean; senderConfigured: boolean };
+  dataforseo: { connected: boolean };
+};
+
+export const getConnectorStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ConnectorStatus> => {
+    await assertAdmin(context);
     const { data: s } = await context.supabase
       .from("api_settings")
-      .select("dataforseo_login, dataforseo_password, semrush_key, sender_email")
+      .select("semrush_key,dataforseo_login,dataforseo_password,sender_email")
       .eq("user_id", context.userId)
       .maybeSingle();
-
-    const dataforseoConfigured = !!(s?.dataforseo_login && s?.dataforseo_password);
-
+    const row = (s ?? {}) as {
+      semrush_key?: string;
+      dataforseo_login?: string;
+      dataforseo_password?: string;
+      sender_email?: string;
+    };
+    const hasEnv = (k: string) => !!process.env[k];
     return {
-      gsc: { connected: !!process.env.GOOGLE_SEARCH_CONSOLE_API_KEY, envVar: "GOOGLE_SEARCH_CONSOLE_API_KEY" },
-      semrush: { connected: !!process.env.SEMRUSH_API_KEY, envVar: "SEMRUSH_API_KEY", keyFallback: !!s?.semrush_key },
-      brevo: { connected: !!process.env.BREVO_API_KEY, envVar: "BREVO_API_KEY", senderConfigured: !!s?.sender_email },
-      dataforseo: { connected: dataforseoConfigured, envVar: null },
+      gsc: { connected: hasEnv("GOOGLE_SEARCH_CONSOLE_API_KEY") },
+      semrush: {
+        connected: hasEnv("SEMRUSH_API_KEY") || !!row.semrush_key,
+        keyFallback: !!row.semrush_key && !hasEnv("SEMRUSH_API_KEY"),
+      },
+      brevo: {
+        connected: hasEnv("BREVO_API_KEY"),
+        senderConfigured: !!row.sender_email,
+      },
+      dataforseo: { connected: !!(row.dataforseo_login && row.dataforseo_password) },
     };
   });
 
 export const testConnector = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { key: string }) =>
-    z.object({ key: z.enum(["gsc", "semrush", "brevo", "dataforseo"]) }).parse(d),
+  .inputValidator((v: unknown) =>
+    z.object({ key: z.enum(["gsc", "semrush", "brevo", "dataforseo"]) }).parse(v),
   )
-  .handler(async ({ data, context }) => {
-    const { data: isAdmin } = await context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" });
-    if (!isAdmin) throw new Error("Forbidden");
-
-    const started = Date.now();
-    let result: { ok: boolean; status: number; message: string; detail?: string };
-
-    if (data.key === "gsc") {
-      const r = await gatewayFetch("google_search_console", "/webmasters/v3/sites", process.env.GOOGLE_SEARCH_CONSOLE_API_KEY);
-      result = { ok: r.ok, status: r.status, message: r.ok ? "GSC auth OK — sites list reachable." : "GSC test failed.", detail: r.ok ? undefined : r.error };
-    } else if (data.key === "brevo") {
-      const r = await gatewayFetch("brevo", "/v3/account", process.env.BREVO_API_KEY);
-      result = { ok: r.ok, status: r.status, message: r.ok ? "Brevo account reachable." : "Brevo test failed.", detail: r.ok ? undefined : r.error };
-    } else if (data.key === "semrush") {
-      if (process.env.SEMRUSH_API_KEY) {
-        const r = await gatewayFetch("semrush", "/?type=domain_ranks&domain=example.com&database=us", process.env.SEMRUSH_API_KEY);
-        result = { ok: r.ok, status: r.status, message: r.ok ? "Semrush connector OK." : "Semrush connector test failed.", detail: r.ok ? undefined : r.error };
-      } else {
-        const { data: s } = await context.supabase.from("api_settings").select("semrush_key").eq("user_id", context.userId).maybeSingle();
-        if (!s?.semrush_key) {
-          result = { ok: false, status: 0, message: "Semrush is not configured.", detail: "Link the connector or add a fallback API key." };
-        } else {
-          const ctrl = new AbortController();
-          const t = setTimeout(() => ctrl.abort(), 10_000);
-          try {
-            const r = await fetch(`https://api.semrush.com/?type=domain_ranks&domain=example.com&database=us&key=${encodeURIComponent(s.semrush_key)}`, { signal: ctrl.signal });
-            const body = await r.text();
-            const bad = !r.ok || body.startsWith("ERROR");
-            result = { ok: !bad, status: r.status, message: bad ? "Semrush API key rejected." : "Semrush API key OK (fallback).", detail: bad ? body.slice(0, 200) : undefined };
-          } catch (e) {
-            result = { ok: false, status: 0, message: "Semrush request failed.", detail: e instanceof Error ? e.message : String(e) };
-          } finally { clearTimeout(t); }
-        }
+  .handler(async ({ context, data }): Promise<{ ok: boolean; message: string; detail?: string; latencyMs: number }> => {
+    await assertAdmin(context);
+    const start = Date.now();
+    const latency = () => Date.now() - start;
+    try {
+      if (data.key === "gsc") {
+        const key = process.env.GOOGLE_SEARCH_CONSOLE_API_KEY;
+        if (!key) return { ok: false, message: "Google Search Console not connected", latencyMs: latency() };
+        return { ok: true, message: "Search Console credentials present", latencyMs: latency() };
       }
-    } else {
-      const { data: s } = await context.supabase.from("api_settings").select("dataforseo_login, dataforseo_password").eq("user_id", context.userId).maybeSingle();
-      if (!s?.dataforseo_login || !s?.dataforseo_password) {
-        result = { ok: false, status: 0, message: "DataForSEO credentials not set.", detail: "Enter login + password below." };
-      } else {
-        const ctrl = new AbortController();
-        const t = setTimeout(() => ctrl.abort(), 10_000);
-        try {
-          const auth = Buffer.from(`${s.dataforseo_login}:${s.dataforseo_password}`).toString("base64");
-          const r = await fetch("https://api.dataforseo.com/v3/appendix/user_data", { headers: { Authorization: `Basic ${auth}` }, signal: ctrl.signal });
-          const body = await r.text();
-          let msg = "DataForSEO auth OK.";
-          let ok = r.ok;
-          try {
-            const parsed = JSON.parse(body);
-            if (parsed?.status_code && parsed.status_code !== 20000) { ok = false; msg = `DataForSEO error ${parsed.status_code}: ${parsed.status_message}`; }
-          } catch { /* non-json */ }
-          result = { ok, status: r.status, message: ok ? msg : "DataForSEO test failed.", detail: ok ? undefined : body.slice(0, 300) };
-        } catch (e) {
-          result = { ok: false, status: 0, message: "DataForSEO request failed.", detail: e instanceof Error ? e.message : String(e) };
-        } finally { clearTimeout(t); }
+      if (data.key === "semrush") {
+        const { data: s } = await context.supabase
+          .from("api_settings").select("semrush_key").eq("user_id", context.userId).maybeSingle();
+        const key = process.env.SEMRUSH_API_KEY || (s as any)?.semrush_key;
+        if (!key) return { ok: false, message: "No Semrush API key configured", latencyMs: latency() };
+        const r = await fetch(`https://api.semrush.com/analytics/v1/?type=domain_ranks&key=${encodeURIComponent(key)}&domain=example.com&export_columns=Db,Dn`);
+        const text = await r.text();
+        if (!r.ok || text.startsWith("ERROR")) return { ok: false, message: "Semrush test failed", detail: text.slice(0, 200), latencyMs: latency() };
+        return { ok: true, message: "Semrush API reachable", latencyMs: latency() };
       }
+      if (data.key === "brevo") {
+        const key = process.env.BREVO_API_KEY;
+        if (!key) return { ok: false, message: "Brevo API key not set", latencyMs: latency() };
+        const r = await fetch("https://api.brevo.com/v3/account", { headers: { "api-key": key } });
+        if (!r.ok) return { ok: false, message: "Brevo test failed", detail: (await r.text()).slice(0, 200), latencyMs: latency() };
+        return { ok: true, message: "Brevo account reachable", latencyMs: latency() };
+      }
+      // dataforseo
+      const { data: s } = await context.supabase
+        .from("api_settings").select("dataforseo_login,dataforseo_password").eq("user_id", context.userId).maybeSingle();
+      const login = (s as any)?.dataforseo_login as string | undefined;
+      const pw = (s as any)?.dataforseo_password as string | undefined;
+      if (!login || !pw) return { ok: false, message: "DataForSEO credentials not set", latencyMs: latency() };
+      const auth = Buffer.from(`${login}:${pw}`).toString("base64");
+      const r = await fetch("https://api.dataforseo.com/v3/appendix/user_data", { headers: { Authorization: `Basic ${auth}` } });
+      if (!r.ok) return { ok: false, message: "DataForSEO test failed", detail: (await r.text()).slice(0, 200), latencyMs: latency() };
+      return { ok: true, message: "DataForSEO reachable", latencyMs: latency() };
+    } catch (e) {
+      return { ok: false, message: "Test failed", detail: e instanceof Error ? e.message : String(e), latencyMs: latency() };
     }
-
-    return { ...result, latencyMs: Date.now() - started };
   });
