@@ -2,6 +2,89 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
 
+// Discover URLs on a website by reading /robots.txt sitemap references and /sitemap.xml
+// (recursively for sitemap indexes). Falls back to a shallow same-origin crawl.
+export const discoverSiteUrls = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { url: string; limit?: number }) =>
+    z.object({ url: z.string().min(3).max(2048), limit: z.number().int().min(1).max(500).optional() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const raw = data.url.trim();
+    const start = new URL(raw.startsWith("http") ? raw : `https://${raw}`);
+    const origin = start.origin;
+    const limit = data.limit ?? 100;
+    const UA = "SEOAuditToolBot/1.0 (+https://lovable.app)";
+    const safeFetch = async (u: string) => {
+      const ctrl = new AbortController();
+      const t = setTimeout(() => ctrl.abort(), 12_000);
+      try { return await fetch(u, { redirect: "follow", signal: ctrl.signal, headers: { "User-Agent": UA } }); }
+      finally { clearTimeout(t); }
+    };
+    const found = new Set<string>();
+    const sitemapCandidates: string[] = [];
+
+    // 1. robots.txt
+    try {
+      const r = await safeFetch(`${origin}/robots.txt`);
+      if (r.ok) {
+        const text = await r.text();
+        for (const line of text.split(/\r?\n/)) {
+          const m = /^\s*Sitemap:\s*(\S+)/i.exec(line);
+          if (m) sitemapCandidates.push(m[1]);
+        }
+      }
+    } catch { /* ignore */ }
+    if (!sitemapCandidates.length) sitemapCandidates.push(`${origin}/sitemap.xml`);
+
+    // 2. parse sitemaps (including indexes)
+    const seenSitemaps = new Set<string>();
+    const parseSitemap = async (sm: string, depth = 0): Promise<void> => {
+      if (depth > 3 || seenSitemaps.has(sm) || found.size >= limit) return;
+      seenSitemaps.add(sm);
+      let res: Response;
+      try { res = await safeFetch(sm); } catch { return; }
+      if (!res.ok) return;
+      const xml = await res.text();
+      const isIndex = /<sitemapindex[\s>]/i.test(xml);
+      const locs = Array.from(xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)).map((m) => m[1]);
+      if (isIndex) {
+        for (const child of locs) { if (found.size >= limit) break; await parseSitemap(child, depth + 1); }
+      } else {
+        for (const loc of locs) {
+          if (found.size >= limit) break;
+          try {
+            const u = new URL(loc);
+            if (u.origin === origin) found.add(u.toString());
+          } catch { /* skip invalid */ }
+        }
+      }
+    };
+    for (const sm of sitemapCandidates) { if (found.size >= limit) break; await parseSitemap(sm); }
+
+    // 3. Fallback: shallow same-origin crawl from the homepage
+    if (found.size === 0) {
+      found.add(start.toString());
+      try {
+        const r = await safeFetch(origin);
+        if (r.ok) {
+          const html = await r.text();
+          const hrefs = Array.from(html.matchAll(/<a\b[^>]*\bhref=["']([^"'#]+)/gi)).map((m) => m[1]);
+          for (const href of hrefs) {
+            if (found.size >= limit) break;
+            try {
+              const u = new URL(href, origin);
+              if (u.origin === origin) found.add(u.toString().split("#")[0]);
+            } catch { /* skip */ }
+          }
+        }
+      } catch { /* ignore */ }
+    }
+
+    const urls = Array.from(found).slice(0, limit);
+    return { urls, source: seenSitemaps.size ? "sitemap" as const : "crawl" as const, count: urls.length };
+  });
+
 export const listKeywords = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
