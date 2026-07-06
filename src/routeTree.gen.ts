@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
 import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
@@ -71,6 +72,11 @@ const AuthenticatedWordCounterRoute =
 const AuthenticatedToolsRoute = AuthenticatedToolsRouteImport.update({
   id: '/tools',
   path: '/tools',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedScheduledRoute = AuthenticatedScheduledRouteImport.update({
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -234,6 +241,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -265,6 +273,7 @@ export interface FileRoutesById {
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -296,6 +305,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/rank-tracking'
     | '/scheduled'
+    | '/settings'
     | '/tools'
     | '/word-counter'
     | '/audit/$id'
@@ -325,6 +335,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/rank-tracking'
     | '/scheduled'
+    | '/settings'
     | '/tools'
     | '/word-counter'
     | '/audit/$id'
@@ -355,6 +366,7 @@ export interface FileRouteTypes {
     | '/_authenticated/projects'
     | '/_authenticated/rank-tracking'
     | '/_authenticated/scheduled'
+    | '/_authenticated/settings'
     | '/_authenticated/tools'
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
@@ -422,6 +434,13 @@ declare module '@tanstack/react-router' {
       path: '/tools'
       fullPath: '/tools'
       preLoaderRoute: typeof AuthenticatedToolsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/scheduled': {
@@ -602,6 +621,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
@@ -626,6 +646,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,
