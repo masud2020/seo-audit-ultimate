@@ -47,6 +47,12 @@ export const removeBacklink = createServerFn({ method: "POST" })
   });
 
 async function checkLive(sourceUrl: string, targetDomain: string): Promise<{ live: boolean; error?: string }> {
+  try {
+    const { assertPublicHttpUrl } = await import("./net-guard.server");
+    assertPublicHttpUrl(sourceUrl);
+  } catch (e) {
+    return { live: false, error: (e as Error).message };
+  }
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 12_000);
   try {

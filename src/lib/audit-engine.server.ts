@@ -32,6 +32,8 @@ export interface AuditReport {
 const UA = "SEOAuditToolBot/1.0 (+https://lovable.app)";
 
 async function safeFetch(url: string, init: RequestInit = {}) {
+  const { assertPublicHttpUrl } = await import("./net-guard.server");
+  assertPublicHttpUrl(url);
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 20_000);
   try {

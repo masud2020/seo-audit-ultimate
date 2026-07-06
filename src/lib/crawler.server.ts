@@ -2,7 +2,10 @@
 
 const UA = "SEOAuditToolBot/1.0 (+https://lovable.app)";
 
+import { assertPublicHttpUrl } from "./net-guard.server";
+
 async function safeFetch(url: string, method: "GET" | "HEAD" = "GET") {
+  assertPublicHttpUrl(url);
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 15_000);
   try {

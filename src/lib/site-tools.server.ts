@@ -1,4 +1,5 @@
 // Server-only helpers for site inspection tools.
+import { assertPublicHttpUrl } from "./net-guard.server";
 
 export function normalizeUrl(u: string): string {
   let s = u.trim();
@@ -21,16 +22,31 @@ export interface FetchResult {
 
 export async function fetchPage(rawUrl: string, timeoutMs = 15000): Promise<FetchResult> {
   const url = normalizeUrl(rawUrl);
+  assertPublicHttpUrl(url);
   const ac = new AbortController();
   const t = setTimeout(() => ac.abort(), timeoutMs);
   const start = Date.now();
   let ttfb = 0;
   try {
-    const res = await fetch(url, {
-      redirect: "follow",
-      signal: ac.signal,
-      headers: { "User-Agent": "Mozilla/5.0 (compatible; LovableSEOBot/1.0)" },
-    });
+    // Manual redirect handling so each hop is re-validated against the SSRF guard.
+    let currentUrl = url;
+    let res: Response;
+    let hops = 0;
+    while (true) {
+      res = await fetch(currentUrl, {
+        redirect: "manual",
+        signal: ac.signal,
+        headers: { "User-Agent": "Mozilla/5.0 (compatible; LovableSEOBot/1.0)" },
+      });
+      if (res.status >= 300 && res.status < 400 && hops < 5) {
+        const loc = res.headers.get("location");
+        if (!loc) break;
+        currentUrl = assertPublicHttpUrl(new URL(loc, currentUrl).toString()).toString();
+        hops++;
+        continue;
+      }
+      break;
+    }
     ttfb = Date.now() - start;
     const buf = await res.arrayBuffer();
     const total = Date.now() - start;
