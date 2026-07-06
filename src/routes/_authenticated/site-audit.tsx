@@ -10,6 +10,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Play, Trash2, Eye, Globe } from "lucide-react";
 
+type SiteAuditRow = { id: string; start_url: string; status: string; overall_score: number | null; pages_audited: number; max_pages: number; created_at: string; error: string | null };
+
 export const Route = createFileRoute("/_authenticated/site-audit")({ component: SiteAuditPage });
 
 function scoreColor(s: number | null | undefined) {
@@ -63,7 +65,7 @@ function SiteAuditPage() {
             <tr><th className="px-4 py-2">Start URL</th><th className="px-4 py-2">Status</th><th className="px-4 py-2">Score</th><th className="px-4 py-2">Pages</th><th className="px-4 py-2">Created</th><th className="px-4 py-2 w-24">Actions</th></tr>
           </thead>
           <tbody>
-            {(data ?? []).map(row => (
+            {((data ?? []) as SiteAuditRow[]).map((row) => (
               <tr key={row.id} className="border-b border-border/50 hover:bg-muted/30">
                 <td className="px-4 py-2 truncate max-w-md">{row.start_url}</td>
                 <td className="px-4 py-2"><Badge variant={row.status === "complete" ? "default" : row.status === "error" ? "destructive" : "secondary"}>{row.status}</Badge></td>
