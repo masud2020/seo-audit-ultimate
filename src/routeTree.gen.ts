@@ -31,6 +31,7 @@ import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_aut
 import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
+import { Route as AuthenticatedHtmlValidatorRouteImport } from './routes/_authenticated/html-validator'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gsc'
 import { Route as AuthenticatedGapsRouteImport } from './routes/_authenticated/gaps'
@@ -174,6 +175,12 @@ const AuthenticatedKeywordDiscoveryRoute =
   AuthenticatedKeywordDiscoveryRouteImport.update({
     id: '/keyword-discovery',
     path: '/keyword-discovery',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHtmlValidatorRoute =
+  AuthenticatedHtmlValidatorRouteImport.update({
+    id: '/html-validator',
+    path: '/html-validator',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHistoryRoute = AuthenticatedHistoryRouteImport.update({
@@ -345,6 +352,7 @@ export interface FileRoutesByFullPath {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -394,6 +402,7 @@ export interface FileRoutesByTo {
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
+  '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -445,6 +454,7 @@ export interface FileRoutesById {
   '/_authenticated/gaps': typeof AuthenticatedGapsRoute
   '/_authenticated/gsc': typeof AuthenticatedGscRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
+  '/_authenticated/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -496,6 +506,7 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
     | '/people-also-ask'
@@ -545,6 +556,7 @@ export interface FileRouteTypes {
     | '/gaps'
     | '/gsc'
     | '/history'
+    | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
     | '/people-also-ask'
@@ -595,6 +607,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gaps'
     | '/_authenticated/gsc'
     | '/_authenticated/history'
+    | '/_authenticated/html-validator'
     | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
     | '/_authenticated/people-also-ask'
@@ -783,6 +796,13 @@ declare module '@tanstack/react-router' {
       path: '/keyword-discovery'
       fullPath: '/keyword-discovery'
       preLoaderRoute: typeof AuthenticatedKeywordDiscoveryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/html-validator': {
+      id: '/_authenticated/html-validator'
+      path: '/html-validator'
+      fullPath: '/html-validator'
+      preLoaderRoute: typeof AuthenticatedHtmlValidatorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/history': {
@@ -1016,6 +1036,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGapsRoute: typeof AuthenticatedGapsRoute
   AuthenticatedGscRoute: typeof AuthenticatedGscRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
+  AuthenticatedHtmlValidatorRoute: typeof AuthenticatedHtmlValidatorRoute
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
@@ -1059,6 +1080,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGapsRoute: AuthenticatedGapsRoute,
   AuthenticatedGscRoute: AuthenticatedGscRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
+  AuthenticatedHtmlValidatorRoute: AuthenticatedHtmlValidatorRoute,
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
