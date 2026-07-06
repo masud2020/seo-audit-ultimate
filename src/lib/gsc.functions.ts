@@ -1,7 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createClient } from "@supabase/supabase-js";
-import type { Database } from "@/integrations/supabase/types";
 import { z } from "zod";
 
 const GATEWAY = "https://connector-gateway.lovable.dev/google_search_console";
@@ -148,14 +146,11 @@ export const deleteGscVerification = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-// Public read for injecting meta tags into the root HTML
+// Public read for injecting meta tags into the root HTML.
+// Uses the service-role admin client because gsc_verifications is restricted
+// to owners; only the token value is returned so no user or site data leaks.
 export const getPublicGscTokens = createServerFn({ method: "GET" }).handler(async () => {
-  const url = process.env.SUPABASE_URL;
-  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return [] as { token: string }[];
-  const sb = createClient<Database>(url, key, {
-    auth: { storage: undefined, persistSession: false, autoRefreshToken: false },
-  });
-  const { data } = await sb.from("gsc_verifications").select("token");
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin.from("gsc_verifications").select("token");
   return (data ?? []) as { token: string }[];
 });
