@@ -53,6 +53,7 @@ import { Route as AuthenticatedAiPotentialRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
 import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedToolsRobotsTxtGeneratorRouteImport } from './routes/_authenticated/tools.robots-txt-generator'
 import { Route as AuthenticatedSiteAuditIdRouteImport } from './routes/_authenticated/site-audit.$id'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
@@ -301,6 +302,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedToolsRobotsTxtGeneratorRoute =
+  AuthenticatedToolsRobotsTxtGeneratorRouteImport.update({
+    id: '/robots-txt-generator',
+    path: '/robots-txt-generator',
+    getParentRoute: () => AuthenticatedToolsRoute,
+  } as any)
 const AuthenticatedSiteAuditIdRoute =
   AuthenticatedSiteAuditIdRouteImport.update({
     id: '/$id',
@@ -375,7 +382,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
-  '/tools': typeof AuthenticatedToolsRoute
+  '/tools': typeof AuthenticatedToolsRouteWithChildren
   '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -383,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
+  '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRoutesByTo {
@@ -426,7 +434,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
-  '/tools': typeof AuthenticatedToolsRoute
+  '/tools': typeof AuthenticatedToolsRouteWithChildren
   '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -434,6 +442,7 @@ export interface FileRoutesByTo {
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
+  '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRoutesById {
@@ -479,7 +488,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
-  '/_authenticated/tools': typeof AuthenticatedToolsRoute
+  '/_authenticated/tools': typeof AuthenticatedToolsRouteWithChildren
   '/_authenticated/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
@@ -487,6 +496,7 @@ export interface FileRoutesById {
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
   '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
+  '/_authenticated/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRouteTypes {
@@ -540,6 +550,7 @@ export interface FileRouteTypes {
     | '/audit/new'
     | '/crawler/$id'
     | '/site-audit/$id'
+    | '/tools/robots-txt-generator'
     | '/api/public/hooks/run-scheduled-audits'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -591,6 +602,7 @@ export interface FileRouteTypes {
     | '/audit/new'
     | '/crawler/$id'
     | '/site-audit/$id'
+    | '/tools/robots-txt-generator'
     | '/api/public/hooks/run-scheduled-audits'
   id:
     | '__root__'
@@ -643,6 +655,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit/new'
     | '/_authenticated/crawler/$id'
     | '/_authenticated/site-audit/$id'
+    | '/_authenticated/tools/robots-txt-generator'
     | '/api/public/hooks/run-scheduled-audits'
   fileRoutesById: FileRoutesById
 }
@@ -965,6 +978,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/tools/robots-txt-generator': {
+      id: '/_authenticated/tools/robots-txt-generator'
+      path: '/robots-txt-generator'
+      fullPath: '/tools/robots-txt-generator'
+      preLoaderRoute: typeof AuthenticatedToolsRobotsTxtGeneratorRouteImport
+      parentRoute: typeof AuthenticatedToolsRoute
+    }
     '/_authenticated/site-audit/$id': {
       id: '/_authenticated/site-audit/$id'
       path: '/$id'
@@ -1035,6 +1055,18 @@ const AuthenticatedSiteAuditRouteWithChildren =
     AuthenticatedSiteAuditRouteChildren,
   )
 
+interface AuthenticatedToolsRouteChildren {
+  AuthenticatedToolsRobotsTxtGeneratorRoute: typeof AuthenticatedToolsRobotsTxtGeneratorRoute
+}
+
+const AuthenticatedToolsRouteChildren: AuthenticatedToolsRouteChildren = {
+  AuthenticatedToolsRobotsTxtGeneratorRoute:
+    AuthenticatedToolsRobotsTxtGeneratorRoute,
+}
+
+const AuthenticatedToolsRouteWithChildren =
+  AuthenticatedToolsRoute._addFileChildren(AuthenticatedToolsRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAiCitationsRoute: typeof AuthenticatedAiCitationsRoute
@@ -1072,7 +1104,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
   AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
-  AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
+  AuthenticatedToolsRoute: typeof AuthenticatedToolsRouteWithChildren
   AuthenticatedWebsiteSpeedRoute: typeof AuthenticatedWebsiteSpeedRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
@@ -1117,7 +1149,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
   AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
-  AuthenticatedToolsRoute: AuthenticatedToolsRoute,
+  AuthenticatedToolsRoute: AuthenticatedToolsRouteWithChildren,
   AuthenticatedWebsiteSpeedRoute: AuthenticatedWebsiteSpeedRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,
