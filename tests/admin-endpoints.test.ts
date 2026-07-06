@@ -35,10 +35,20 @@ beforeAll(async () => {
   }
 });
 
+function encodeServerFnId(file: string, exportName: string) {
+  // TanStack Start server functions are addressed by a base64url-encoded
+  // JSON descriptor: /_serverFn/<base64({file, export})>
+  const json = JSON.stringify({ file, export: exportName });
+  return Buffer.from(json, "utf8")
+    .toString("base64")
+    .replace(/=+$/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
 async function callServerFn(exportName: string, body: unknown) {
-  const url = new URL("/_serverFn/x", BASE);
-  url.searchParams.set("_serverFnId", `src/lib/admin.functions.ts?tss-serverfn-split#${exportName}`);
-  return fetch(url.toString(), {
+  const id = encodeServerFnId("/src/lib/admin.functions.ts?tss-serverfn-split", exportName);
+  return fetch(`${BASE}/_serverFn/${id}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
