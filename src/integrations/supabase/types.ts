@@ -194,6 +194,48 @@ export type Database = {
         }
         Relationships: []
       }
+      site_crawls: {
+        Row: {
+          created_at: string
+          error: string | null
+          id: string
+          issues: Json
+          max_pages: number
+          pages: Json
+          pages_crawled: number
+          start_url: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          issues?: Json
+          max_pages?: number
+          pages?: Json
+          pages_crawled?: number
+          start_url: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          error?: string | null
+          id?: string
+          issues?: Json
+          max_pages?: number
+          pages?: Json
+          pages_crawled?: number
+          start_url?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
