@@ -34,7 +34,7 @@ export interface AdminUserRow {
   is_admin: boolean;
 }
 
-async function assertAdmin(ctx: { supabase: any; userId: string }) {
+export async function assertAdmin(ctx: { supabase: any; userId: string }) {
   const { data, error } = await ctx.supabase.rpc("has_role", {
     _user_id: ctx.userId,
     _role: "admin",

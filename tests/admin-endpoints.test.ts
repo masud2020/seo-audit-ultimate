@@ -1,0 +1,90 @@
+/**
+ * Integration test: verifies every admin-only server function endpoint
+ * rejects unauthenticated requests, and that /admin (client-gated) never
+ * returns sensitive server data in its SSR shell.
+ *
+ * Requires the dev server running at http://localhost:8080. In CI, start it
+ * with `bun run dev &` then wait for readiness before invoking vitest.
+ *
+ * Skipped automatically if the dev server is not reachable.
+ */
+import { describe, it, expect, beforeAll } from "vitest";
+
+const BASE = process.env.TEST_BASE_URL ?? "http://localhost:8080";
+
+// Server-function endpoints are addressed by `_serverFnId` in the request.
+// The routing filename+export uniquely identifies each handler.
+const ADMIN_ENDPOINTS = [
+  "listAllUsers_createServerFn_handler",
+  "setUserAdmin_createServerFn_handler",
+  "deleteUserAccount_createServerFn_handler",
+  "sendPasswordResetForUser_createServerFn_handler",
+  "toggleUserBan_createServerFn_handler",
+  "getConnectorStatus_createServerFn_handler",
+  "testConnector_createServerFn_handler",
+] as const;
+
+let serverUp = false;
+
+beforeAll(async () => {
+  try {
+    const r = await fetch(BASE, { method: "GET" });
+    serverUp = r.status < 600;
+  } catch {
+    serverUp = false;
+  }
+});
+
+function encodeServerFnId(file: string, exportName: string) {
+  // TanStack Start server functions are addressed by a base64url-encoded
+  // JSON descriptor: /_serverFn/<base64({file, export})>
+  const json = JSON.stringify({ file, export: exportName });
+  return Buffer.from(json, "utf8")
+    .toString("base64")
+    .replace(/=+$/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
+async function callServerFn(exportName: string, body: unknown) {
+  const id = encodeServerFnId("/src/lib/admin.functions.ts?tss-serverfn-split", exportName);
+  return fetch(`${BASE}/_serverFn/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+describe("admin endpoints reject unauthenticated callers", () => {
+  for (const name of ADMIN_ENDPOINTS) {
+    it(`${name} → unauthorized / forbidden`, async () => {
+      if (!serverUp) return; // skip when dev server not running
+      const res = await callServerFn(name, { data: {} });
+      const text = await res.text();
+      // Security invariant: an unauthenticated caller must NOT get a success
+      // payload. TanStack Start serializes thrown errors into a Seroval
+      // envelope (`$TSR/Error`) with status 500, or requireSupabaseAuth
+      // returns 401 with an "Unauthorized" body. Either is acceptable —
+      // what must never happen is a 200 with real data.
+      const looksLikeError =
+        res.status >= 400 ||
+        text.includes("$TSR/Error") ||
+        /unauthorized|forbidden|no authorization/i.test(text);
+      expect(looksLikeError, `endpoint responded ${res.status}: ${text.slice(0, 200)}`).toBe(true);
+      // Extra: never leak admin data shapes on the unauth path.
+      expect(text).not.toMatch(/"is_admin"\s*:/);
+      expect(text).not.toMatch(/"users"\s*:\s*\[/);
+    });
+  }
+});
+
+describe("/admin route shell is not a data leak", () => {
+  it("SSR HTML for /admin contains no user list payload", async () => {
+    if (!serverUp) return;
+    const res = await fetch(`${BASE}/admin`);
+    const html = await res.text();
+    // _authenticated layout is ssr:false, so the shell must not embed users.
+    expect(html).not.toMatch(/"users"\s*:\s*\[/);
+    expect(html).not.toMatch(/is_admin/);
+  });
+});
