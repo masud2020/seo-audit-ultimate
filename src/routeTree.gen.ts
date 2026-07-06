@@ -31,6 +31,7 @@ import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
+import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
 import { Route as ApiPublicHooksRunScheduledAuditsRouteImport } from './routes/api/public/hooks/run-scheduled-audits'
 
@@ -148,6 +149,11 @@ const AuthenticatedAuditNewRoute = AuthenticatedAuditNewRouteImport.update({
   path: '/audit/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAuditBulkRoute = AuthenticatedAuditBulkRouteImport.update({
+  id: '/audit/bulk',
+  path: '/audit/bulk',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedAuditIdRoute = AuthenticatedAuditIdRouteImport.update({
   id: '/audit/$id',
   path: '/audit/$id',
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
+  '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
+  '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
@@ -233,6 +241,7 @@ export interface FileRoutesById {
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
+  '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
   '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/word-counter'
     | '/audit/$id'
+    | '/audit/bulk'
     | '/audit/new'
     | '/crawler/$id'
     | '/api/public/hooks/run-scheduled-audits'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/word-counter'
     | '/audit/$id'
+    | '/audit/bulk'
     | '/audit/new'
     | '/crawler/$id'
     | '/api/public/hooks/run-scheduled-audits'
@@ -311,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tools'
     | '/_authenticated/word-counter'
     | '/_authenticated/audit/$id'
+    | '/_authenticated/audit/bulk'
     | '/_authenticated/audit/new'
     | '/_authenticated/crawler/$id'
     | '/api/public/hooks/run-scheduled-audits'
@@ -480,6 +492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/audit/bulk': {
+      id: '/_authenticated/audit/bulk'
+      path: '/audit/bulk'
+      fullPath: '/audit/bulk'
+      preLoaderRoute: typeof AuthenticatedAuditBulkRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/audit/$id': {
       id: '/_authenticated/audit/$id'
       path: '/audit/$id'
@@ -526,6 +545,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
   AuthenticatedAuditIdRoute: typeof AuthenticatedAuditIdRoute
+  AuthenticatedAuditBulkRoute: typeof AuthenticatedAuditBulkRoute
   AuthenticatedAuditNewRoute: typeof AuthenticatedAuditNewRoute
 }
 
@@ -547,6 +567,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
   AuthenticatedAuditIdRoute: AuthenticatedAuditIdRoute,
+  AuthenticatedAuditBulkRoute: AuthenticatedAuditBulkRoute,
   AuthenticatedAuditNewRoute: AuthenticatedAuditNewRoute,
 }
 
