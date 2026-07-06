@@ -21,6 +21,7 @@ import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authenticated/site-audit'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
+import { Route as AuthenticatedSchemaValidatorRouteImport } from './routes/_authenticated/schema-validator'
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
 import { Route as AuthenticatedResponsiveCheckRouteImport } from './routes/_authenticated/responsive-check'
 import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
@@ -121,6 +122,12 @@ const AuthenticatedSeoNewsRoute = AuthenticatedSeoNewsRouteImport.update({
   path: '/seo-news',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSchemaValidatorRoute =
+  AuthenticatedSchemaValidatorRouteImport.update({
+    id: '/schema-validator',
+    path: '/schema-validator',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedScheduledRoute = AuthenticatedScheduledRouteImport.update({
   id: '/scheduled',
   path: '/scheduled',
@@ -363,6 +370,7 @@ export interface FileRoutesByFullPath {
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
+  '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
@@ -413,6 +421,7 @@ export interface FileRoutesByTo {
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/scheduled': typeof AuthenticatedScheduledRoute
+  '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
@@ -465,6 +474,7 @@ export interface FileRoutesById {
   '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/_authenticated/responsive-check': typeof AuthenticatedResponsiveCheckRoute
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
+  '/_authenticated/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
@@ -517,6 +527,7 @@ export interface FileRouteTypes {
     | '/rank-tracking'
     | '/responsive-check'
     | '/scheduled'
+    | '/schema-validator'
     | '/seo-news'
     | '/settings'
     | '/site-audit'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/rank-tracking'
     | '/responsive-check'
     | '/scheduled'
+    | '/schema-validator'
     | '/seo-news'
     | '/settings'
     | '/site-audit'
@@ -618,6 +630,7 @@ export interface FileRouteTypes {
     | '/_authenticated/rank-tracking'
     | '/_authenticated/responsive-check'
     | '/_authenticated/scheduled'
+    | '/_authenticated/schema-validator'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
     | '/_authenticated/site-audit'
@@ -726,6 +739,13 @@ declare module '@tanstack/react-router' {
       path: '/seo-news'
       fullPath: '/seo-news'
       preLoaderRoute: typeof AuthenticatedSeoNewsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/schema-validator': {
+      id: '/_authenticated/schema-validator'
+      path: '/schema-validator'
+      fullPath: '/schema-validator'
+      preLoaderRoute: typeof AuthenticatedSchemaValidatorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/scheduled': {
@@ -1047,6 +1067,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
   AuthenticatedResponsiveCheckRoute: typeof AuthenticatedResponsiveCheckRoute
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
+  AuthenticatedSchemaValidatorRoute: typeof AuthenticatedSchemaValidatorRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
@@ -1091,6 +1112,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
   AuthenticatedResponsiveCheckRoute: AuthenticatedResponsiveCheckRoute,
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
+  AuthenticatedSchemaValidatorRoute: AuthenticatedSchemaValidatorRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
