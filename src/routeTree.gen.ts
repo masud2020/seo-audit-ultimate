@@ -24,6 +24,7 @@ import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authent
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
 import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
+import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_authenticated/people-also-search'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
@@ -127,6 +128,12 @@ const AuthenticatedPingRoute = AuthenticatedPingRouteImport.update({
   path: '/ping',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedPeopleAlsoSearchRoute =
+  AuthenticatedPeopleAlsoSearchRouteImport.update({
+    id: '/people-also-search',
+    path: '/people-also-search',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKeywordsRoute = AuthenticatedKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
@@ -282,6 +289,7 @@ export interface FileRoutesByFullPath {
   '/history': typeof AuthenticatedHistoryRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -322,6 +330,7 @@ export interface FileRoutesByTo {
   '/history': typeof AuthenticatedHistoryRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -364,6 +373,7 @@ export interface FileRoutesById {
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
+  '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
   '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -406,6 +416,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/keyword-discovery'
     | '/keywords'
+    | '/people-also-search'
     | '/ping'
     | '/preferences'
     | '/projects'
@@ -446,6 +457,7 @@ export interface FileRouteTypes {
     | '/history'
     | '/keyword-discovery'
     | '/keywords'
+    | '/people-also-search'
     | '/ping'
     | '/preferences'
     | '/projects'
@@ -487,6 +499,7 @@ export interface FileRouteTypes {
     | '/_authenticated/history'
     | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
+    | '/_authenticated/people-also-search'
     | '/_authenticated/ping'
     | '/_authenticated/preferences'
     | '/_authenticated/projects'
@@ -618,6 +631,13 @@ declare module '@tanstack/react-router' {
       path: '/ping'
       fullPath: '/ping'
       preLoaderRoute: typeof AuthenticatedPingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/people-also-search': {
+      id: '/_authenticated/people-also-search'
+      path: '/people-also-search'
+      fullPath: '/people-also-search'
+      preLoaderRoute: typeof AuthenticatedPeopleAlsoSearchRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/keywords': {
@@ -822,6 +842,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
+  AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
   AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -857,6 +878,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
+  AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
   AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
