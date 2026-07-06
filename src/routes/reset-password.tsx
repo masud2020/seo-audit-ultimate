@@ -7,7 +7,19 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
-export const Route = createFileRoute("/reset-password")({ component: ResetPassword });
+export const Route = createFileRoute("/reset-password")({
+  component: ResetPassword,
+  head: () => ({
+    meta: [
+      { title: "Reset password — SEO Audit Tool" },
+      { name: "description", content: "Set a new password for your SEO Audit Tool account." },
+      { name: "robots", content: "noindex" },
+      { property: "og:title", content: "Reset password — SEO Audit Tool" },
+      { property: "og:url", content: "https://seo-audittool.lovable.app/reset-password" },
+    ],
+    links: [{ rel: "canonical", href: "https://seo-audittool.lovable.app/reset-password" }],
+  }),
+});
 
 function ResetPassword() {
   const [password, setPassword] = useState("");
