@@ -32,6 +32,7 @@ import { Route as AuthenticatedContentOptimizerRouteImport } from './routes/_aut
 import { Route as AuthenticatedCompetitorsRouteImport } from './routes/_authenticated/competitors'
 import { Route as AuthenticatedChecklistRouteImport } from './routes/_authenticated/checklist'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
+import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenticated/broken-links'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
@@ -157,6 +158,12 @@ const AuthenticatedCalendarRoute = AuthenticatedCalendarRouteImport.update({
   path: '/calendar',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedBrokenLinksRoute =
+  AuthenticatedBrokenLinksRouteImport.update({
+    id: '/broken-links',
+    path: '/broken-links',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAiVisibilityRoute =
   AuthenticatedAiVisibilityRouteImport.update({
     id: '/ai-visibility',
@@ -196,6 +203,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
   '/competitors': typeof AuthenticatedCompetitorsRoute
@@ -226,6 +234,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
   '/competitors': typeof AuthenticatedCompetitorsRoute
@@ -258,6 +267,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
+  '/_authenticated/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/checklist': typeof AuthenticatedChecklistRoute
   '/_authenticated/competitors': typeof AuthenticatedCompetitorsRoute
@@ -290,6 +300,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/ai-visibility'
+    | '/broken-links'
     | '/calendar'
     | '/checklist'
     | '/competitors'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/ai-visibility'
+    | '/broken-links'
     | '/calendar'
     | '/checklist'
     | '/competitors'
@@ -351,6 +363,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/_authenticated/ai-visibility'
+    | '/_authenticated/broken-links'
     | '/_authenticated/calendar'
     | '/_authenticated/checklist'
     | '/_authenticated/competitors'
@@ -548,6 +561,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/broken-links': {
+      id: '/_authenticated/broken-links'
+      path: '/broken-links'
+      fullPath: '/broken-links'
+      preLoaderRoute: typeof AuthenticatedBrokenLinksRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ai-visibility': {
       id: '/_authenticated/ai-visibility'
       path: '/ai-visibility'
@@ -606,6 +626,7 @@ const AuthenticatedCrawlerRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
+  AuthenticatedBrokenLinksRoute: typeof AuthenticatedBrokenLinksRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChecklistRoute: typeof AuthenticatedChecklistRoute
   AuthenticatedCompetitorsRoute: typeof AuthenticatedCompetitorsRoute
@@ -631,6 +652,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
+  AuthenticatedBrokenLinksRoute: AuthenticatedBrokenLinksRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChecklistRoute: AuthenticatedChecklistRoute,
   AuthenticatedCompetitorsRoute: AuthenticatedCompetitorsRoute,
