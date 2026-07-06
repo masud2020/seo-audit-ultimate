@@ -1,0 +1,10 @@
+# SEO Audit Tool
+
+> AI-powered SEO audit platform: 50+ technical, on-page and AI-search checks per URL, with keyword rank tracking, whole-site crawling, competitor & backlink insights, and AI-generated recommendations.
+
+SEO Audit Tool helps site owners, marketers and SEO agencies audit any website, track keyword rankings over time, crawl entire sites for issues, monitor competitors and backlinks, and get actionable, AI-generated recommendations to improve technical SEO, on-page content, and AI-search visibility.
+
+## Pages
+
+- [Home](/): Overview of the SEO Audit Tool platform and its capabilities.
+- [Sign in](/auth): Create an account or sign in to run audits.
