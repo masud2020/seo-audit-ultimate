@@ -21,6 +21,7 @@ import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCrawlerRouteImport } from './routes/_authenticated/crawler'
+import { Route as AuthenticatedCompetitorsRouteImport } from './routes/_authenticated/competitors'
 import { Route as AuthenticatedChecklistRouteImport } from './routes/_authenticated/checklist'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedAiVisibilityRouteImport } from './routes/_authenticated/ai-visibility'
@@ -88,6 +89,12 @@ const AuthenticatedCrawlerRoute = AuthenticatedCrawlerRouteImport.update({
   path: '/crawler',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedCompetitorsRoute =
+  AuthenticatedCompetitorsRouteImport.update({
+    id: '/competitors',
+    path: '/competitors',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedChecklistRoute = AuthenticatedChecklistRouteImport.update({
   id: '/checklist',
   path: '/checklist',
@@ -127,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
+  '/competitors': typeof AuthenticatedCompetitorsRoute
   '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -146,6 +154,7 @@ export interface FileRoutesByTo {
   '/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
+  '/competitors': typeof AuthenticatedCompetitorsRoute
   '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -167,6 +176,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-visibility': typeof AuthenticatedAiVisibilityRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/checklist': typeof AuthenticatedChecklistRoute
+  '/_authenticated/competitors': typeof AuthenticatedCompetitorsRoute
   '/_authenticated/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
@@ -188,6 +198,7 @@ export interface FileRouteTypes {
     | '/ai-visibility'
     | '/calendar'
     | '/checklist'
+    | '/competitors'
     | '/crawler'
     | '/dashboard'
     | '/history'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/ai-visibility'
     | '/calendar'
     | '/checklist'
+    | '/competitors'
     | '/crawler'
     | '/dashboard'
     | '/history'
@@ -227,6 +239,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-visibility'
     | '/_authenticated/calendar'
     | '/_authenticated/checklist'
+    | '/_authenticated/competitors'
     | '/_authenticated/crawler'
     | '/_authenticated/dashboard'
     | '/_authenticated/history'
@@ -333,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCrawlerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/competitors': {
+      id: '/_authenticated/competitors'
+      path: '/competitors'
+      fullPath: '/competitors'
+      preLoaderRoute: typeof AuthenticatedCompetitorsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/checklist': {
       id: '/_authenticated/checklist'
       path: '/checklist'
@@ -393,6 +413,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiVisibilityRoute: typeof AuthenticatedAiVisibilityRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChecklistRoute: typeof AuthenticatedChecklistRoute
+  AuthenticatedCompetitorsRoute: typeof AuthenticatedCompetitorsRoute
   AuthenticatedCrawlerRoute: typeof AuthenticatedCrawlerRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
@@ -409,6 +430,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiVisibilityRoute: AuthenticatedAiVisibilityRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChecklistRoute: AuthenticatedChecklistRoute,
+  AuthenticatedCompetitorsRoute: AuthenticatedCompetitorsRoute,
   AuthenticatedCrawlerRoute: AuthenticatedCrawlerRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
