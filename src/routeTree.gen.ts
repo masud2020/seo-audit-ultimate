@@ -17,6 +17,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenticated/tool-history'
+import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authenticated/site-audit'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
 import { Route as AuthenticatedScheduledRouteImport } from './routes/_authenticated/scheduled'
@@ -47,6 +48,7 @@ import { Route as AuthenticatedAiPotentialRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
 import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedSiteAuditIdRouteImport } from './routes/_authenticated/site-audit.$id'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
@@ -94,6 +96,11 @@ const AuthenticatedToolHistoryRoute =
     path: '/tool-history',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSiteAuditRoute = AuthenticatedSiteAuditRouteImport.update({
+  id: '/site-audit',
+  path: '/site-audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -259,6 +266,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSiteAuditIdRoute =
+  AuthenticatedSiteAuditIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedSiteAuditRoute,
+  } as any)
 const AuthenticatedCrawlerIdRoute = AuthenticatedCrawlerIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -321,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/scheduled': typeof AuthenticatedScheduledRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
@@ -328,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRoutesByTo {
@@ -365,6 +380,7 @@ export interface FileRoutesByTo {
   '/scheduled': typeof AuthenticatedScheduledRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
@@ -372,6 +388,7 @@ export interface FileRoutesByTo {
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRoutesById {
@@ -411,6 +428,7 @@ export interface FileRoutesById {
   '/_authenticated/scheduled': typeof AuthenticatedScheduledRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
@@ -418,6 +436,7 @@ export interface FileRoutesById {
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
   '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
 }
 export interface FileRouteTypes {
@@ -457,6 +476,7 @@ export interface FileRouteTypes {
     | '/scheduled'
     | '/seo-news'
     | '/settings'
+    | '/site-audit'
     | '/tool-history'
     | '/tools'
     | '/word-counter'
@@ -464,6 +484,7 @@ export interface FileRouteTypes {
     | '/audit/bulk'
     | '/audit/new'
     | '/crawler/$id'
+    | '/site-audit/$id'
     | '/api/public/hooks/run-scheduled-audits'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -501,6 +522,7 @@ export interface FileRouteTypes {
     | '/scheduled'
     | '/seo-news'
     | '/settings'
+    | '/site-audit'
     | '/tool-history'
     | '/tools'
     | '/word-counter'
@@ -508,6 +530,7 @@ export interface FileRouteTypes {
     | '/audit/bulk'
     | '/audit/new'
     | '/crawler/$id'
+    | '/site-audit/$id'
     | '/api/public/hooks/run-scheduled-audits'
   id:
     | '__root__'
@@ -546,6 +569,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scheduled'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
+    | '/_authenticated/site-audit'
     | '/_authenticated/tool-history'
     | '/_authenticated/tools'
     | '/_authenticated/word-counter'
@@ -553,6 +577,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit/bulk'
     | '/_authenticated/audit/new'
     | '/_authenticated/crawler/$id'
+    | '/_authenticated/site-audit/$id'
     | '/api/public/hooks/run-scheduled-audits'
   fileRoutesById: FileRoutesById
 }
@@ -621,6 +646,13 @@ declare module '@tanstack/react-router' {
       path: '/tool-history'
       fullPath: '/tool-history'
       preLoaderRoute: typeof AuthenticatedToolHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/site-audit': {
+      id: '/_authenticated/site-audit'
+      path: '/site-audit'
+      fullPath: '/site-audit'
+      preLoaderRoute: typeof AuthenticatedSiteAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -833,6 +865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/site-audit/$id': {
+      id: '/_authenticated/site-audit/$id'
+      path: '/$id'
+      fullPath: '/site-audit/$id'
+      preLoaderRoute: typeof AuthenticatedSiteAuditIdRouteImport
+      parentRoute: typeof AuthenticatedSiteAuditRoute
+    }
     '/_authenticated/crawler/$id': {
       id: '/_authenticated/crawler/$id'
       path: '/$id'
@@ -882,6 +921,20 @@ const AuthenticatedCrawlerRouteChildren: AuthenticatedCrawlerRouteChildren = {
 const AuthenticatedCrawlerRouteWithChildren =
   AuthenticatedCrawlerRoute._addFileChildren(AuthenticatedCrawlerRouteChildren)
 
+interface AuthenticatedSiteAuditRouteChildren {
+  AuthenticatedSiteAuditIdRoute: typeof AuthenticatedSiteAuditIdRoute
+}
+
+const AuthenticatedSiteAuditRouteChildren: AuthenticatedSiteAuditRouteChildren =
+  {
+    AuthenticatedSiteAuditIdRoute: AuthenticatedSiteAuditIdRoute,
+  }
+
+const AuthenticatedSiteAuditRouteWithChildren =
+  AuthenticatedSiteAuditRoute._addFileChildren(
+    AuthenticatedSiteAuditRouteChildren,
+  )
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedAiCitationsRoute: typeof AuthenticatedAiCitationsRoute
@@ -913,6 +966,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedScheduledRoute: typeof AuthenticatedScheduledRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
   AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRoute
   AuthenticatedWordCounterRoute: typeof AuthenticatedWordCounterRoute
@@ -952,6 +1006,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedScheduledRoute: AuthenticatedScheduledRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
   AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRoute,
   AuthenticatedWordCounterRoute: AuthenticatedWordCounterRoute,
