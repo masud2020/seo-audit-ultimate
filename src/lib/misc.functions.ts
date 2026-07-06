@@ -137,3 +137,100 @@ export const listPings = createServerFn({ method: "GET" })
     const { data } = await context.supabase.from("ping_history").select("*").order("created_at", { ascending: false }).limit(50);
     return data ?? [];
   });
+
+// ========== Competitors ==========
+export const listCompetitors = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase.from("competitors").select("*").order("created_at", { ascending: false });
+    if (error) throw new Error(error.message);
+    return data ?? [];
+  });
+
+export const addCompetitor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { domain: string; notes?: string }) => z.object({ domain: z.string().min(3).max(255), notes: z.string().max(2000).optional().default("") }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase.from("competitors").insert({ user_id: context.userId, domain: data.domain, notes: data.notes || null }).select().single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteCompetitor = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("competitors").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+// ========== Backlinks (Semrush) ==========
+export const getBacklinks = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { domain: string }) => z.object({ domain: z.string().min(3).max(255) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: s } = await context.supabase.from("api_settings").select("semrush_key").eq("user_id", context.userId).maybeSingle();
+    const key = (s as { semrush_key?: string } | null)?.semrush_key;
+    if (!key) return { configured: false as const };
+    const target = data.domain.replace(/^https?:\/\//, "").replace(/\/.*$/, "");
+    const url = `https://api.semrush.com/analytics/v1/?type=backlinks_overview&key=${encodeURIComponent(key)}&target=${encodeURIComponent(target)}&target_type=root_domain&export_columns=ascore,total,domains_num,urls_num,ips_num,follows_num,nofollows_num,texts_num,images_num,forms_num,frames_num`;
+    const r = await fetch(url);
+    const txt = await r.text();
+    if (!r.ok) throw new Error(`Semrush error ${r.status}: ${txt.slice(0, 200)}`);
+    // CSV response: header line then value line, ; separated
+    const [header, ...rows] = txt.trim().split(/\r?\n/);
+    const cols = header.split(";");
+    const parsed = rows.map(row => Object.fromEntries(row.split(";").map((v, i) => [cols[i], v])));
+    return { configured: true as const, target, overview: parsed[0] ?? null, raw: txt };
+  });
+
+// ========== Site crawler ==========
+export const startCrawl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { start_url: string; max_pages?: number }) => z.object({ start_url: z.string().min(3).max(2048), max_pages: z.number().min(1).max(100).optional().default(25) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase.from("site_crawls").insert({
+      user_id: context.userId, start_url: data.start_url, max_pages: data.max_pages, status: "running",
+    }).select("id").single();
+    if (error) throw new Error(error.message);
+    const crawlId = row.id as string;
+    try {
+      const { runCrawl } = await import("./crawler.server");
+      const report = await runCrawl(data.start_url, data.max_pages);
+      await context.supabase.from("site_crawls").update({
+        status: "complete", pages_crawled: report.pages.length,
+        pages: report.pages as never, issues: report.issues as never,
+        updated_at: new Date().toISOString(),
+      }).eq("id", crawlId);
+      return { id: crawlId };
+    } catch (err) {
+      await context.supabase.from("site_crawls").update({ status: "error", error: err instanceof Error ? err.message : String(err) }).eq("id", crawlId);
+      throw err;
+    }
+  });
+
+export const listCrawls = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data } = await context.supabase.from("site_crawls").select("id,start_url,status,pages_crawled,max_pages,created_at,error").order("created_at", { ascending: false }).limit(50);
+    return data ?? [];
+  });
+
+export const getCrawl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase.from("site_crawls").select("*").eq("id", data.id).single();
+    if (error) throw new Error(error.message);
+    return row;
+  });
+
+export const deleteCrawl = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { id: string }) => z.object({ id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.from("site_crawls").delete().eq("id", data.id);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
