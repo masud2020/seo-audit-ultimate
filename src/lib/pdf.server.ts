@@ -374,6 +374,8 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     priority.slice(0, 12).forEach((p, i) => {
       const meta = statusMeta(p.check.status);
       ensure(40);
+      const startPage = page;
+      const startY = y + 4;
       // Number + title row
       const numStr = `${i + 1}.`;
       const numW = bold.widthOfTextAtSize(numStr, 11);
@@ -397,15 +399,43 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
           y -= 12;
         }
       }
-      // How to fix
+      // How to fix: summary + 3-5 step checklist + rule ID + jump link to Detailed Findings.
       {
-        const hint = fixHint(p.check);
-        const lines = wrap(`How to fix: ${hint}`, font, 9, W - M - titleX);
-        for (let i = 0; i < lines.length; i++) {
+        const g = fixHint(p.check);
+        const maxW = W - M - titleX;
+        const summary = wrap(`How to fix (rule: ${p.check.id}): ${g.summary}`, font, 9, maxW);
+        for (let i = 0; i < summary.length; i++) {
           ensure(12);
-          page.drawText(lines[i], { x: titleX, y: y - 9, size: 9, font: i === 0 ? bold : font, color: rgb(meta.color[0], meta.color[1], meta.color[2]) });
+          page.drawText(summary[i], { x: titleX, y: y - 9, size: 9, font: i === 0 ? bold : font, color: rgb(meta.color[0], meta.color[1], meta.color[2]) });
           y -= 12;
         }
+        for (const step of g.steps) {
+          const stepLines = wrap(`- ${step}`, font, 9, maxW - 10);
+          for (const line of stepLines) {
+            ensure(12);
+            page.drawText(line, { x: titleX + 10, y: y - 9, size: 9, font, color: rgb(0.25, 0.25, 0.3) });
+            y -= 12;
+          }
+        }
+        // "See full detail" jump link
+        const jump = "See full detail in Detailed Findings ->";
+        ensure(12);
+        page.drawText(jump, { x: titleX, y: y - 9, size: 9, font: bold, color: rgb(0.15, 0.35, 0.75) });
+        const jw = bold.widthOfTextAtSize(jump, 9);
+        pendingCrossLinks.push({
+          page,
+          rect: [titleX, y - 11, titleX + jw + 2, y + 1],
+          check: p.check,
+        });
+        y -= 12;
+      }
+      // Register whole item as clickable → Detailed Findings row.
+      if (startPage === page) {
+        pendingCrossLinks.push({
+          page: startPage,
+          rect: [M, y + 4, W - M, startY],
+          check: p.check,
+        });
       }
       spacer(8);
     });
