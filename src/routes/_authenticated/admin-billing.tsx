@@ -26,6 +26,7 @@ import {
   type PricingPlan, type BkashPaymentWithEmail,
 } from "@/lib/pricing.functions";
 import { checkIsAdmin } from "@/lib/admin.functions";
+import { autoApproveTrx, pollPendingPayments } from "@/lib/bkash-poller.functions";
 
 export const Route = createFileRoute("/_authenticated/admin-billing")({
   head: () => ({ meta: [{ title: "Admin — Billing & bKash" }] }),
@@ -76,6 +77,9 @@ function PaymentsPanel() {
   const [status, setStatus] = useState<"pending" | "approved" | "rejected" | "all">("pending");
   const load = useServerFn(listAllPayments);
   const review = useServerFn(reviewPayment);
+  const autoApprove = useServerFn(autoApproveTrx);
+  const pollNow = useServerFn(pollPendingPayments);
+  const [trxInput, setTrxInput] = useState("");
   const qc = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["admin-payments", status],
@@ -85,6 +89,29 @@ function PaymentsPanel() {
     mutationFn: (v: { id: string; action: "approve" | "reject"; note?: string }) => review({ data: v }),
     onSuccess: (_r, v) => {
       toast.success(v.action === "approve" ? "Payment approved — subscription activated" : "Payment rejected");
+      qc.invalidateQueries({ queryKey: ["admin-payments"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+  const autoMut = useMutation({
+    mutationFn: (trxId: string) => autoApprove({ data: { trxId } }),
+    onSuccess: (r: any) => {
+      if (r?.ok && r.status === "activated") toast.success("Auto-approved & subscription activated");
+      else if (r?.ok && r.status === "already_processed") toast.info("That TrxID was already processed");
+      else if (r?.reason === "not_found") toast.error("No pending payment found for that TrxID");
+      else if (r?.reason === "amount_mismatch") toast.error("Amount mismatch — flagged for manual review");
+      else toast.message(JSON.stringify(r));
+      setTrxInput("");
+      qc.invalidateQueries({ queryKey: ["admin-payments"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+  const pollMut = useMutation({
+    mutationFn: () => pollNow({}),
+    onSuccess: (r: any) => {
+      if (r?.configured === false) toast.warning(r.message ?? "bKash PGW not configured");
+      else if (r?.ok) toast.success(`Polled ${r.checked} pending payment(s)`);
+      else toast.error(r?.error ?? "Poll failed");
       qc.invalidateQueries({ queryKey: ["admin-payments"] });
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
@@ -103,6 +130,37 @@ function PaymentsPanel() {
             <SelectItem value="all">All</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+      <div className="rounded border border-border bg-muted/30 p-3 space-y-2">
+        <div className="text-xs font-medium uppercase text-muted-foreground">Auto-verify</div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            placeholder="Paste bKash TrxID to auto-approve"
+            value={trxInput}
+            onChange={(e) => setTrxInput(e.target.value)}
+            className="max-w-xs"
+          />
+          <Button
+            size="sm"
+            disabled={!trxInput.trim() || autoMut.isPending}
+            onClick={() => autoMut.mutate(trxInput.trim())}
+          >
+            {autoMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Match & approve"}
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={pollMut.isPending}
+            onClick={() => pollMut.mutate()}
+          >
+            {pollMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Poll bKash now"}
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Payments are auto-approved when bKash notifies the webhook or when a
+          TrxID here matches a pending row. Configure the bKash Payment Gateway
+          credentials as secrets to enable status polling.
+        </p>
       </div>
       {isLoading ? (
         <div className="p-6 text-sm text-muted-foreground">Loading payments…</div>
