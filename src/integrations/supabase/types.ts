@@ -680,6 +680,60 @@ export type Database = {
         }
         Relationships: []
       }
+      llm_visibility_runs: {
+        Row: {
+          competitors: string[]
+          created_at: string
+          hits: number
+          id: string
+          mode: string
+          prompts: Json
+          providers: string[]
+          results: Json
+          score: number | null
+          summary: Json
+          target_domain: string | null
+          target_url: string | null
+          topic: string | null
+          total: number
+          user_id: string
+        }
+        Insert: {
+          competitors?: string[]
+          created_at?: string
+          hits?: number
+          id?: string
+          mode: string
+          prompts?: Json
+          providers?: string[]
+          results?: Json
+          score?: number | null
+          summary?: Json
+          target_domain?: string | null
+          target_url?: string | null
+          topic?: string | null
+          total?: number
+          user_id: string
+        }
+        Update: {
+          competitors?: string[]
+          created_at?: string
+          hits?: number
+          id?: string
+          mode?: string
+          prompts?: Json
+          providers?: string[]
+          results?: Json
+          score?: number | null
+          summary?: Json
+          target_domain?: string | null
+          target_url?: string | null
+          topic?: string | null
+          total?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       mega_audits: {
         Row: {
           competitor_url: string | null
