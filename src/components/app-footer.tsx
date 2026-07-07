@@ -1,6 +1,6 @@
-import { Link } from "@tanstack/react-router";
 import { useBrand } from "@/components/brand-provider";
-import { Mail, MapPin, Shield, FileText, Search } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { Mail, MapPin, Shield, FileText, Search, Send } from "lucide-react";
 
 export function AppFooter() {
   const brand = useBrand();
@@ -87,9 +87,15 @@ export function AppFooter() {
       <div className="border-t border-border">
         <div className="mx-auto max-w-7xl px-6 py-4 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-2">
           <span className="whitespace-pre-line">{footerText}</span>
-          <span>
-            Manage footer in <Link to="/preferences" className="hover:text-foreground underline">Preferences</Link>
-          </span>
+          <a
+            href="https://t.me/masudmonsur"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 hover:text-foreground"
+          >
+            <Send className="h-3.5 w-3.5" />
+            Telegram: @masudmonsur
+          </a>
         </div>
       </div>
     </footer>
