@@ -134,6 +134,8 @@ export type Database = {
           dataforseo_password: string | null
           gemini_key: string | null
           groq_key: string | null
+          majestic_key: string | null
+          moz_token: string | null
           openai_key: string | null
           perplexity_key: string | null
           provider: string
@@ -150,6 +152,8 @@ export type Database = {
           dataforseo_password?: string | null
           gemini_key?: string | null
           groq_key?: string | null
+          majestic_key?: string | null
+          moz_token?: string | null
           openai_key?: string | null
           perplexity_key?: string | null
           provider?: string
@@ -166,6 +170,8 @@ export type Database = {
           dataforseo_password?: string | null
           gemini_key?: string | null
           groq_key?: string | null
+          majestic_key?: string | null
+          moz_token?: string | null
           openai_key?: string | null
           perplexity_key?: string | null
           provider?: string

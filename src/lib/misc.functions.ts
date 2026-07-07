@@ -184,6 +184,8 @@ export const saveApiSettings = createServerFn({ method: "POST" })
     claude_key: z.string().max(500).optional().default(""),
     serpapi_key: z.string().max(500).optional().default(""),
     semrush_key: z.string().max(500).optional().default(""),
+    moz_token: z.string().max(1000).optional().default(""),
+    majestic_key: z.string().max(500).optional().default(""),
     sender_email: z.string().email().optional().or(z.literal("")),
     sender_name: z.string().max(200).optional().default(""),
     dataforseo_login: z.string().max(200).optional().default(""),

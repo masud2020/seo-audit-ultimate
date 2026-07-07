@@ -21,10 +21,11 @@ export type DomainMetricsResult = {
   expires_date: string | null;
   registrar: string | null;
   nameservers: string[];
-  spam_score: null;
-  trust_flow: null;
-  citation_flow: null;
-  page_authority: null;
+  spam_score: number | null;
+  trust_flow: number | null;
+  citation_flow: number | null;
+  page_authority: number | null;
+  domain_authority: number | null;
   notes: string[];
   run_id?: string | null;
 };
@@ -46,6 +47,49 @@ function pickEvent(events: any[] | undefined, action: string): string | null {
   return ev?.eventDate ?? null;
 }
 
+async function fetchMoz(domain: string, token: string) {
+  // Moz Links API v2 (JSON-RPC 2.0). Auth: Bearer token.
+  // Docs: https://moz.com/help/links-api
+  const r = await fetch("https://api.moz.com/jsonrpc", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({
+      jsonrpc: "2.0", id: "domain-metrics",
+      method: "data.site.metrics.fetch",
+      params: { data: { site_query: { query: domain, scope: "domain" } } },
+    }),
+    signal: AbortSignal.timeout(15_000),
+  });
+  const j = (await r.json()) as { error?: { message?: string }; result?: { site_metrics?: Record<string, number> } };
+  if (!r.ok || j.error) throw new Error(j.error?.message || `Moz error ${r.status}`);
+  const sm = j.result?.site_metrics ?? {};
+  return {
+    domain_authority: typeof sm.domain_authority === "number" ? sm.domain_authority : null,
+    page_authority: typeof sm.page_authority === "number" ? sm.page_authority : null,
+    spam_score: typeof sm.spam_score === "number" ? sm.spam_score : null,
+  };
+}
+
+async function fetchMajestic(domain: string, key: string) {
+  // Majestic API: GET /api/json?cmd=GetIndexItemInfo&app_api_key=...&items=1&item0=<domain>
+  // Docs: https://developer-support.majestic.com/api/commands/get-index-item-info.shtml
+  const params = new URLSearchParams({
+    app_api_key: key, cmd: "GetIndexItemInfo", items: "1", item0: domain, datasource: "fresh",
+  });
+  const r = await fetch(`https://api.majestic.com/api/json?${params}`, { signal: AbortSignal.timeout(15_000) });
+  const j = (await r.json()) as {
+    Code?: string; ErrorMessage?: string;
+    DataTables?: { Results?: { Data?: Array<Record<string, unknown>> } };
+  };
+  if (j.Code && j.Code !== "OK") throw new Error(j.ErrorMessage || `Majestic error ${j.Code}`);
+  const row = j.DataTables?.Results?.Data?.[0] ?? {};
+  const num = (v: unknown) => (typeof v === "number" ? v : v != null && !isNaN(Number(v)) ? Number(v) : null);
+  return {
+    trust_flow: num(row.TrustFlow),
+    citation_flow: num(row.CitationFlow),
+  };
+}
+
 export const runDomainMetrics = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: z.input<typeof schema>) => schema.parse(d))
@@ -57,8 +101,11 @@ export const runDomainMetrics = createServerFn({ method: "POST" })
     const notes: string[] = [];
 
     // Semrush key
-    const { data: apiRow } = await supabase.from("api_settings").select("semrush_key").eq("user_id", userId).maybeSingle();
-    const semrushKey = (apiRow as { semrush_key?: string } | null)?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+    const { data: apiRow } = await supabase.from("api_settings").select("semrush_key,moz_token,majestic_key").eq("user_id", userId).maybeSingle();
+    const row = (apiRow ?? {}) as { semrush_key?: string; moz_token?: string; majestic_key?: string };
+    const semrushKey = row.semrush_key || process.env.SEMRUSH_API_KEY || null;
+    const mozToken = row.moz_token || process.env.MOZ_API_TOKEN || null;
+    const majesticKey = row.majestic_key || process.env.MAJESTIC_API_KEY || null;
 
     let authority_score: number | null = null;
     let backlinks_total: number | null = null;
@@ -66,6 +113,11 @@ export const runDomainMetrics = createServerFn({ method: "POST" })
     let follow_pct: number | null = null;
     let organic_keywords: number | null = null;
     let organic_traffic: number | null = null;
+    let domain_authority: number | null = null;
+    let page_authority: number | null = null;
+    let spam_score: number | null = null;
+    let trust_flow: number | null = null;
+    let citation_flow: number | null = null;
 
     if (!semrushKey) {
       notes.push("Semrush API key not set — Authority Score and backlink counts unavailable. Add it in API Settings.");
@@ -103,6 +155,29 @@ export const runDomainMetrics = createServerFn({ method: "POST" })
       } catch (e) { notes.push(`Organic data: ${e instanceof Error ? e.message : String(e)}`); }
     }
 
+    // Moz (PA / DA / Spam Score)
+    if (!mozToken) {
+      notes.push("Moz API token not set — Page Authority and Spam Score unavailable. Add it in Admin Settings → API Keys.");
+    } else {
+      try {
+        const m = await fetchMoz(domain, mozToken);
+        domain_authority = m.domain_authority;
+        page_authority = m.page_authority;
+        spam_score = m.spam_score;
+      } catch (e) { notes.push(`Moz: ${e instanceof Error ? e.message : String(e)}`); }
+    }
+
+    // Majestic (TF / CF)
+    if (!majesticKey) {
+      notes.push("Majestic API key not set — Trust Flow and Citation Flow unavailable. Add it in Admin Settings → API Keys.");
+    } else {
+      try {
+        const mj = await fetchMajestic(domain, majesticKey);
+        trust_flow = mj.trust_flow;
+        citation_flow = mj.citation_flow;
+      } catch (e) { notes.push(`Majestic: ${e instanceof Error ? e.message : String(e)}`); }
+    }
+
     // Domain age (RDAP)
     let created_date: string | null = null;
     let updated_date: string | null = null;
@@ -129,19 +204,17 @@ export const runDomainMetrics = createServerFn({ method: "POST" })
       notes.push("Whois/RDAP lookup unavailable for this TLD.");
     }
 
-    notes.push("Moz Spam Score, Page Authority, Majestic Trust Flow & Citation Flow are shown as N/A — they require Moz / Majestic API keys, which aren't connected. Authority Score (Semrush) is included as a widely used DA-equivalent.");
-
     const result: DomainMetricsResult = {
       domain, authority_score, backlinks_total, referring_domains, follow_pct,
       organic_keywords, organic_traffic,
       domain_age_years, created_date, updated_date, expires_date, registrar, nameservers,
-      spam_score: null, trust_flow: null, citation_flow: null, page_authority: null,
+      spam_score, trust_flow, citation_flow, page_authority, domain_authority,
       notes,
     };
 
     const run_id = await logToolRun({
       supabase, userId, tool: "domain_metrics", status: "success",
-      label: `${domain} · AS ${authority_score ?? "—"} · ${domain_age_years ?? "?"}y`,
+      label: `${domain} · DA ${domain_authority ?? authority_score ?? "—"} · PA ${page_authority ?? "—"} · TF ${trust_flow ?? "—"}`,
       input: data as unknown as Record<string, unknown>,
       result: result as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,

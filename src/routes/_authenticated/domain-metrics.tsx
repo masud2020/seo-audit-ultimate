@@ -55,7 +55,7 @@ function Page() {
     <div className="space-y-4 max-w-6xl">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2"><Gauge className="h-6 w-6" />DA, PA, Spam Score, Domain Age, TF, CF Checker</h1>
-        <p className="text-sm text-muted-foreground">Domain Authority (via Semrush Authority Score), backlink profile, and domain age from WHOIS/RDAP. Moz & Majestic metrics show as N/A unless those APIs are connected.</p>
+        <p className="text-sm text-muted-foreground">Domain / Page Authority and Spam Score from Moz, Trust & Citation Flow from Majestic, Authority Score & backlink profile from Semrush, domain age from WHOIS/RDAP. Add API keys under Admin Settings → API Keys.</p>
       </div>
       <Card className="p-4 grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
         <div><Label>Domain</Label><Input placeholder="example.com" value={domain} onChange={(e) => setDomain(e.target.value)} /></div>
@@ -73,12 +73,13 @@ function Page() {
         <div className="space-y-4">
           {runId && <ToolReportExtras runId={runId} tool="domain_metrics" label={`Domain metrics · ${view.domain}`} result={view} />}
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Metric label="Authority Score (DA)" value={fmt(view.authority_score)} hint="Semrush 0–100" badge="Semrush" />
-            <Metric label="Page Authority (PA)" value="N/A" hint="Requires Moz API" badge="Moz" />
-            <Metric label="Spam Score" value="N/A" hint="Requires Moz API" badge="Moz" />
+            <Metric label="Domain Authority (DA)" value={fmt(view.domain_authority)} hint={view.domain_authority == null ? "Requires Moz API" : "Moz 0–100"} badge="Moz" />
+            <Metric label="Page Authority (PA)" value={fmt(view.page_authority)} hint={view.page_authority == null ? "Requires Moz API" : "Moz 0–100"} badge="Moz" />
+            <Metric label="Spam Score" value={fmt(view.spam_score)} hint={view.spam_score == null ? "Requires Moz API" : "Moz 0–17 (lower is better)"} badge="Moz" />
             <Metric label="Domain Age" value={view.domain_age_years !== null ? `${view.domain_age_years} yrs` : "—"} hint={fmtDate(view.created_date)} badge="WHOIS" />
-            <Metric label="Trust Flow (TF)" value="N/A" hint="Requires Majestic API" badge="Majestic" />
-            <Metric label="Citation Flow (CF)" value="N/A" hint="Requires Majestic API" badge="Majestic" />
+            <Metric label="Trust Flow (TF)" value={fmt(view.trust_flow)} hint={view.trust_flow == null ? "Requires Majestic API" : "Majestic 0–100"} badge="Majestic" />
+            <Metric label="Citation Flow (CF)" value={fmt(view.citation_flow)} hint={view.citation_flow == null ? "Requires Majestic API" : "Majestic 0–100"} badge="Majestic" />
+            <Metric label="Authority Score" value={fmt(view.authority_score)} hint="Semrush 0–100" badge="Semrush" />
             <Metric label="Backlinks" value={fmt(view.backlinks_total)} hint={view.follow_pct !== null ? `${view.follow_pct}% follow` : undefined} badge="Semrush" />
             <Metric label="Referring Domains" value={fmt(view.referring_domains)} badge="Semrush" />
             <Metric label="Organic Keywords" value={fmt(view.organic_keywords)} badge="Semrush" />
