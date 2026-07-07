@@ -20,6 +20,7 @@ import { Route as AuthenticatedWebsiteSpeedRouteImport } from './routes/_authent
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenticated/tool-history'
 import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authenticated/site-audit'
+import { Route as AuthenticatedSheetsRouteImport } from './routes/_authenticated/sheets'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
 import { Route as AuthenticatedSchemaValidatorRouteImport } from './routes/_authenticated/schema-validator'
@@ -123,6 +124,11 @@ const AuthenticatedToolHistoryRoute =
 const AuthenticatedSiteAuditRoute = AuthenticatedSiteAuditRouteImport.update({
   id: '/site-audit',
   path: '/site-audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSheetsRoute = AuthenticatedSheetsRouteImport.update({
+  id: '/sheets',
+  path: '/sheets',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
@@ -428,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/sheets': typeof AuthenticatedSheetsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRouteWithChildren
@@ -487,6 +494,7 @@ export interface FileRoutesByTo {
   '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/sheets': typeof AuthenticatedSheetsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRouteWithChildren
@@ -548,6 +556,7 @@ export interface FileRoutesById {
   '/_authenticated/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/sheets': typeof AuthenticatedSheetsRoute
   '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRouteWithChildren
@@ -609,6 +618,7 @@ export interface FileRouteTypes {
     | '/schema-validator'
     | '/seo-news'
     | '/settings'
+    | '/sheets'
     | '/site-audit'
     | '/tool-history'
     | '/tools'
@@ -668,6 +678,7 @@ export interface FileRouteTypes {
     | '/schema-validator'
     | '/seo-news'
     | '/settings'
+    | '/sheets'
     | '/site-audit'
     | '/tool-history'
     | '/tools'
@@ -728,6 +739,7 @@ export interface FileRouteTypes {
     | '/_authenticated/schema-validator'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
+    | '/_authenticated/sheets'
     | '/_authenticated/site-audit'
     | '/_authenticated/tool-history'
     | '/_authenticated/tools'
@@ -836,6 +848,13 @@ declare module '@tanstack/react-router' {
       path: '/site-audit'
       fullPath: '/site-audit'
       preLoaderRoute: typeof AuthenticatedSiteAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sheets': {
+      id: '/_authenticated/sheets'
+      path: '/sheets'
+      fullPath: '/sheets'
+      preLoaderRoute: typeof AuthenticatedSheetsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
@@ -1248,6 +1267,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchemaValidatorRoute: typeof AuthenticatedSchemaValidatorRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSheetsRoute: typeof AuthenticatedSheetsRoute
   AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
   AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRouteWithChildren
@@ -1296,6 +1316,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchemaValidatorRoute: AuthenticatedSchemaValidatorRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSheetsRoute: AuthenticatedSheetsRoute,
   AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
   AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRouteWithChildren,
