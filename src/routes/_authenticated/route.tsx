@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar";
 import { BrandProvider, useBrand } from "@/components/brand-provider";
 import { NotificationsBell } from "@/components/notifications-bell";
 import { AppFooter } from "@/components/app-footer";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -40,6 +41,7 @@ function LayoutHeader() {
       <SidebarTrigger />
       <div className="text-xs text-muted-foreground truncate">{brand.app_name ?? "SEO Audit Tool"}</div>
       <div className="ml-auto flex items-center gap-1">
+        <ThemeToggle />
         <NotificationsBell />
       </div>
     </header>
