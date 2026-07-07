@@ -76,10 +76,12 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
     const lines = wrap(t, f, size, W - M * 2);
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
     for (const line of lines) {
-      ensure(size + 4);
-      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
-      y -= size + 3;
+      ensure(lh);
+      page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= lh;
     }
   };
   const spacer = (n = 6) => { y -= n; };
@@ -103,7 +105,7 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     const w = bold.widthOfTextAtSize(label, size) + padX * 2;
     const h = size + padY * 2;
     page.drawRectangle({ x, y: yTop - h, width: w, height: h, color: rgb(bg[0], bg[1], bg[2]) });
-    page.drawText(label, { x: x + padX, y: yTop - h + padY + 1, size, font: bold, color: rgb(color[0], color[1], color[2]) });
+    page.drawText(label, { x: x + padX, y: centerBaselineY(yTop, h, bold, size), size, font: bold, color: rgb(color[0], color[1], color[2]) });
     return w;
   };
   // Section header with a colored left bar.
@@ -115,10 +117,12 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     page.drawRectangle({ x: M, y: y - barH, width: W - M * 2, height: barH, color: rgb(0.97, 0.97, 0.99) });
     // Colored accent bar on the left
     page.drawRectangle({ x: M, y: y - barH, width: 4, height: barH, color: rgb(col[0], col[1], col[2]) });
-    page.drawText(sanitize(title), { x: M + 14, y: y - 18, size: 13, font: bold, color: rgb(0.1, 0.1, 0.1) });
+    const titleSize = 13;
+    page.drawText(sanitize(title), { x: M + 14, y: centerBaselineY(y, barH, bold, titleSize), size: titleSize, font: bold, color: rgb(0.1, 0.1, 0.1) });
     const scoreStr = `${score}/100`;
-    const sw = bold.widthOfTextAtSize(scoreStr, 12);
-    page.drawText(scoreStr, { x: W - M - sw - 8, y: y - 18, size: 12, font: bold, color: rgb(col[0], col[1], col[2]) });
+    const scoreSize = 12;
+    const sw = bold.widthOfTextAtSize(scoreStr, scoreSize);
+    page.drawText(scoreStr, { x: W - M - sw - 8, y: centerBaselineY(y, barH, bold, scoreSize), size: scoreSize, font: bold, color: rgb(col[0], col[1], col[2]) });
     y -= barH + 8;
   };
   // Anchors so Priority Issues can link into Detailed Findings.
