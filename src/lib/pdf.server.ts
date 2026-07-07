@@ -423,11 +423,13 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
       ensure(40);
       const startPage = page;
       const startY = y + 4;
+      // Card background
+      const cardTopY = y + 6;
       // Number + title row
       const numStr = `${i + 1}.`;
       const numW = bold.widthOfTextAtSize(numStr, 11);
-      page.drawText(numStr, { x: M, y: y - 11, size: 11, font: bold, color: rgb(0.3, 0.3, 0.3) });
-      const titleX = M + numW + 6;
+      page.drawText(numStr, { x: M + 10, y: y - 11, size: 11, font: bold, color: rgb(0.3, 0.3, 0.3) });
+      const titleX = M + 10 + numW + 6;
       const badgeW = drawBadge(titleX, y, meta.label, meta.color, meta.bg);
       const secX = titleX + badgeW + 6;
       page.drawText(sanitize(p.section), { x: secX, y: y - 11, size: 9, font, color: rgb(0.5, 0.5, 0.5) });
@@ -478,13 +480,24 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
       }
       // Register whole item as clickable → Detailed Findings row.
       if (startPage === page) {
+        // Draw the card frame around the whole item now that height is known.
+        const cardH = cardTopY - (y + 4);
+        startPage.drawRectangle({
+          x: M, y: y + 4, width: W - M * 2, height: cardH,
+          borderColor: rgb(0.9, 0.9, 0.93), borderWidth: 0.5,
+        });
+        // Left status accent bar
+        startPage.drawRectangle({
+          x: M, y: y + 4, width: 3, height: cardH,
+          color: rgb(meta.color[0], meta.color[1], meta.color[2]),
+        });
         pendingCrossLinks.push({
           page: startPage,
           rect: [M, y + 4, W - M, startY],
           check: p.check,
         });
       }
-      spacer(8);
+      spacer(12);
     });
   }
 
