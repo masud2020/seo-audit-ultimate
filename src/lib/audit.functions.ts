@@ -15,6 +15,36 @@ export const startAudit = createServerFn({ method: "POST" })
     try {
       const { runAudit } = await import("./audit-engine.server");
       const report = await runAudit(data.url);
+
+      // ---------- External SEO signals (Phase 1) ----------
+      // Each returns a Section (or null). Failures are isolated so a bad signal
+      // never fails the audit — worst case it just doesn't appear in the report.
+      try {
+        const { psiSection, redirectChainSection, gscSection, semrushSection, aiVisibilitySection } = await import("./audit-signals.server");
+        // Look up user's Semrush key + verified GSC sites in parallel with the signal calls.
+        const [semrushKeyRow, gscRow] = await Promise.all([
+          supabase.from("api_settings").select("semrush_key").eq("user_id", userId).maybeSingle(),
+          supabase.from("gsc_verifications").select("site_url,verified").eq("user_id", userId).eq("verified", true),
+        ]);
+        const semrushKey = (semrushKeyRow.data as { semrush_key?: string } | null)?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+        const verifiedSites = (gscRow.data ?? []).map((s) => s.site_url as string);
+
+        const [psi, redir, gsc, sr, ai] = await Promise.allSettled([
+          psiSection(report.final_url),
+          redirectChainSection(data.url),
+          gscSection({ url: report.final_url, verifiedSites }),
+          semrushSection({ url: report.final_url, apiKey: semrushKey }),
+          aiVisibilitySection(report.final_url),
+        ]);
+        for (const r of [psi, redir, gsc, sr, ai]) {
+          if (r.status === "fulfilled" && r.value) report.sections.push(r.value);
+        }
+        // Recompute overall score to include the new sections.
+        report.overall_score = Math.round(report.sections.reduce((a, s) => a + s.score, 0) / report.sections.length);
+      } catch (e) {
+        console.error("External signals failed", e);
+      }
+
       let aiRecommendations: unknown = [];
       try {
         const { generateRecommendations } = await import("./ai-recommendations.server");

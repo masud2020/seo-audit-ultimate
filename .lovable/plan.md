@@ -1,106 +1,64 @@
-## Goal
 
-Make every audit and tool report comprehensive:
-- Deeper checks per report
-- AI-generated fix recommendations per section
-- Executive summary with category scores + priority-ranked issue list
-- Export as PDF, CSV, and shareable link
+# Make the audit the most comprehensive SEO report
 
-## Reports in scope
+You picked "all of the above (phased)" with depth 5 and the four external signals. Here's how I'll roll it out so you get value on day 1 and it snowballs from there.
 
-1. **Single-URL SEO audit** — `/audit/:id` (`audit-engine.server.ts`)
-2. **Whole-site audit** — `/site-audit/:id` (`crawler.server.ts`)
-3. **Tool reports** — backlink checker, website speed, responsive, HTML validator, schema validator (`site-tools.server.ts`)
+## What each phase ships
 
-## 1. Deeper checks
+### Phase 1 — Deepen the single-page Audit engine (biggest impact per hour)
 
-**Single-URL audit** — add sections:
-- Core Web Vitals proxies: TTFB, transferred bytes, DOM size, render-blocking resources, image count/size
-- Accessibility basics: lang attr, image alt coverage %, color-contrast heuristic on inline styles, form labels
-- Security headers: HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy
-- Open Graph completeness: og:image dimensions/format check, twitter:card, twitter:image
-- International SEO: hreflang tags, canonical vs. self, language declaration
-- Structured data: parse ALL JSON-LD blocks, list types found, validate required fields for Article/Product/Organization/BreadcrumbList/FAQ/HowTo
-- Content quality: word count, keyword density top-10, reading level (Flesch), duplicate H1, empty headings
+New checks added to every URL audit, grouped so the PDF stays scannable:
 
-**Whole-site audit** — add:
-- Orphan page detection (pages with 0 internal inbound links)
-- Duplicate title/description across pages
-- Broken internal links summary
-- Redirect chain depth per URL
-- Depth-from-root metric
-- Sitemap vs. crawled diff (in sitemap but not crawled / crawled but not in sitemap)
-- Robots.txt disallow coverage
+- **On-page fundamentals** – title/description length + uniqueness, canonical loops, hreflang, favicon, viewport, charset, language declaration, duplicate H1, heading order gaps, keyword density vs. target keyword, thin-content flag, reading level.
+- **Schema & rich results** – detect all JSON-LD/Microdata/RDFa, validate types, flag missing recommended fields, warn on schema without on-page content match.
+- **Social & sharing** – full OG + Twitter card check, image dimensions, preview render.
+- **Security & trust** – HTTPS chain, HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy, mixed content, cookie flags.
+- **Crawl signals** – robots.txt fetch + parse, sitemap discovery, `X-Robots-Tag`, redirect chain length, 4xx/5xx internal links, orphan-image detection.
+- **Mobile & UX** – viewport meta, tap-target size, font-size floor, horizontal-overflow.
+- **Media** – images without alt, oversized images, missing modern formats (webp/avif), lazy-load coverage.
+- **Speed (real numbers)** – Core Web Vitals from Google's CrUX API (field data if the URL has traffic) + one Lighthouse-style synthetic run via **PageSpeed Insights**. LCP / INP / CLS / TTFB shown side-by-side.
 
-**Tool reports** — add:
-- Backlink checker: authority score, follow/nofollow ratio, top anchor texts, referring TLDs, lost/new deltas when Semrush is connected
-- Website speed: TTFB, total bytes, request count estimate, gzip/br compression check, cache-control headers, image weight breakdown
-- Responsive check: capture screenshots at 375/768/1024/1440 via headless render (or use viewport-based CSS heuristics if headless not available on Workers — fall back to DOM/viewport-meta analysis)
-- HTML validator: nvvhtml-style rule set — orphan tags, deprecated elements, duplicate IDs, missing required attrs, malformed nesting
-- Schema validator: pass/fail per JSON-LD block against schema.org required fields, Google rich-result eligibility (Article, Product, Recipe, FAQ, Event, LocalBusiness, VideoObject)
+External signals wired in when connected:
 
-## 2. AI recommendations per section
+- **Semrush** (per URL): organic keywords the URL already ranks for, position + volume, top-10 SERP competitors for its target term, backlink count.
+- **Google Search Console** (per URL): real impressions/clicks/CTR/position for last 28 days + URL Inspection (indexing state, mobile-usable, rich-results, last crawl).
+- **AI visibility**: reuse your existing citation checker; runs 5 canned prompts against Perplexity/Gemini/OpenAI and reports whether the URL/domain is cited.
 
-- New server fn `generateSectionRecommendations(sectionSlug, findings)` in `src/lib/ai-recs.functions.ts`
-- Calls Lovable AI Gateway (google/gemini-2.5-flash) with structured output: `{ summary, top_fixes: [{title, steps[], impact, effort}] }`
-- Cached per (report_id, section_slug) in a new `report_recommendations` table
-- Rendered in each report section under a collapsible "AI recommendations" panel
-- User clicks "Generate recommendations" per section (not automatic) to keep AI cost predictable
+All of this goes into the existing report shape so the report page, share links, CSV, and PDF pick it up automatically.
 
-## 3. Executive summary + scores
+### Phase 2 — Roll Phase 1 into the Whole-Site Audit
 
-Every report gains a top-of-page summary card:
-- **Overall score** 0–100
-- **Category scores**: Technical, On-page, Content, Performance, Accessibility, Security, Schema
-- **Priority issues**: top 10 sorted by (severity × impact)
-- **Health delta** vs previous run of the same URL (when history exists)
+- New checks run on every crawled page (with a budget: heavy ones like PSI + AI throttled to a sample so a 500-page crawl doesn't take an hour).
+- Site-level aggregates: worst-CWV pages, thinnest pages, biggest schema gaps, redirect-chain map, orphan pages, duplicate title/description clusters.
+- Domain-level Semrush pull (top pages, keyword count, authority score) and GSC site-wide performance included in the site summary + PDF.
+- PDF grows a "Site-wide external signals" section between the scorecard and page-by-page.
 
-Scoring lives in `src/lib/scoring.ts` — pure fn taking the report shape and returning `{ overall, categories, priorityIssues[] }`. Rendered by a new `<ExecutiveSummary>` component reused across all three report types.
+### Phase 3 — New "Mega Audit" (one-click, everything)
 
-## 4. Export
+- New route `/mega-audit` — enter a URL, pick a competitor (optional), pick a target keyword (optional).
+- Runs, in parallel: single-page audit, site crawl (limit configurable), broken-link check, backlink pull, Semrush domain snapshot + top pages + SERP analysis for the target keyword, GSC pull, AI citation check, PSI/CWV on the top 10 pages.
+- Unified dashboard: one health score, weighted rollup, side-by-side vs. competitor, prioritized action plan.
+- Single "Mega Audit PDF" that stitches every section together with the TOC + page links you already have.
 
-- **CSV**: client-side flatten via `papaparse` — one row per check/issue with columns `section, check, status, severity, message, recommendation`
-- **PDF**: server-generated on demand. New route `/api/reports/:id/pdf` builds an HTML shell (executive summary + all sections + AI recs) and returns it — client uses browser print or `print-js` to save as PDF. (No Puppeteer — not supported on Workers.)
-- **Shareable link**: new `report_shares` table with `id, report_id, report_type, expires_at, created_by`. Public route `/shared/report/:token` renders a read-only view (no user data, no destructive actions). RLS: rows insertable by owner; `/shared/:token` fetch goes through a server fn using `supabaseAdmin` after verifying the token exists and hasn't expired.
+## What you need to set up
 
-## Data model changes
+- **Semrush** – not yet linked. When Phase 1 lands I'll trigger the connect modal; once connected the checks light up automatically. Free/trial Semrush plans have low API quotas, so I'll add graceful "quota exhausted" fallbacks.
+- **Google Search Console** – already connected via `GOOGLE_SEARCH_CONSOLE_API_KEY`. No action needed. The audited URL/domain must be a verified property in your GSC — if not, I'll show a "verify site" CTA using the meta-tag flow you already have.
+- **PageSpeed Insights** – Google offers a free API key with a generous quota. I'll request it via `add_secret` when Phase 1 ships. Without a key the audit falls back to the anonymous 25-req/day tier (enough for demos, not production).
+- **AI visibility** – uses your existing `LOVABLE_API_KEY`, nothing new.
 
-New tables (with GRANTs + RLS):
-- `report_recommendations` — `id, report_id, report_type, section_slug, summary, fixes jsonb, created_at`
-- `report_shares` — `id, token (unique), report_id, report_type, expires_at, created_by, created_at`
+## Technical shape (for the record)
 
-Existing report tables (`site_audits`, `site_crawls`, `tool_runs`) already store full JSON payloads — extended checks slot into the existing `report`/`data` jsonb column with additive keys, no schema migration needed for the checks themselves.
+- Extra check modules live next to `audit-engine.server.ts` (`audit-checks/*.server.ts`) so each check is one small function returning `{ id, status, detail, value }` — same shape you already use. No breaking changes to callers.
+- External signals fetched in parallel with `Promise.allSettled` and cached per-URL for 15 min in a new `audit_signal_cache` table so re-runs are cheap.
+- CWV/PSI, Semrush URL data, GSC data, AI check all become optional sections that render only if data is available — no empty panels for users who aren't connected.
+- PDF: extend `buildAuditPdf` (Phase 1) and `buildSiteAuditPdf` (Phase 2) with new sections; TOC + link annotations already handle new pages.
+- Mega Audit (Phase 3): new table `mega_audits`, background orchestrator, live progress panel reusing the pattern from AI recommendations.
 
-## Files to add/edit
+## Delivery order
 
-Add:
-- `src/lib/scoring.ts` — scoring engine
-- `src/lib/ai-recs.functions.ts` + `.server.ts` — AI recommendations
-- `src/lib/report-export.ts` — CSV builder
-- `src/lib/report-share.functions.ts` — share tokens
-- `src/routes/api/reports.$id.pdf.ts` — printable HTML endpoint
-- `src/routes/shared/report.$token.tsx` — public share view
-- `src/components/reports/ExecutiveSummary.tsx`
-- `src/components/reports/AiRecommendations.tsx`
-- `src/components/reports/ExportMenu.tsx`
-- migration: `report_recommendations`, `report_shares` + RLS + GRANTs
+1. **Phase 1 now** – ship all new checks + PSI/CWV + GSC + AI visibility in the single-URL audit, plus Semrush hooks that turn on the moment you connect. Updates the report page, CSV, and PDF.
+2. **Phase 2 next** – propagate to Whole-Site Audit + PDF, add site-level aggregates and domain-wide Semrush/GSC pulls.
+3. **Phase 3 last** – Mega Audit route, orchestrator, unified dashboard, one-shot mega PDF.
 
-Edit:
-- `src/lib/audit-engine.server.ts` — add security/accessibility/i18n/CWV/schema sections
-- `src/lib/crawler.server.ts` — add orphans, duplicates, depth, sitemap diff
-- `src/lib/site-tools.server.ts` — deepen every tool
-- `src/routes/_authenticated/audit.$id.tsx`, `site-audit.$id.tsx`, and the 5 tool routes — mount ExecutiveSummary + AiRecommendations + ExportMenu
-
-## Rollout order (single implementation pass)
-
-1. Migration (tables + RLS + GRANTs)
-2. `scoring.ts` + `ExecutiveSummary` + `ExportMenu` (CSV) — wire into all 7 report pages
-3. Deeper checks in audit-engine, crawler, and each tool
-4. AI recs fn + component, wire per section
-5. PDF endpoint + share tokens + public shared route
-
-## Out of scope
-
-- Real Lighthouse / headless-Chrome CWV (Workers can't run Chromium)
-- Historical trend charts beyond the previous-run delta
-- Semrush-dependent extras when the user hasn't connected Semrush (graceful fallback with a "connect Semrush" hint)
+Approve and I'll start Phase 1. If you want me to shrink or reorder any phase (e.g. skip AI visibility, or put Whole-Site before more single-page checks), tell me now.
