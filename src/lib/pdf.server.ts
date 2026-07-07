@@ -318,6 +318,34 @@ export async function buildSiteAuditPdf(
 
   // ============ AI RECOMMENDATIONS ============
   if (recs.length) {
+    // (external signals handled below)
+  }
+
+  // ============ SITE-WIDE EXTERNAL SIGNALS ============
+  if (s.site_signals && s.site_signals.length) {
+    newPage();
+    mark("Site-wide External Signals");
+    text("Site-wide External Signals", { size: 18, bold: true });
+    spacer(2);
+    text("Live data pulled from PageSpeed Insights, Google Search Console, Semrush and leading AI models for your homepage/domain.", { size: 10, color: [0.35, 0.35, 0.35] });
+    spacer(8);
+    for (const sig of s.site_signals) {
+      ensure(40);
+      text(`${sig.title}   (${sig.score}/100)`, { size: 13, bold: true, color: scoreColor(sig.score) });
+      spacer(2);
+      for (const c of sig.checks) {
+        const tag = c.status === "pass" ? "[PASS]" : c.status === "warn" ? "[WARN]" : c.status === "fail" ? "[FAIL]" : "[INFO]";
+        const col: [number, number, number] = c.status === "pass" ? [0.2, 0.6, 0.3] : c.status === "warn" ? [0.85, 0.6, 0.1] : c.status === "fail" ? [0.8, 0.2, 0.2] : [0.4, 0.4, 0.4];
+        text(`${tag} ${c.label}${c.value != null && c.value !== "" ? ` — ${String(c.value).slice(0, 120)}` : ""}`, { size: 10, bold: true, color: col });
+        if (c.detail) text(c.detail, { size: 9, color: [0.35, 0.35, 0.35] });
+        spacer(2);
+      }
+      spacer(6);
+      rule();
+    }
+  }
+
+  if (recs.length) {
     newPage();
     mark("Recommendations & Step-by-Step Fixes");
     text("Recommendations & Step-by-Step Fixes", { size: 18, bold: true });
