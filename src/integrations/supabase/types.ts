@@ -572,6 +572,57 @@ export type Database = {
         }
         Relationships: []
       }
+      mega_audits: {
+        Row: {
+          competitor_url: string | null
+          created_at: string
+          error: string | null
+          id: string
+          max_pages: number
+          overall_score: number | null
+          progress: number
+          results: Json | null
+          status: string
+          status_message: string | null
+          target_keyword: string | null
+          target_url: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          competitor_url?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          max_pages?: number
+          overall_score?: number | null
+          progress?: number
+          results?: Json | null
+          status?: string
+          status_message?: string | null
+          target_keyword?: string | null
+          target_url: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          competitor_url?: string | null
+          created_at?: string
+          error?: string | null
+          id?: string
+          max_pages?: number
+          overall_score?: number | null
+          progress?: number
+          results?: Json | null
+          status?: string
+          status_message?: string | null
+          target_keyword?: string | null
+          target_url?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       monitored_backlinks: {
         Row: {
           anchor: string | null
