@@ -100,15 +100,24 @@ export const claimAdminBootstrap = createServerFn({ method: "POST" })
 
 export const listAllUsers = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<{ users: AdminUserRow[] }> => {
+  .handler(async ({ context }): Promise<{ users: AdminUserRow[]; degraded?: string }> => {
     await assertAdmin(context);
     const supabaseAdmin = await getAdminClient();
     const users: AdminUserRow[] = [];
+    let degraded: string | undefined;
     let page = 1;
     // paginate up to 10 pages (1000 users) — sufficient for admin panels
     while (page <= 10) {
       const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 100 });
-      if (error) throw new Error(error.message);
+      if (error) {
+        // Auth Admin API can return "User not allowed" when the deployed
+        // service key can't hit auth.admin (e.g. opaque sb_secret_* key
+        // without admin privilege). Degrade to a profiles-based listing so
+        // the admin page still renders instead of crashing.
+        console.warn("[listAllUsers] auth.admin.listUsers failed, falling back to profiles:", error.message);
+        degraded = `Auth admin unavailable (${error.message}). Showing profiles only.`;
+        break;
+      }
       const batch = data?.users ?? [];
       if (!batch.length) break;
       for (const u of batch) {
@@ -125,6 +134,26 @@ export const listAllUsers = createServerFn({ method: "GET" })
       if (batch.length < 100) break;
       page++;
     }
+
+    if (degraded) {
+      const { data: profs } = await supabaseAdmin
+        .from("profiles")
+        .select("user_id,display_name,updated_at")
+        .order("updated_at", { ascending: false })
+        .limit(1000);
+      for (const p of (profs ?? []) as Array<{ user_id: string; display_name: string | null; updated_at: string }>) {
+        users.push({
+          id: p.user_id,
+          email: p.display_name,
+          created_at: p.updated_at,
+          last_sign_in_at: null,
+          email_confirmed_at: null,
+          banned_until: null,
+          is_admin: false,
+        });
+      }
+    }
+
     // attach admin flag
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
@@ -133,7 +162,7 @@ export const listAllUsers = createServerFn({ method: "GET" })
     const adminSet = new Set((roles ?? []).map((r: any) => r.user_id));
     for (const u of users) u.is_admin = adminSet.has(u.id);
     users.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-    return { users };
+    return { users, degraded };
   });
 
 const setRoleInput = z.object({ userId: z.string().uuid(), makeAdmin: z.boolean() });
