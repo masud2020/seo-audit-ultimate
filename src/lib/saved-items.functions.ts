@@ -56,7 +56,7 @@ export const updateSavedItem = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { id: string; table: Table; name?: string; url?: string; notes?: string | null }) => UpdateSchema.parse(d))
   .handler(async ({ data, context }) => {
-    const patch: Record<string, unknown> = {};
+    const patch: { name?: string; url?: string; notes?: string | null } = {};
     if (data.name !== undefined) patch.name = data.name;
     if (data.url !== undefined) patch.url = data.url;
     if (data.notes !== undefined) patch.notes = data.notes;
