@@ -26,6 +26,8 @@ type Summary = {
 };
 type Page = { url: string; status: number; overall_score: number | null; duration_ms: number; section_scores: Record<string, number>; top_issues: { id: string; label: string; status: string; detail?: string }[]; error?: string };
 type Issue = { url: string; severity: "high" | "medium" | "low"; message: string; source: "crawl" | "audit" };
+type SignalCheck = { id: string; label: string; status: "pass" | "warn" | "fail" | "info"; detail?: string; value?: string | number | null };
+type SignalSection = { id: string; title: string; score: number; checks: SignalCheck[] };
 
 function scoreCls(s: number | null | undefined) {
   if (s == null) return "text-muted-foreground";
@@ -66,6 +68,7 @@ function Detail() {
   const summary = data.summary as unknown as Summary;
   const pages = (data.pages as unknown as Page[]) ?? [];
   const issues = (data.issues as unknown as Issue[]) ?? [];
+  const siteSignals = ((data.summary as unknown as { site_signals?: SignalSection[] })?.site_signals) ?? [];
   const normalized = normalizeSiteAudit(data as unknown as Record<string, unknown>);
 
   return (
@@ -97,6 +100,43 @@ function Detail() {
       </div>
 
       <AiRecommendationsPanel report={normalized} />
+
+      {siteSignals.length > 0 && (
+        <div className="space-y-3">
+          <div>
+            <h2 className="text-lg font-semibold">Site-wide external signals</h2>
+            <p className="text-xs text-muted-foreground">Live data from PageSpeed Insights, Google Search Console, Semrush and leading AI models.</p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            {siteSignals.map((sig) => (
+              <Card key={sig.id} className="p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">{sig.title}</div>
+                  <div className={`text-sm font-semibold ${scoreCls(sig.score)}`}>{sig.score}</div>
+                </div>
+                <ul className="space-y-1 text-xs">
+                  {sig.checks.map((c) => (
+                    <li key={c.id} className="flex gap-2">
+                      <span className={
+                        c.status === "pass" ? "text-emerald-400" :
+                        c.status === "warn" ? "text-amber-400" :
+                        c.status === "fail" ? "text-rose-400" : "text-muted-foreground"
+                      }>●</span>
+                      <div className="flex-1">
+                        <div className="font-medium">
+                          {c.label}
+                          {c.value != null && c.value !== "" && <span className="text-muted-foreground"> — {String(c.value)}</span>}
+                        </div>
+                        {c.detail && <div className="text-muted-foreground">{c.detail}</div>}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="sections">
         <TabsList>
