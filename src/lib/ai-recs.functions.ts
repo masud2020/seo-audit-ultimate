@@ -134,6 +134,7 @@ const bulkInputSchema = z.object({
   report_id: z.string().uuid(),
   report_type: z.enum(REPORT_TYPES),
   sections: z.array(bulkSectionSchema).min(1).max(40),
+  force: z.boolean().optional(),
 });
 
 export const generateAllRecommendations = createServerFn({ method: "POST" })
@@ -154,6 +155,7 @@ export const generateAllRecommendations = createServerFn({ method: "POST" })
         .filter((r) => Array.isArray(r.fixes) && r.fixes.length > 0)
         .map((r) => r.section_slug),
     );
+    const force = data.force === true;
 
     const { callAi, extractJson } = await import("./ai.server");
     const model = "google/gemini-2.5-flash";
@@ -163,7 +165,7 @@ export const generateAllRecommendations = createServerFn({ method: "POST" })
     const errors: string[] = [];
 
     for (const section of data.sections) {
-      if (cached.has(section.slug)) { skipped++; continue; }
+      if (!force && cached.has(section.slug)) { skipped++; continue; }
 
       const failing = section.findings.filter((f) => f.status === "fail" || f.status === "warn");
       if (!failing.length) {
