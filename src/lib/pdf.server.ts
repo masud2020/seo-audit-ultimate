@@ -1,4 +1,4 @@
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, PDFName, PDFString, StandardFonts, rgb, type PDFFont, type PDFPage, type PDFRef } from "pdf-lib";
 
 interface Check { id: string; label: string; status: "pass"|"warn"|"fail"|"info"; detail?: string; value?: string | number | null; }
 interface Section { id: string; title: string; score: number; checks: Check[]; }
@@ -141,6 +141,53 @@ export async function buildSiteAuditPdf(
   const spacer = (n = 6) => { y -= n; };
   const rule = () => { ensure(6); page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) }); y -= 8; };
 
+  // ---------- TOC + link annotation helpers ----------
+  type TocEntry = { title: string; page: PDFPage; targetY: number };
+  const toc: TocEntry[] = [];
+  const mark = (title: string) => { toc.push({ title, page, targetY: y + 8 }); };
+
+  const attachAnnot = (p: PDFPage, annotRef: PDFRef) => {
+    const existing = p.node.lookup(PDFName.of("Annots"));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (existing && typeof (existing as any).push === "function") (existing as any).push(annotRef);
+    else p.node.set(PDFName.of("Annots"), doc.context.obj([annotRef]));
+  };
+  const addUriLink = (p: PDFPage, rect: [number, number, number, number], url: string) => {
+    const annot = doc.context.obj({
+      Type: "Annot", Subtype: "Link", Rect: rect, Border: [0, 0, 0],
+      A: { Type: "Action", S: "URI", URI: PDFString.of(sanitize(url)) },
+    });
+    attachAnnot(p, doc.context.register(annot));
+  };
+  const addInternalLink = (p: PDFPage, rect: [number, number, number, number], targetPageRef: PDFRef, targetY: number) => {
+    const annot = doc.context.obj({
+      Type: "Annot", Subtype: "Link", Rect: rect, Border: [0, 0, 0],
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      Dest: [targetPageRef, PDFName.of("XYZ"), null, targetY, null] as any,
+    });
+    attachAnnot(p, doc.context.register(annot));
+  };
+
+  // Draws a URL as a single line (truncated if needed) and attaches a URI link annotation.
+  const linkedUrl = (url: string, size: number, opts: { bold?: boolean; indent?: number; color?: [number, number, number] } = {}) => {
+    const f = opts.bold ? bold : font;
+    const color: [number, number, number] = opts.color ?? [0.15, 0.35, 0.75];
+    const x = M + (opts.indent ?? 0);
+    const maxW = W - M - x;
+    let display = sanitize(url);
+    // Truncate with ellipsis if too wide for one line.
+    if (f.widthOfTextAtSize(display, size) > maxW) {
+      while (display.length > 1 && f.widthOfTextAtSize(display + "…", size) > maxW) display = display.slice(0, -1);
+      display = display + "…";
+    }
+    ensure(size + 4);
+    const lineY = y - size;
+    page.drawText(display, { x, y: lineY, size, font: f, color: rgb(color[0], color[1], color[2]) });
+    const w = Math.min(f.widthOfTextAtSize(display, size), maxW);
+    addUriLink(page, [x, lineY - 1, x + w, lineY + size], url);
+    y -= size + 3;
+  };
+
   const s = data.summary;
   const grade = (n: number) => n >= 90 ? "Excellent" : n >= 80 ? "Good" : n >= 60 ? "Needs work" : n >= 40 ? "Poor" : "Critical";
   const gradeExplain = (n: number) =>
@@ -175,6 +222,7 @@ export async function buildSiteAuditPdf(
     : "Nice to fix - small polish that adds up over time.";
 
   // ============ COVER PAGE ============
+  mark("Cover & Summary");
   text("Whole-Site SEO Audit Report", { size: 24, bold: true });
   spacer(6);
   text(data.start_url, { size: 12, color: [0.35, 0.35, 0.35] });
@@ -218,6 +266,7 @@ export async function buildSiteAuditPdf(
 
   // ============ PRIORITY ACTION PLAN ============
   newPage();
+  mark("Priority Action Plan");
   text("Priority Action Plan", { size: 18, bold: true });
   spacer(2);
   text("The most impactful fixes, ranked. Start at the top.", { size: 10, color: [0.35, 0.35, 0.35] });
@@ -243,6 +292,7 @@ export async function buildSiteAuditPdf(
 
   // ============ SECTION SCORECARD ============
   ensure(60);
+  mark("Section Scorecard");
   text("Section Scorecard", { size: 18, bold: true });
   spacer(2);
   text("How each area of your site performs. Each section is scored 0-100.", { size: 10, color: [0.35, 0.35, 0.35] });
@@ -268,6 +318,7 @@ export async function buildSiteAuditPdf(
   // ============ AI RECOMMENDATIONS ============
   if (recs.length) {
     newPage();
+    mark("Recommendations & Step-by-Step Fixes");
     text("Recommendations & Step-by-Step Fixes", { size: 18, bold: true });
     spacer(2);
     text("Concrete actions, generated for your site, grouped by section.", { size: 10, color: [0.35, 0.35, 0.35] });
@@ -294,6 +345,7 @@ export async function buildSiteAuditPdf(
 
   // ============ PAGE-BY-PAGE ============
   newPage();
+  mark("Page-by-Page Results");
   text(`Page-by-Page Results (${data.pages.length})`, { size: 18, bold: true });
   spacer(2);
   text("Every page we audited, sorted by score. Lowest-scoring pages appear first so you know where to focus.", { size: 10, color: [0.35, 0.35, 0.35] });
@@ -305,7 +357,7 @@ export async function buildSiteAuditPdf(
     const sc = p.overall_score;
     const sTxt = sc == null ? "—" : `${sc}/100 (${grade(sc)})`;
     const col: [number, number, number] = sc == null ? [0.5, 0.5, 0.5] : scoreColor(sc);
-    text(p.url, { size: 10, bold: true });
+    linkedUrl(p.url, 10, { bold: true });
     text(`Score: ${sTxt}  ·  HTTP ${p.status || "error"}  ·  Loaded in ${p.duration_ms}ms`, { size: 9, color: col });
     if (p.error) text(`Error: ${p.error}`, { size: 9, color: sevColor("high") });
     const issuesForPage = (p.top_issues ?? []).filter(x => x.status === "fail" || x.status === "warn").slice(0, 5);
@@ -322,6 +374,7 @@ export async function buildSiteAuditPdf(
 
   // ============ ALL ISSUES ============
   newPage();
+  mark("Complete Issue Log");
   text(`Complete Issue Log (${data.issues.length})`, { size: 18, bold: true });
   spacer(2);
   text("Every individual issue found, grouped by severity so you can work through them in order.", { size: 10, color: [0.35, 0.35, 0.35] });
@@ -339,7 +392,7 @@ export async function buildSiteAuditPdf(
     for (const it of list.slice(0, 300)) {
       ensure(24);
       text(`- ${it.message}`, { size: 9, bold: true });
-      text(`   ${it.url}`, { size: 9, color: [0.35, 0.35, 0.35] });
+      linkedUrl(it.url, 9, { indent: 12 });
     }
     if (list.length > 300) text(`   (+${list.length - 300} more not shown)`, { size: 9, color: [0.5, 0.5, 0.5] });
     spacer(8);
@@ -348,6 +401,7 @@ export async function buildSiteAuditPdf(
 
   // ============ GLOSSARY ============
   newPage();
+  mark("Glossary");
   text("Glossary - SEO terms in plain English", { size: 18, bold: true });
   spacer(8);
   const glossary: [string, string][] = [
@@ -381,6 +435,62 @@ export async function buildSiteAuditPdf(
   rule();
   text("End of report", { size: 9, color: [0.5, 0.5, 0.5] });
   text(`Generated by SEO Audit Tool for ${data.start_url}`, { size: 9, color: [0.5, 0.5, 0.5] });
+
+  // ============ TABLE OF CONTENTS ============
+  // Build TOC pages AFTER content so we know each section's real destination page.
+  // Insert them right after the cover page (index 1..).
+  const tocPages: PDFPage[] = [];
+  const makeTocPage = () => {
+    const insertAt = 1 + tocPages.length;
+    const tp = doc.insertPage(insertAt, [W, H]);
+    tocPages.push(tp);
+    return tp;
+  };
+  let tp = makeTocPage();
+  let ty = H - M;
+  const drawTocText = (t: string, size: number, isBold: boolean, x = M, color: [number, number, number] = [0.1, 0.1, 0.1]) => {
+    const f = isBold ? bold : font;
+    tp.drawText(sanitize(t), { x, y: ty - size, size, font: f, color: rgb(color[0], color[1], color[2]) });
+  };
+  drawTocText("Contents", 22, true);
+  ty -= 22 + 10;
+  tp.drawLine({ start: { x: M, y: ty }, end: { x: W - M, y: ty }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) });
+  ty -= 14;
+  drawTocText("Click any entry to jump to that section.", 9, false, M, [0.5, 0.5, 0.5]);
+  ty -= 20;
+
+  // Resolve each section's live page number now that TOC pages have been inserted.
+  const allPages = doc.getPages();
+  for (const entry of toc) {
+    if (ty - 22 < M) {
+      // Overflow to another TOC page.
+      tp = makeTocPage();
+      ty = H - M;
+      drawTocText("Contents (continued)", 16, true);
+      ty -= 26;
+    }
+    const pageNum = allPages.indexOf(entry.page) + 1;
+    const entrySize = 12;
+    const rowY = ty - entrySize;
+    // Title
+    tp.drawText(sanitize(entry.title), { x: M, y: rowY, size: entrySize, font: bold, color: rgb(0.15, 0.35, 0.75) });
+    // Page number, right-aligned
+    const pageStr = String(pageNum);
+    const pageW = font.widthOfTextAtSize(pageStr, entrySize);
+    tp.drawText(pageStr, { x: W - M - pageW, y: rowY, size: entrySize, font, color: rgb(0.3, 0.3, 0.3) });
+    // Dotted leader
+    const titleW = bold.widthOfTextAtSize(sanitize(entry.title), entrySize);
+    const dotsStartX = M + titleW + 6;
+    const dotsEndX = W - M - pageW - 6;
+    if (dotsEndX > dotsStartX) {
+      const dotW = font.widthOfTextAtSize(".", entrySize);
+      const dotCount = Math.floor((dotsEndX - dotsStartX) / (dotW + 1));
+      tp.drawText(".".repeat(Math.max(0, dotCount)), { x: dotsStartX, y: rowY, size: entrySize, font, color: rgb(0.7, 0.7, 0.7) });
+    }
+    // Full-row clickable link
+    addInternalLink(tp, [M, rowY - 2, W - M, rowY + entrySize + 2], entry.page.ref, entry.targetY);
+    ty -= entrySize + 12;
+  }
 
   return await doc.save();
 }
