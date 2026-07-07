@@ -47,51 +47,225 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
   const spacer = (n = 6) => { y -= n; };
   const rule = () => { ensure(6); page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) }); y -= 8; };
 
-  // Header
-  text("SEO Audit Report", { size: 22, bold: true });
-  spacer(4);
-  text(report.url, { size: 11, color: [0.35, 0.35, 0.35] });
-  text(`Audited ${new Date(report.fetched_at).toLocaleString()}  ·  HTTP ${report.meta.status_code}  ·  ${report.meta.duration_ms}ms  ·  ${(report.meta.bytes/1024).toFixed(1)} KB`, { size: 9, color: [0.4, 0.4, 0.4] });
-  spacer(10);
-
-  // Overall score
-  const scoreColor: [number, number, number] = report.overall_score >= 80 ? [0.2, 0.6, 0.3] : report.overall_score >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
-  text(`Overall Score: ${report.overall_score}/100`, { size: 16, bold: true, color: scoreColor });
-  spacer(6);
-  rule();
-
-  // Sections
-  for (const s of report.sections) {
-    ensure(40);
-    text(`${s.title}   (${s.score}/100)`, { size: 13, bold: true });
-    spacer(2);
-    for (const c of s.checks) {
-      const tag = c.status === "pass" ? "[PASS]" : c.status === "warn" ? "[WARN]" : c.status === "fail" ? "[FAIL]" : "[INFO]";
-      const color: [number, number, number] = c.status === "pass" ? [0.2, 0.6, 0.3] : c.status === "warn" ? [0.85, 0.6, 0.1] : c.status === "fail" ? [0.8, 0.2, 0.2] : [0.4, 0.4, 0.4];
-      text(`${tag} ${c.label}`, { size: 10, bold: true, color });
-      if (c.detail) text(c.detail, { size: 9, color: [0.35, 0.35, 0.35] });
-      if (c.value != null && c.value !== "") text(String(c.value).slice(0, 200), { size: 9, color: [0.35, 0.35, 0.35] });
-      spacer(2);
+  // ============ Helpers ============
+  const scoreColor = (n: number): [number, number, number] =>
+    n >= 80 ? [0.2, 0.6, 0.3] : n >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
+  const grade = (n: number) =>
+    n >= 90 ? "Excellent" : n >= 80 ? "Good" : n >= 60 ? "Needs work" : n >= 40 ? "Poor" : "Critical";
+  const statusMeta = (st: Check["status"]) => {
+    if (st === "pass") return { label: "PASS", color: [0.2, 0.6, 0.3] as [number, number, number], bg: [0.88, 0.96, 0.90] as [number, number, number] };
+    if (st === "warn") return { label: "WARN", color: [0.85, 0.6, 0.1] as [number, number, number], bg: [0.99, 0.94, 0.82] as [number, number, number] };
+    if (st === "fail") return { label: "FAIL", color: [0.8, 0.2, 0.2] as [number, number, number], bg: [0.99, 0.88, 0.88] as [number, number, number] };
+    return { label: "INFO", color: [0.4, 0.4, 0.4] as [number, number, number], bg: [0.93, 0.93, 0.95] as [number, number, number] };
+  };
+  // Draw a small filled badge with text; return width used.
+  const drawBadge = (x: number, yTop: number, label: string, color: [number, number, number], bg: [number, number, number]) => {
+    const size = 8;
+    const padX = 5, padY = 2.5;
+    const w = bold.widthOfTextAtSize(label, size) + padX * 2;
+    const h = size + padY * 2;
+    page.drawRectangle({ x, y: yTop - h, width: w, height: h, color: rgb(bg[0], bg[1], bg[2]) });
+    page.drawText(label, { x: x + padX, y: yTop - h + padY + 1, size, font: bold, color: rgb(color[0], color[1], color[2]) });
+    return w;
+  };
+  // Section header with a colored left bar.
+  const sectionHeader = (title: string, score: number) => {
+    ensure(28);
+    const barH = 22;
+    const col = scoreColor(score);
+    page.drawRectangle({ x: M, y: y - barH, width: 4, height: barH, color: rgb(col[0], col[1], col[2]) });
+    page.drawText(sanitize(title), { x: M + 12, y: y - 16, size: 13, font: bold, color: rgb(0.1, 0.1, 0.1) });
+    const scoreStr = `${score}/100`;
+    const sw = bold.widthOfTextAtSize(scoreStr, 12);
+    page.drawText(scoreStr, { x: W - M - sw, y: y - 16, size: 12, font: bold, color: rgb(col[0], col[1], col[2]) });
+    y -= barH + 6;
+  };
+  // A check row with a badge on the left and wrapped label/detail on the right.
+  const drawCheck = (c: Check) => {
+    const meta = statusMeta(c.status);
+    const badgeW = bold.widthOfTextAtSize(meta.label, 8) + 10;
+    const textX = M + badgeW + 8;
+    const maxW = W - M - textX;
+    const labelLines = wrap(c.label, bold, 10, maxW);
+    const detailLines = c.detail ? wrap(c.detail, font, 9, maxW) : [];
+    const valStr = c.value != null && c.value !== "" ? String(c.value).slice(0, 240) : "";
+    const valueLines = valStr ? wrap(valStr, font, 9, maxW) : [];
+    const rowH = Math.max(16, labelLines.length * 13 + detailLines.length * 12 + valueLines.length * 12 + 4);
+    ensure(rowH + 4);
+    drawBadge(M, y, meta.label, meta.color, meta.bg);
+    let ly = y;
+    for (const line of labelLines) {
+      page.drawText(line, { x: textX, y: ly - 10, size: 10, font: bold, color: rgb(0.1, 0.1, 0.1) });
+      ly -= 13;
     }
-    spacer(6);
-    rule();
+    for (const line of detailLines) {
+      page.drawText(line, { x: textX, y: ly - 9, size: 9, font, color: rgb(0.35, 0.35, 0.35) });
+      ly -= 12;
+    }
+    for (const line of valueLines) {
+      page.drawText(line, { x: textX, y: ly - 9, size: 9, font, color: rgb(0.45, 0.45, 0.45) });
+      ly -= 12;
+    }
+    y -= rowH + 4;
+  };
+
+  // Totals
+  const totals = { pass: 0, warn: 0, fail: 0, info: 0 };
+  for (const s of report.sections) for (const c of s.checks) totals[c.status]++;
+
+  // Priority issues (fails first, then warns), keep top ones.
+  const priority: { section: string; check: Check }[] = [];
+  for (const s of report.sections) for (const c of s.checks) if (c.status === "fail") priority.push({ section: s.title, check: c });
+  for (const s of report.sections) for (const c of s.checks) if (c.status === "warn") priority.push({ section: s.title, check: c });
+
+  // ============ COVER ============
+  text("SEO Audit Report", { size: 24, bold: true });
+  spacer(6);
+  text(report.url, { size: 12, color: [0.35, 0.35, 0.35] });
+  text(`Audited ${new Date(report.fetched_at).toLocaleString()}`, { size: 9, color: [0.5, 0.5, 0.5] });
+  text(`HTTP ${report.meta.status_code}  ·  ${report.meta.duration_ms}ms  ·  ${(report.meta.bytes/1024).toFixed(1)} KB`, { size: 9, color: [0.5, 0.5, 0.5] });
+  spacer(14);
+  rule();
+  spacer(6);
+  text("Overall Health", { size: 12, bold: true, color: [0.35, 0.35, 0.35] });
+  spacer(2);
+  const oc = scoreColor(report.overall_score);
+  text(`${report.overall_score} / 100 - ${grade(report.overall_score)}`, { size: 28, bold: true, color: oc });
+  spacer(8);
+
+  // At-a-glance cards row
+  const cardsY = y;
+  const gap = 10;
+  const cardW = (W - M * 2 - gap * 3) / 4;
+  const cardH = 52;
+  const drawCard = (i: number, label: string, value: string, color: [number, number, number]) => {
+    const x = M + i * (cardW + gap);
+    page.drawRectangle({ x, y: cardsY - cardH, width: cardW, height: cardH, borderColor: rgb(0.88, 0.88, 0.9), borderWidth: 0.5, color: rgb(0.985, 0.985, 0.99) });
+    page.drawText(label, { x: x + 10, y: cardsY - 16, size: 9, font, color: rgb(0.45, 0.45, 0.5) });
+    page.drawText(value, { x: x + 10, y: cardsY - 42, size: 20, font: bold, color: rgb(color[0], color[1], color[2]) });
+  };
+  drawCard(0, "Passing", String(totals.pass), [0.2, 0.6, 0.3]);
+  drawCard(1, "Warnings", String(totals.warn), [0.85, 0.6, 0.1]);
+  drawCard(2, "Failing", String(totals.fail), [0.8, 0.2, 0.2]);
+  drawCard(3, "Info", String(totals.info), [0.4, 0.4, 0.4]);
+  y = cardsY - cardH - 10;
+
+  rule();
+  text("How to read this report", { size: 12, bold: true });
+  spacer(2);
+  text("Each check is tagged PASS (looks good), WARN (worth improving), FAIL (fix soon) or INFO (context only). Sections are scored 0-100 - 80+ is good, 60-79 needs work, below 60 is a serious problem.", { size: 9, color: [0.35, 0.35, 0.35] });
+
+  // ============ PRIORITY ISSUES ============
+  if (priority.length) {
+    newPage();
+    text("Priority Issues", { size: 18, bold: true });
+    spacer(2);
+    text("The most impactful items to address first, ranked by severity.", { size: 10, color: [0.35, 0.35, 0.35] });
+    spacer(8);
+    priority.slice(0, 12).forEach((p, i) => {
+      const meta = statusMeta(p.check.status);
+      ensure(40);
+      // Number + title row
+      const numStr = `${i + 1}.`;
+      const numW = bold.widthOfTextAtSize(numStr, 11);
+      page.drawText(numStr, { x: M, y: y - 11, size: 11, font: bold, color: rgb(0.3, 0.3, 0.3) });
+      const titleX = M + numW + 6;
+      const badgeW = drawBadge(titleX, y, meta.label, meta.color, meta.bg);
+      const secX = titleX + badgeW + 6;
+      page.drawText(sanitize(p.section), { x: secX, y: y - 11, size: 9, font, color: rgb(0.5, 0.5, 0.5) });
+      y -= 18;
+      const labelLines = wrap(p.check.label, bold, 11, W - M - titleX);
+      for (const line of labelLines) {
+        ensure(14);
+        page.drawText(line, { x: titleX, y: y - 11, size: 11, font: bold, color: rgb(0.1, 0.1, 0.1) });
+        y -= 14;
+      }
+      if (p.check.detail) {
+        const detailLines = wrap(p.check.detail, font, 9, W - M - titleX);
+        for (const line of detailLines) {
+          ensure(12);
+          page.drawText(line, { x: titleX, y: y - 9, size: 9, font, color: rgb(0.35, 0.35, 0.35) });
+          y -= 12;
+        }
+      }
+      spacer(8);
+    });
   }
 
-  // AI Recommendations
+  // ============ SECTION SCORECARD ============
+  newPage();
+  text("Section Scorecard", { size: 18, bold: true });
+  spacer(2);
+  text("How each area of the page performs. Lower scores are pulling the overall grade down.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
+  const sorted = report.sections.slice().sort((a, b) => a.score - b.score);
+  for (const s of sorted) {
+    ensure(32);
+    const col = scoreColor(s.score);
+    // Score chip on the right
+    const scoreStr = `${s.score}/100`;
+    const sw = bold.widthOfTextAtSize(scoreStr, 11);
+    page.drawText(sanitize(s.title), { x: M, y: y - 12, size: 12, font: bold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(scoreStr, { x: W - M - sw, y: y - 12, size: 11, font: bold, color: rgb(col[0], col[1], col[2]) });
+    y -= 18;
+    // Progress bar
+    const barW = W - M * 2;
+    page.drawRectangle({ x: M, y: y - 5, width: barW, height: 5, color: rgb(0.92, 0.92, 0.94) });
+    page.drawRectangle({ x: M, y: y - 5, width: Math.max(2, barW * (s.score / 100)), height: 5, color: rgb(col[0], col[1], col[2]) });
+    y -= 10;
+    const fails = s.checks.filter(c => c.status === "fail").length;
+    const warns = s.checks.filter(c => c.status === "warn").length;
+    page.drawText(`${s.checks.length} checks  ·  ${fails} failing  ·  ${warns} warnings  ·  ${grade(s.score)}`, {
+      x: M, y: y - 9, size: 9, font, color: rgb(0.5, 0.5, 0.5),
+    });
+    y -= 18;
+  }
+
+  // ============ DETAILED FINDINGS ============
+  newPage();
+  text("Detailed Findings", { size: 18, bold: true });
+  spacer(2);
+  text("Every check we ran, grouped by section.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
+  for (const s of report.sections) {
+    sectionHeader(s.title, s.score);
+    for (const c of s.checks) drawCheck(c);
+    spacer(8);
+  }
+
+  // ============ AI RECOMMENDATIONS ============
   if (recs.length) {
     newPage();
-    text("AI Recommendations", { size: 16, bold: true });
-    spacer(6);
+    text("AI Recommendations", { size: 18, bold: true });
+    spacer(2);
+    text("Concrete next actions generated for this page.", { size: 10, color: [0.35, 0.35, 0.35] });
+    spacer(8);
     for (const r of recs) {
-      ensure(30);
-      text(r.title, { size: 12, bold: true });
+      ensure(40);
+      text(r.title, { size: 13, bold: true });
       spacer(2);
       for (const rec of r.recommendations) {
-        text(`- ${rec}`, { size: 10 });
+        ensure(16);
+        // bullet
+        page.drawCircle({ x: M + 4, y: y - 5, size: 2, color: rgb(0.35, 0.35, 0.75) });
+        const lines = wrap(rec, font, 10, W - M * 2 - 14);
+        for (let i = 0; i < lines.length; i++) {
+          ensure(13);
+          page.drawText(lines[i], { x: M + 14, y: y - 10, size: 10, font, color: rgb(0.15, 0.15, 0.15) });
+          y -= 13;
+        }
+        spacer(2);
       }
-      spacer(6);
+      spacer(8);
+      rule();
     }
   }
+
+  // ============ FOOTER ============
+  spacer(10);
+  rule();
+  text("End of report", { size: 9, color: [0.5, 0.5, 0.5] });
+  text(`Generated by SEO Audit Tool for ${report.url}`, { size: 9, color: [0.5, 0.5, 0.5] });
 
   return await doc.save();
 }
