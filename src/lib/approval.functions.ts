@@ -104,7 +104,7 @@ export const setUserApproval = createServerFn({ method: "POST" })
       };
     }
 
-    const { error } = await supabaseAdmin.from("profiles").update(patch).eq("user_id", data.userId);
+    const { error } = await supabaseAdmin.from("profiles").update(patch as any).eq("user_id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true, approved_until: (patch.approved_until as string | null) ?? null };
   });
