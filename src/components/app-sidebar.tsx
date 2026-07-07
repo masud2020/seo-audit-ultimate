@@ -85,7 +85,7 @@ export function AppSidebar() {
     .map(g => ({
       ...g,
       items: g.items
-        .filter(i => i.url !== "/admin" || isAdmin)
+        .filter(i => (i.url !== "/admin" && i.url !== "/settings") || isAdmin)
         .filter(i => i.title.toLowerCase().includes(q.toLowerCase())),
     }))
     .filter(g => g.items.length);
