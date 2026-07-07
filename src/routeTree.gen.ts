@@ -20,6 +20,7 @@ import { Route as AuthenticatedWebsiteSpeedRouteImport } from './routes/_authent
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
 import { Route as AuthenticatedToolHistoryRouteImport } from './routes/_authenticated/tool-history'
 import { Route as AuthenticatedSiteAuditRouteImport } from './routes/_authenticated/site-audit'
+import { Route as AuthenticatedSheetsRouteImport } from './routes/_authenticated/sheets'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedSeoNewsRouteImport } from './routes/_authenticated/seo-news'
 import { Route as AuthenticatedSchemaValidatorRouteImport } from './routes/_authenticated/schema-validator'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/p
 import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_authenticated/people-also-search'
 import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
 import { Route as AuthenticatedMegaAuditRouteImport } from './routes/_authenticated/mega-audit'
+import { Route as AuthenticatedLinkManagementRouteImport } from './routes/_authenticated/link-management'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
 import { Route as AuthenticatedHtmlValidatorRouteImport } from './routes/_authenticated/html-validator'
@@ -124,6 +126,11 @@ const AuthenticatedSiteAuditRoute = AuthenticatedSiteAuditRouteImport.update({
   path: '/site-audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSheetsRoute = AuthenticatedSheetsRouteImport.update({
+  id: '/sheets',
+  path: '/sheets',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -195,6 +202,12 @@ const AuthenticatedMegaAuditRoute = AuthenticatedMegaAuditRouteImport.update({
   path: '/mega-audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLinkManagementRoute =
+  AuthenticatedLinkManagementRouteImport.update({
+    id: '/link-management',
+    path: '/link-management',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedKeywordsRoute = AuthenticatedKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
@@ -407,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/link-management': typeof AuthenticatedLinkManagementRoute
   '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
@@ -420,6 +434,7 @@ export interface FileRoutesByFullPath {
   '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/sheets': typeof AuthenticatedSheetsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRouteWithChildren
@@ -465,6 +480,7 @@ export interface FileRoutesByTo {
   '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/link-management': typeof AuthenticatedLinkManagementRoute
   '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
@@ -478,6 +494,7 @@ export interface FileRoutesByTo {
   '/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/seo-news': typeof AuthenticatedSeoNewsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/sheets': typeof AuthenticatedSheetsRoute
   '/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/tool-history': typeof AuthenticatedToolHistoryRoute
   '/tools': typeof AuthenticatedToolsRouteWithChildren
@@ -525,6 +542,7 @@ export interface FileRoutesById {
   '/_authenticated/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
+  '/_authenticated/link-management': typeof AuthenticatedLinkManagementRoute
   '/_authenticated/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
@@ -538,6 +556,7 @@ export interface FileRoutesById {
   '/_authenticated/schema-validator': typeof AuthenticatedSchemaValidatorRoute
   '/_authenticated/seo-news': typeof AuthenticatedSeoNewsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/sheets': typeof AuthenticatedSheetsRoute
   '/_authenticated/site-audit': typeof AuthenticatedSiteAuditRouteWithChildren
   '/_authenticated/tool-history': typeof AuthenticatedToolHistoryRoute
   '/_authenticated/tools': typeof AuthenticatedToolsRouteWithChildren
@@ -585,6 +604,7 @@ export interface FileRouteTypes {
     | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
+    | '/link-management'
     | '/mega-audit'
     | '/people-also-ask'
     | '/people-also-search'
@@ -598,6 +618,7 @@ export interface FileRouteTypes {
     | '/schema-validator'
     | '/seo-news'
     | '/settings'
+    | '/sheets'
     | '/site-audit'
     | '/tool-history'
     | '/tools'
@@ -643,6 +664,7 @@ export interface FileRouteTypes {
     | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
+    | '/link-management'
     | '/mega-audit'
     | '/people-also-ask'
     | '/people-also-search'
@@ -656,6 +678,7 @@ export interface FileRouteTypes {
     | '/schema-validator'
     | '/seo-news'
     | '/settings'
+    | '/sheets'
     | '/site-audit'
     | '/tool-history'
     | '/tools'
@@ -702,6 +725,7 @@ export interface FileRouteTypes {
     | '/_authenticated/html-validator'
     | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
+    | '/_authenticated/link-management'
     | '/_authenticated/mega-audit'
     | '/_authenticated/people-also-ask'
     | '/_authenticated/people-also-search'
@@ -715,6 +739,7 @@ export interface FileRouteTypes {
     | '/_authenticated/schema-validator'
     | '/_authenticated/seo-news'
     | '/_authenticated/settings'
+    | '/_authenticated/sheets'
     | '/_authenticated/site-audit'
     | '/_authenticated/tool-history'
     | '/_authenticated/tools'
@@ -825,6 +850,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSiteAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sheets': {
+      id: '/_authenticated/sheets'
+      path: '/sheets'
+      fullPath: '/sheets'
+      preLoaderRoute: typeof AuthenticatedSheetsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -914,6 +946,13 @@ declare module '@tanstack/react-router' {
       path: '/mega-audit'
       fullPath: '/mega-audit'
       preLoaderRoute: typeof AuthenticatedMegaAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/link-management': {
+      id: '/_authenticated/link-management'
+      path: '/link-management'
+      fullPath: '/link-management'
+      preLoaderRoute: typeof AuthenticatedLinkManagementRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/keywords': {
@@ -1214,6 +1253,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHtmlValidatorRoute: typeof AuthenticatedHtmlValidatorRoute
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
+  AuthenticatedLinkManagementRoute: typeof AuthenticatedLinkManagementRoute
   AuthenticatedMegaAuditRoute: typeof AuthenticatedMegaAuditRouteWithChildren
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
   AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
@@ -1227,6 +1267,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSchemaValidatorRoute: typeof AuthenticatedSchemaValidatorRoute
   AuthenticatedSeoNewsRoute: typeof AuthenticatedSeoNewsRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedSheetsRoute: typeof AuthenticatedSheetsRoute
   AuthenticatedSiteAuditRoute: typeof AuthenticatedSiteAuditRouteWithChildren
   AuthenticatedToolHistoryRoute: typeof AuthenticatedToolHistoryRoute
   AuthenticatedToolsRoute: typeof AuthenticatedToolsRouteWithChildren
@@ -1261,6 +1302,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHtmlValidatorRoute: AuthenticatedHtmlValidatorRoute,
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
+  AuthenticatedLinkManagementRoute: AuthenticatedLinkManagementRoute,
   AuthenticatedMegaAuditRoute: AuthenticatedMegaAuditRouteWithChildren,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
   AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
@@ -1274,6 +1316,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSchemaValidatorRoute: AuthenticatedSchemaValidatorRoute,
   AuthenticatedSeoNewsRoute: AuthenticatedSeoNewsRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedSheetsRoute: AuthenticatedSheetsRoute,
   AuthenticatedSiteAuditRoute: AuthenticatedSiteAuditRouteWithChildren,
   AuthenticatedToolHistoryRoute: AuthenticatedToolHistoryRoute,
   AuthenticatedToolsRoute: AuthenticatedToolsRouteWithChildren,
