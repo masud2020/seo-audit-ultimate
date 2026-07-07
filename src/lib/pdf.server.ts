@@ -91,15 +91,18 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
   };
   // Section header with a colored left bar.
   const sectionHeader = (title: string, score: number) => {
-    ensure(28);
-    const barH = 22;
+    ensure(34);
+    const barH = 26;
     const col = scoreColor(score);
+    // Subtle banded background across full column
+    page.drawRectangle({ x: M, y: y - barH, width: W - M * 2, height: barH, color: rgb(0.97, 0.97, 0.99) });
+    // Colored accent bar on the left
     page.drawRectangle({ x: M, y: y - barH, width: 4, height: barH, color: rgb(col[0], col[1], col[2]) });
-    page.drawText(sanitize(title), { x: M + 12, y: y - 16, size: 13, font: bold, color: rgb(0.1, 0.1, 0.1) });
+    page.drawText(sanitize(title), { x: M + 14, y: y - 18, size: 13, font: bold, color: rgb(0.1, 0.1, 0.1) });
     const scoreStr = `${score}/100`;
     const sw = bold.widthOfTextAtSize(scoreStr, 12);
-    page.drawText(scoreStr, { x: W - M - sw, y: y - 16, size: 12, font: bold, color: rgb(col[0], col[1], col[2]) });
-    y -= barH + 6;
+    page.drawText(scoreStr, { x: W - M - sw - 8, y: y - 18, size: 12, font: bold, color: rgb(col[0], col[1], col[2]) });
+    y -= barH + 8;
   };
   // Anchors so Priority Issues can link into Detailed Findings.
   const checkAnchors = new Map<Check, { page: PDFPage; y: number }>();
