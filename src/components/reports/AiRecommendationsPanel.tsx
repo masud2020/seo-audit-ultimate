@@ -6,6 +6,7 @@ import { Sparkles, Loader2, ChevronDown, ChevronUp, RefreshCw } from "lucide-rea
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { generateAllRecommendations, generateSectionRecommendations, listSectionRecommendations, type Fix } from "@/lib/ai-recs.functions";
 import type { NormalizedReport, Section } from "@/lib/report-core";
 
@@ -15,9 +16,11 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
   const list = useServerFn(listSectionRecommendations);
   const qc = useQueryClient();
   const bulk = useServerFn(generateAllRecommendations);
+  const bulkMutRef = useState<{ pending: boolean }>({ pending: false })[0];
   const { data: cached } = useQuery({
     queryKey: ["ai-recs", report.type, report.id],
     queryFn: () => list({ data: { report_id: report.id, report_type: report.type } }),
+    refetchInterval: () => (bulkMutRef.pending ? 1500 : false),
   });
 
   const cachedMap = new Map<string, { summary: string; fixes: Fix[] }>();
@@ -44,6 +47,8 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
         })),
       },
     }),
+    onMutate: () => { bulkMutRef.pending = true; },
+    onSettled: () => { bulkMutRef.pending = false; },
     onSuccess: (r) => {
       qc.invalidateQueries({ queryKey: ["ai-recs", report.type, report.id] });
       if (r.failed && r.errors.length) toast.warning(`${r.generated} generated · ${r.failed} failed. ${r.errors[0]}`);
@@ -51,6 +56,10 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to generate recommendations"),
   });
+
+  const cachedCount = cached?.length ?? 0;
+  const totalTarget = bulkMut.variables?.force ? eligible.length : eligible.length;
+  const progressPct = totalTarget > 0 ? Math.round((cachedCount / totalTarget) * 100) : 0;
 
   if (!eligible.length) {
     return (
@@ -102,6 +111,20 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
           )}
         </div>
       </div>
+      {bulkMut.isPending && (
+        <Card className="p-3">
+          <div className="flex items-center gap-2 text-xs mb-2">
+            <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            <span className="font-medium">
+              {bulkMut.variables?.force ? "Regenerating" : "Generating"} recommendations…
+            </span>
+            <span className="text-muted-foreground ml-auto font-mono">
+              {cachedCount} / {totalTarget}
+            </span>
+          </div>
+          <Progress value={progressPct} className="h-1" />
+        </Card>
+      )}
       <div className="grid gap-3 md:grid-cols-2">
         {eligible.map((section) => (
           <SectionRecs key={section.id} report={report} section={section} initial={cachedMap.get(section.id)} />
@@ -117,12 +140,13 @@ function SectionRecs({ report, section, initial }: { report: NormalizedReport; s
   const qc = useQueryClient();
   const gen = useServerFn(generateSectionRecommendations);
   const mut = useMutation({
-    mutationFn: () => gen({
+    mutationFn: (opts: { force: boolean }) => gen({
       data: {
         report_id: report.id,
         report_type: report.type as ReportType,
         section_slug: section.id,
         section_title: section.title,
+        force: opts.force,
         findings: section.findings.map((f) => ({
           label: f.label,
           status: f.status,
@@ -131,9 +155,10 @@ function SectionRecs({ report, section, initial }: { report: NormalizedReport; s
         })),
       },
     }),
-    onSuccess: () => {
+    onSuccess: (_, vars) => {
       setOpen(true);
       qc.invalidateQueries({ queryKey: ["ai-recs", report.type, report.id] });
+      if (vars.force) toast.success(`Regenerated recommendations for "${section.title}"`);
     },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to generate recommendations"),
   });
@@ -151,13 +176,26 @@ function SectionRecs({ report, section, initial }: { report: NormalizedReport; s
           </div>
         </div>
         {!state ? (
-          <Button size="sm" variant="secondary" onClick={() => mut.mutate()} disabled={mut.isPending}>
+          <Button size="sm" variant="secondary" onClick={() => mut.mutate({ force: false })} disabled={mut.isPending}>
             {mut.isPending ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating…</> : <><Sparkles className="h-3 w-3 mr-1" />Generate</>}
           </Button>
         ) : (
-          <Button size="sm" variant="ghost" onClick={() => setOpen((o) => !o)}>
-            {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => mut.mutate({ force: true })}
+              disabled={mut.isPending}
+              title="Regenerate this section"
+            >
+              {mut.isPending
+                ? <Loader2 className="h-3 w-3 animate-spin" />
+                : <RefreshCw className="h-3 w-3" />}
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setOpen((o) => !o)}>
+              {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            </Button>
+          </div>
         )}
       </div>
 
