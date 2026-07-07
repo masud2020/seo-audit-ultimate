@@ -134,7 +134,7 @@ function Landing() {
 
         {/* Features */}
         <section id="features" className="mx-auto max-w-6xl px-4 py-20">
-          <div className="max-w-2xl">
+          <div className="max-w-2xl mx-auto text-center">
             <h2 className="text-3xl font-semibold tracking-tight">Everything you need to rank</h2>
             <p className="mt-3 text-muted-foreground">A single workspace for technical SEO, on-page optimization, keyword tracking and AI-search visibility.</p>
           </div>
