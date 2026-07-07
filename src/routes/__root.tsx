@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { getPublicGscTokens } from "@/lib/gsc.functions";
 import { ThemeProvider } from "@/components/theme-provider";
+import { recordActivity } from "@/lib/activity.functions";
 
 function NotFoundComponent() {
   return (
@@ -140,6 +141,14 @@ function RootComponent() {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        recordActivity({
+          data: {
+            action: event === "SIGNED_IN" ? "sign_in" : "sign_out",
+            path: typeof window !== "undefined" ? window.location.pathname : null,
+          },
+        }).catch(() => {});
+      }
     });
     return () => sub.subscription.unsubscribe();
   }, [router, queryClient]);
