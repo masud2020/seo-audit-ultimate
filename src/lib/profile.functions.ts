@@ -58,7 +58,8 @@ const profileFields = z.object({
 });
 
 function normalize(v: z.infer<typeof profileFields>) {
-  const empty = (s: unknown) => (typeof s === "string" && s.trim() === "" ? null : s ?? null);
+  const empty = (s: string | null | undefined): string | null =>
+    typeof s === "string" && s.trim() === "" ? null : (s ?? null);
   return {
     display_name: empty(v.display_name),
     avatar_url: empty(v.avatar_url),
