@@ -142,74 +142,245 @@ export async function buildSiteAuditPdf(
   const rule = () => { ensure(6); page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) }); y -= 8; };
 
   const s = data.summary;
-  const scoreColor: [number, number, number] = s.overall_score >= 80 ? [0.2, 0.6, 0.3] : s.overall_score >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
+  const grade = (n: number) => n >= 90 ? "Excellent" : n >= 80 ? "Good" : n >= 60 ? "Needs work" : n >= 40 ? "Poor" : "Critical";
+  const gradeExplain = (n: number) =>
+    n >= 90 ? "Your site is in great shape. Keep monitoring and fix minor issues as they appear."
+    : n >= 80 ? "Your site is healthy overall. A few improvements will push it into top shape."
+    : n >= 60 ? "There are important issues holding your rankings back. Prioritize the high-severity fixes below."
+    : n >= 40 ? "Serious problems are hurting your visibility in search. Fix the high-severity issues as soon as possible."
+    : "Your site has critical SEO problems. Search engines may struggle to crawl, index, or rank your pages until these are fixed.";
+  const scoreColor = (n: number): [number, number, number] =>
+    n >= 80 ? [0.2, 0.6, 0.3] : n >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
 
-  text("Whole-Site SEO Audit", { size: 22, bold: true });
+  const SECTION_INFO: Record<string, { title: string; what: string }> = {
+    meta: { title: "Titles & Descriptions", what: "The title tag and meta description are what people see in Google. Good ones improve clicks." },
+    content: { title: "Content Quality", what: "How much useful, unique text your pages have and how well it is structured with headings." },
+    headings: { title: "Headings Structure", what: "Whether pages use H1/H2/H3 correctly. This helps readers and search engines understand your page." },
+    links: { title: "Links", what: "Internal and external links. Broken links, missing anchor text and orphan pages all hurt SEO." },
+    images: { title: "Images", what: "Alt text, file sizes and formats. Missing alt text hurts accessibility and image search." },
+    performance: { title: "Speed & Performance", what: "How fast your pages load. Slow pages lose visitors and rank lower." },
+    mobile: { title: "Mobile Friendliness", what: "Whether your pages work well on phones. Google uses mobile-first indexing." },
+    security: { title: "Security", what: "HTTPS, HSTS and other protections. Insecure sites get flagged in browsers and rank lower." },
+    social: { title: "Social & Sharing", what: "Open Graph and Twitter tags that control how your pages look when shared on social media." },
+    technical: { title: "Technical SEO", what: "Robots.txt, sitemap, canonical tags, structured data and other under-the-hood signals." },
+    accessibility: { title: "Accessibility", what: "Whether your site is usable for people with disabilities. Also improves SEO." },
+    schema: { title: "Structured Data", what: "Schema.org markup that unlocks rich results (star ratings, FAQs, prices) in Google." },
+  };
+  const niceSection = (id: string) => SECTION_INFO[id]?.title ?? (id.charAt(0).toUpperCase() + id.slice(1).replace(/[_-]/g, " "));
+
+  const sevLabel = (sev: string) => sev === "high" ? "HIGH" : sev === "medium" ? "MEDIUM" : "LOW";
+  const sevColor = (sev: string): [number, number, number] => sev === "high" ? [0.8, 0.2, 0.2] : sev === "medium" ? [0.85, 0.6, 0.1] : [0.5, 0.5, 0.5];
+  const sevWhy = (sev: string) => sev === "high" ? "Fix this soon - it directly hurts rankings, traffic or user trust."
+    : sev === "medium" ? "Worth fixing - it holds back your SEO potential but is not urgent."
+    : "Nice to fix - small polish that adds up over time.";
+
+  // ============ COVER PAGE ============
+  text("Whole-Site SEO Audit Report", { size: 24, bold: true });
+  spacer(6);
+  text(data.start_url, { size: 12, color: [0.35, 0.35, 0.35] });
+  text(`Report generated ${new Date(s.finished_at ?? Date.now()).toLocaleString()}`, { size: 9, color: [0.5, 0.5, 0.5] });
+  spacer(14);
+  rule();
+  spacer(6);
+  text("Overall Health", { size: 12, bold: true, color: [0.35, 0.35, 0.35] });
+  spacer(2);
+  text(`${s.overall_score ?? 0} / 100 - ${grade(s.overall_score ?? 0)}`, { size: 26, bold: true, color: scoreColor(s.overall_score ?? 0) });
   spacer(4);
-  text(data.start_url, { size: 11, color: [0.35, 0.35, 0.35] });
-  text(`Finished ${new Date(s.finished_at).toLocaleString()}  ·  ${s.pages_audited} pages  ·  ${s.pages_failed} failed`, { size: 9, color: [0.4, 0.4, 0.4] });
+  text(gradeExplain(s.overall_score ?? 0), { size: 11 });
+  spacer(10);
+
+  // Quick stats
+  text("At a glance", { size: 13, bold: true });
+  spacer(2);
+  text(`- Pages audited: ${s.pages_audited ?? data.pages.length}`, { size: 11 });
+  text(`- Pages that failed to load: ${s.pages_failed ?? 0}`, { size: 11 });
+  text(`- High-severity issues (fix soon): ${s.issue_counts?.high ?? 0}`, { size: 11, color: sevColor("high") });
+  text(`- Medium-severity issues (worth fixing): ${s.issue_counts?.medium ?? 0}`, { size: 11, color: sevColor("medium") });
+  text(`- Low-severity issues (polish): ${s.issue_counts?.low ?? 0}`, { size: 11, color: sevColor("low") });
+  spacer(10);
+  rule();
+
+  // ============ HOW TO READ THIS REPORT ============
+  text("How to read this report", { size: 13, bold: true });
+  spacer(2);
+  text("This report checks your website against dozens of SEO best practices - the same signals Google uses to decide who ranks. Each finding is labelled:", { size: 10 });
+  spacer(2);
+  text("HIGH", { size: 10, bold: true, color: sevColor("high") });
+  text("Directly hurts search rankings, traffic or user trust. Fix as soon as possible.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(2);
+  text("MEDIUM", { size: 10, bold: true, color: sevColor("medium") });
+  text("Holds back your SEO potential. Fix these after the high-severity items.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(2);
+  text("LOW", { size: 10, bold: true, color: sevColor("low") });
+  text("Minor polish. Address once the bigger items are handled.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(4);
+  text("Scores are on a 0-100 scale. 80+ is good, 60-79 needs work, below 60 is a serious problem.", { size: 10, color: [0.35, 0.35, 0.35] });
+
+  // ============ PRIORITY ACTION PLAN ============
+  newPage();
+  text("Priority Action Plan", { size: 18, bold: true });
+  spacer(2);
+  text("The most impactful fixes, ranked. Start at the top.", { size: 10, color: [0.35, 0.35, 0.35] });
   spacer(8);
-  text(`Overall Site Score: ${s.overall_score}/100`, { size: 16, bold: true, color: scoreColor });
-  spacer(4);
-  text(`Issues: ${s.issue_counts?.high ?? 0} high · ${s.issue_counts?.medium ?? 0} medium · ${s.issue_counts?.low ?? 0} low`, { size: 11, bold: true });
-  spacer(4);
-  rule();
 
-  text("Section averages", { size: 13, bold: true });
-  spacer(2);
-  for (const [id, score] of Object.entries(s.avg_by_section ?? {})) {
-    const col: [number, number, number] = score >= 80 ? [0.2, 0.6, 0.3] : score >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
-    text(`- ${id}: ${score}/100`, { size: 10, color: col });
+  const problems = (s.top_problems ?? []).slice().sort((a, b) => {
+    const rank = (x: { severity: string; count: number }) => (x.severity === "high" ? 3 : x.severity === "medium" ? 2 : 1) * 1000 + x.count;
+    return rank(b) - rank(a);
+  });
+
+  if (!problems.length) {
+    text("No recurring problems detected. Nice work.", { size: 11, color: [0.2, 0.6, 0.3] });
+  } else {
+    problems.slice(0, 15).forEach((p, i) => {
+      ensure(50);
+      text(`${i + 1}. [${sevLabel(p.severity)}] ${p.message}`, { size: 11, bold: true, color: sevColor(p.severity) });
+      text(`Affects ${p.count} page${p.count === 1 ? "" : "s"}.  ${sevWhy(p.severity)}`, { size: 9, color: [0.35, 0.35, 0.35] });
+      spacer(6);
+    });
   }
   spacer(6);
   rule();
 
-  text("Top recurring problems", { size: 13, bold: true });
+  // ============ SECTION SCORECARD ============
+  ensure(60);
+  text("Section Scorecard", { size: 18, bold: true });
   spacer(2);
-  if (!s.top_problems?.length) text("None detected.", { size: 10, color: [0.4, 0.4, 0.4] });
-  for (const p of s.top_problems ?? []) {
-    const tag = p.severity === "high" ? "[HIGH]" : p.severity === "medium" ? "[MED] " : "[LOW] ";
-    const col: [number, number, number] = p.severity === "high" ? [0.8, 0.2, 0.2] : p.severity === "medium" ? [0.85, 0.6, 0.1] : [0.4, 0.4, 0.4];
-    text(`${tag} ${p.message}  (${p.count} pages)`, { size: 10, bold: true, color: col });
-  }
-  spacer(6);
-  rule();
+  text("How each area of your site performs. Each section is scored 0-100.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
 
-  text(`Pages (${data.pages.length})`, { size: 13, bold: true });
-  spacer(2);
-  for (const p of data.pages.slice(0, 200)) {
-    const scoreTxt = p.overall_score == null ? "—" : `${p.overall_score}/100`;
-    text(`- [${p.status || "err"}] ${scoreTxt}  ${p.url}`, { size: 9 });
-    if (p.error) text(`      ${p.error}`, { size: 9, color: [0.8, 0.2, 0.2] });
-  }
-  spacer(6);
-  rule();
-
-  text(`All issues (${data.issues.length})`, { size: 13, bold: true });
-  spacer(2);
-  for (const i of data.issues.slice(0, 400)) {
-    const tag = i.severity === "high" ? "[HIGH]" : i.severity === "medium" ? "[MED] " : "[LOW] ";
-    const col: [number, number, number] = i.severity === "high" ? [0.8, 0.2, 0.2] : i.severity === "medium" ? [0.85, 0.6, 0.1] : [0.4, 0.4, 0.4];
-    text(`${tag} ${i.url}`, { size: 9, bold: true, color: col });
-    text(`      ${i.message}`, { size: 9, color: [0.35, 0.35, 0.35] });
-  }
-
-  if (recs.length) {
-    newPage();
-    text("AI Recommendations", { size: 16, bold: true });
-    spacer(6);
-    for (const r of recs) {
-      ensure(30);
-      text(r.section, { size: 12, bold: true });
-      if (r.summary) { spacer(2); text(r.summary, { size: 10, color: [0.35, 0.35, 0.35] }); }
-      for (const fix of r.fixes ?? []) {
-        spacer(4);
-        text(`- ${fix.title}${fix.impact ? `  [impact: ${fix.impact}]` : ""}${fix.effort ? `  [effort: ${fix.effort}]` : ""}`, { size: 10, bold: true });
-        for (const step of fix.steps ?? []) text(`    • ${step}`, { size: 9 });
-      }
+  const sections = Object.entries(s.avg_by_section ?? {}).sort((a, b) => a[1] - b[1]); // worst first
+  if (!sections.length) {
+    text("No section data available.", { size: 10, color: [0.5, 0.5, 0.5] });
+  } else {
+    for (const [id, score] of sections) {
+      ensure(56);
+      const info = SECTION_INFO[id];
+      text(`${niceSection(id)} - ${score}/100 (${grade(score)})`, { size: 12, bold: true, color: scoreColor(score) });
+      if (info?.what) text(info.what, { size: 9, color: [0.35, 0.35, 0.35] });
+      const takeaway = score >= 80 ? "This area looks good. Keep it up."
+        : score >= 60 ? "This area needs some attention. See the recommendations below."
+        : "This area is a priority - it is pulling your overall score down.";
+      text(takeaway, { size: 9, color: [0.4, 0.4, 0.4] });
       spacer(8);
     }
   }
+
+  // ============ AI RECOMMENDATIONS ============
+  if (recs.length) {
+    newPage();
+    text("Recommendations & Step-by-Step Fixes", { size: 18, bold: true });
+    spacer(2);
+    text("Concrete actions, generated for your site, grouped by section.", { size: 10, color: [0.35, 0.35, 0.35] });
+    spacer(8);
+
+    for (const r of recs) {
+      ensure(40);
+      text(niceSection(r.section), { size: 13, bold: true });
+      const info = SECTION_INFO[r.section];
+      if (info?.what) { text(info.what, { size: 9, color: [0.4, 0.4, 0.4] }); spacer(2); }
+      if (r.summary) { text(r.summary, { size: 10, color: [0.35, 0.35, 0.35] }); spacer(2); }
+      for (const fix of r.fixes ?? []) {
+        ensure(30);
+        spacer(4);
+        const badges = [fix.impact ? `Impact: ${fix.impact}` : null, fix.effort ? `Effort: ${fix.effort}` : null].filter(Boolean).join("  ·  ");
+        text(`> ${fix.title}`, { size: 11, bold: true });
+        if (badges) text(badges, { size: 9, color: [0.4, 0.4, 0.4] });
+        for (const step of fix.steps ?? []) text(`    - ${step}`, { size: 10 });
+      }
+      spacer(10);
+      rule();
+    }
+  }
+
+  // ============ PAGE-BY-PAGE ============
+  newPage();
+  text(`Page-by-Page Results (${data.pages.length})`, { size: 18, bold: true });
+  spacer(2);
+  text("Every page we audited, sorted by score. Lowest-scoring pages appear first so you know where to focus.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
+
+  const sortedPages = data.pages.slice().sort((a, b) => (a.overall_score ?? -1) - (b.overall_score ?? -1));
+  for (const p of sortedPages.slice(0, 200)) {
+    ensure(50);
+    const sc = p.overall_score;
+    const sTxt = sc == null ? "—" : `${sc}/100 (${grade(sc)})`;
+    const col: [number, number, number] = sc == null ? [0.5, 0.5, 0.5] : scoreColor(sc);
+    text(p.url, { size: 10, bold: true });
+    text(`Score: ${sTxt}  ·  HTTP ${p.status || "error"}  ·  Loaded in ${p.duration_ms}ms`, { size: 9, color: col });
+    if (p.error) text(`Error: ${p.error}`, { size: 9, color: sevColor("high") });
+    const issuesForPage = (p.top_issues ?? []).filter(x => x.status === "fail" || x.status === "warn").slice(0, 5);
+    for (const it of issuesForPage) {
+      const c = it.status === "fail" ? sevColor("high") : sevColor("medium");
+      text(`  - [${it.status.toUpperCase()}] ${it.label}${it.detail ? `: ${it.detail}` : ""}`, { size: 9, color: c });
+    }
+    spacer(6);
+  }
+  if (sortedPages.length > 200) {
+    spacer(2);
+    text(`(+${sortedPages.length - 200} more pages not shown - see the app for the full list)`, { size: 9, color: [0.5, 0.5, 0.5] });
+  }
+
+  // ============ ALL ISSUES ============
+  newPage();
+  text(`Complete Issue Log (${data.issues.length})`, { size: 18, bold: true });
+  spacer(2);
+  text("Every individual issue found, grouped by severity so you can work through them in order.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
+
+  const byGroup: Record<"high"|"medium"|"low", SiteAuditIssue[]> = { high: [], medium: [], low: [] };
+  for (const i of data.issues) byGroup[i.severity]?.push(i);
+  for (const sev of ["high", "medium", "low"] as const) {
+    const list = byGroup[sev];
+    if (!list.length) continue;
+    ensure(30);
+    text(`${sevLabel(sev)} severity  (${list.length})`, { size: 13, bold: true, color: sevColor(sev) });
+    text(sevWhy(sev), { size: 9, color: [0.4, 0.4, 0.4] });
+    spacer(4);
+    for (const it of list.slice(0, 300)) {
+      ensure(24);
+      text(`- ${it.message}`, { size: 9, bold: true });
+      text(`   ${it.url}`, { size: 9, color: [0.35, 0.35, 0.35] });
+    }
+    if (list.length > 300) text(`   (+${list.length - 300} more not shown)`, { size: 9, color: [0.5, 0.5, 0.5] });
+    spacer(8);
+    rule();
+  }
+
+  // ============ GLOSSARY ============
+  newPage();
+  text("Glossary - SEO terms in plain English", { size: 18, bold: true });
+  spacer(8);
+  const glossary: [string, string][] = [
+    ["Title tag", "The clickable headline shown in Google. Should be unique and under ~60 characters."],
+    ["Meta description", "The short summary under the title in Google. Aim for 120-160 characters."],
+    ["H1", "The main heading on a page. Each page should have exactly one that describes the page's topic."],
+    ["Canonical tag", "Tells Google which version of a page is the master copy. Prevents duplicate-content problems."],
+    ["Alt text", "A short description of an image for screen readers and Google Image Search."],
+    ["Robots.txt", "A file that tells search engines which pages they may or may not crawl."],
+    ["Sitemap", "An XML file listing your pages, so search engines can discover them quickly."],
+    ["Structured data (Schema)", "Machine-readable tags that unlock rich results like star ratings, FAQs and prices."],
+    ["Core Web Vitals", "Google's speed and stability metrics (LCP, INP, CLS). Faster pages rank better."],
+    ["HTTPS / SSL", "Encrypted connection. Non-HTTPS sites are flagged as Not Secure and rank lower."],
+    ["HSTS", "A security header that forces browsers to always use HTTPS for your domain."],
+    ["Open Graph", "Tags that control the title, description and image shown when someone shares your page on Facebook, LinkedIn, etc."],
+    ["Internal link", "A link from one page on your site to another. Helps Google discover pages and pass authority."],
+    ["Backlink", "A link from another site to yours. High-quality backlinks improve rankings."],
+    ["Orphan page", "A page with no internal links pointing to it. Hard for Google to find."],
+    ["Crawl", "When a search engine bot visits and reads your pages."],
+    ["Index", "The database Google keeps of pages it might show in results. If a page is not indexed, it cannot rank."],
+  ];
+  for (const [term, def] of glossary) {
+    ensure(22);
+    text(term, { size: 11, bold: true });
+    text(def, { size: 9, color: [0.35, 0.35, 0.35] });
+    spacer(4);
+  }
+
+  // ============ FOOTER ============
+  spacer(10);
+  rule();
+  text("End of report", { size: 9, color: [0.5, 0.5, 0.5] });
+  text(`Generated by SEO Audit Tool for ${data.start_url}`, { size: 9, color: [0.5, 0.5, 0.5] });
 
   return await doc.save();
 }
