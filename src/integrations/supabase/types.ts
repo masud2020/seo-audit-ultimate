@@ -195,6 +195,75 @@ export type Database = {
           },
         ]
       }
+      bkash_payments: {
+        Row: {
+          admin_note: string | null
+          amount_bdt: number
+          created_at: string
+          id: string
+          plan_slug: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sender_msisdn: string
+          status: string
+          transaction_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_bdt: number
+          created_at?: string
+          id?: string
+          plan_slug: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sender_msisdn: string
+          status?: string
+          transaction_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_bdt?: number
+          created_at?: string
+          id?: string
+          plan_slug?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sender_msisdn?: string
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bkash_settings: {
+        Row: {
+          account_type: string
+          id: number
+          instructions: string | null
+          merchant_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_type?: string
+          id?: number
+          instructions?: string | null
+          merchant_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_type?: string
+          id?: number
+          instructions?: string | null
+          merchant_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       blog_sources: {
         Row: {
           created_at: string
@@ -761,6 +830,54 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_plans: {
+        Row: {
+          created_at: string
+          cta_label: string
+          currency: string
+          description: string | null
+          features: Json
+          id: string
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          price_bdt: number
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          cta_label?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          price_bdt?: number
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          cta_label?: string
+          currency?: string
+          description?: string | null
+          features?: Json
+          id?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          price_bdt?: number
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1109,6 +1226,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          plan_slug: string
+          source: string
+          source_payment_id: string | null
+          started_at: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_slug: string
+          source?: string
+          source_payment_id?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          plan_slug?: string
+          source?: string
+          source_payment_id?: string | null
+          started_at?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_source_payment_id_fkey"
+            columns: ["source_payment_id"]
+            isOneToOne: false
+            referencedRelation: "bkash_payments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

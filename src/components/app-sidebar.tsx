@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy, Globe, Link as LinkIcon, Zap, Smartphone, FileCode2, Braces, UserCircle } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy, Globe, Link as LinkIcon, Zap, Smartphone, FileCode2, Braces, UserCircle, CreditCard, Wallet } from "lucide-react";
 import { useBrand } from "@/components/brand-provider";
 import { useEffect, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -59,10 +59,12 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
   ]},
   { label: "Settings", items: [
     { title: "Your Profile", url: "/profile", icon: UserCircle },
+    { title: "Billing", url: "/billing", icon: CreditCard },
     { title: "API Settings", url: "/settings", icon: Settings },
     { title: "Preferences & Branding", url: "/preferences", icon: SlidersHorizontal },
     { title: "Search Console", url: "/gsc", icon: ShieldCheck },
     { title: "Admin Panel", url: "/admin", icon: UserCog },
+    { title: "Admin: Billing & bKash", url: "/admin-billing", icon: Wallet },
   ]},
 ];
 
@@ -102,7 +104,7 @@ export function AppSidebar() {
     .map(g => ({
       ...g,
       items: g.items
-        .filter(i => (i.url !== "/admin" && i.url !== "/settings") || isAdmin)
+        .filter(i => (i.url !== "/admin" && i.url !== "/settings" && i.url !== "/admin-billing") || isAdmin)
         .filter(i => i.title.toLowerCase().includes(q.toLowerCase())),
     }))
     .filter(g => g.items.length);
