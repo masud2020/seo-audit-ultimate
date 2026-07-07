@@ -30,6 +30,7 @@ import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_authenticated/people-also-search'
 import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
+import { Route as AuthenticatedMegaAuditRouteImport } from './routes/_authenticated/mega-audit'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
 import { Route as AuthenticatedHtmlValidatorRouteImport } from './routes/_authenticated/html-validator'
@@ -176,6 +177,11 @@ const AuthenticatedPeopleAlsoAskRoute =
     path: '/people-also-ask',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMegaAuditRoute = AuthenticatedMegaAuditRouteImport.update({
+  id: '/mega-audit',
+  path: '/mega-audit',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedKeywordsRoute = AuthenticatedKeywordsRouteImport.update({
   id: '/keywords',
   path: '/keywords',
@@ -381,6 +387,7 @@ export interface FileRoutesByFullPath {
   '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/mega-audit': typeof AuthenticatedMegaAuditRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -435,6 +442,7 @@ export interface FileRoutesByTo {
   '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
+  '/mega-audit': typeof AuthenticatedMegaAuditRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -491,6 +499,7 @@ export interface FileRoutesById {
   '/_authenticated/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
+  '/_authenticated/mega-audit': typeof AuthenticatedMegaAuditRoute
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
@@ -547,6 +556,7 @@ export interface FileRouteTypes {
     | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
+    | '/mega-audit'
     | '/people-also-ask'
     | '/people-also-search'
     | '/ping'
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/html-validator'
     | '/keyword-discovery'
     | '/keywords'
+    | '/mega-audit'
     | '/people-also-ask'
     | '/people-also-search'
     | '/ping'
@@ -656,6 +667,7 @@ export interface FileRouteTypes {
     | '/_authenticated/html-validator'
     | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
+    | '/_authenticated/mega-audit'
     | '/_authenticated/people-also-ask'
     | '/_authenticated/people-also-search'
     | '/_authenticated/ping'
@@ -841,6 +853,13 @@ declare module '@tanstack/react-router' {
       path: '/people-also-ask'
       fullPath: '/people-also-ask'
       preLoaderRoute: typeof AuthenticatedPeopleAlsoAskRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mega-audit': {
+      id: '/_authenticated/mega-audit'
+      path: '/mega-audit'
+      fullPath: '/mega-audit'
+      preLoaderRoute: typeof AuthenticatedMegaAuditRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/keywords': {
@@ -1131,6 +1150,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHtmlValidatorRoute: typeof AuthenticatedHtmlValidatorRoute
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
+  AuthenticatedMegaAuditRoute: typeof AuthenticatedMegaAuditRoute
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
   AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
@@ -1176,6 +1196,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHtmlValidatorRoute: AuthenticatedHtmlValidatorRoute,
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
+  AuthenticatedMegaAuditRoute: AuthenticatedMegaAuditRoute,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
   AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
