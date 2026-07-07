@@ -39,7 +39,6 @@ import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gs
 import { Route as AuthenticatedGapsRouteImport } from './routes/_authenticated/gaps'
 import { Route as AuthenticatedDisavowRouteImport } from './routes/_authenticated/disavow'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as AuthenticatedCrawlerRouteImport } from './routes/_authenticated/crawler'
 import { Route as AuthenticatedContentOptimizerRouteImport } from './routes/_authenticated/content-optimizer'
 import { Route as AuthenticatedCompetitorsRouteImport } from './routes/_authenticated/competitors'
 import { Route as AuthenticatedChecklistRouteImport } from './routes/_authenticated/checklist'
@@ -58,7 +57,6 @@ import { Route as SharedReportTokenRouteImport } from './routes/shared/report.$t
 import { Route as AuthenticatedToolsRobotsTxtGeneratorRouteImport } from './routes/_authenticated/tools.robots-txt-generator'
 import { Route as AuthenticatedSiteAuditIdRouteImport } from './routes/_authenticated/site-audit.$id'
 import { Route as AuthenticatedMegaAuditIdRouteImport } from './routes/_authenticated/mega-audit.$id'
-import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
@@ -225,11 +223,6 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedCrawlerRoute = AuthenticatedCrawlerRouteImport.update({
-  id: '/crawler',
-  path: '/crawler',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedContentOptimizerRoute =
   AuthenticatedContentOptimizerRouteImport.update({
     id: '/content-optimizer',
@@ -334,11 +327,6 @@ const AuthenticatedMegaAuditIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedMegaAuditRoute,
   } as any)
-const AuthenticatedCrawlerIdRoute = AuthenticatedCrawlerIdRouteImport.update({
-  id: '/$id',
-  path: '/$id',
-  getParentRoute: () => AuthenticatedCrawlerRoute,
-} as any)
 const AuthenticatedAuditNewRoute = AuthenticatedAuditNewRouteImport.update({
   id: '/audit/new',
   path: '/audit/new',
@@ -385,7 +373,6 @@ export interface FileRoutesByFullPath {
   '/checklist': typeof AuthenticatedChecklistRoute
   '/competitors': typeof AuthenticatedCompetitorsRoute
   '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
-  '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/disavow': typeof AuthenticatedDisavowRoute
   '/gaps': typeof AuthenticatedGapsRoute
@@ -414,7 +401,6 @@ export interface FileRoutesByFullPath {
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
-  '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/mega-audit/$id': typeof AuthenticatedMegaAuditIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
@@ -441,7 +427,6 @@ export interface FileRoutesByTo {
   '/checklist': typeof AuthenticatedChecklistRoute
   '/competitors': typeof AuthenticatedCompetitorsRoute
   '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
-  '/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/disavow': typeof AuthenticatedDisavowRoute
   '/gaps': typeof AuthenticatedGapsRoute
@@ -470,7 +455,6 @@ export interface FileRoutesByTo {
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
-  '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/mega-audit/$id': typeof AuthenticatedMegaAuditIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
@@ -499,7 +483,6 @@ export interface FileRoutesById {
   '/_authenticated/checklist': typeof AuthenticatedChecklistRoute
   '/_authenticated/competitors': typeof AuthenticatedCompetitorsRoute
   '/_authenticated/content-optimizer': typeof AuthenticatedContentOptimizerRoute
-  '/_authenticated/crawler': typeof AuthenticatedCrawlerRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/disavow': typeof AuthenticatedDisavowRoute
   '/_authenticated/gaps': typeof AuthenticatedGapsRoute
@@ -528,7 +511,6 @@ export interface FileRoutesById {
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
-  '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/_authenticated/mega-audit/$id': typeof AuthenticatedMegaAuditIdRoute
   '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/_authenticated/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
@@ -557,7 +539,6 @@ export interface FileRouteTypes {
     | '/checklist'
     | '/competitors'
     | '/content-optimizer'
-    | '/crawler'
     | '/dashboard'
     | '/disavow'
     | '/gaps'
@@ -586,7 +567,6 @@ export interface FileRouteTypes {
     | '/audit/$id'
     | '/audit/bulk'
     | '/audit/new'
-    | '/crawler/$id'
     | '/mega-audit/$id'
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
@@ -613,7 +593,6 @@ export interface FileRouteTypes {
     | '/checklist'
     | '/competitors'
     | '/content-optimizer'
-    | '/crawler'
     | '/dashboard'
     | '/disavow'
     | '/gaps'
@@ -642,7 +621,6 @@ export interface FileRouteTypes {
     | '/audit/$id'
     | '/audit/bulk'
     | '/audit/new'
-    | '/crawler/$id'
     | '/mega-audit/$id'
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
@@ -670,7 +648,6 @@ export interface FileRouteTypes {
     | '/_authenticated/checklist'
     | '/_authenticated/competitors'
     | '/_authenticated/content-optimizer'
-    | '/_authenticated/crawler'
     | '/_authenticated/dashboard'
     | '/_authenticated/disavow'
     | '/_authenticated/gaps'
@@ -699,7 +676,6 @@ export interface FileRouteTypes {
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/bulk'
     | '/_authenticated/audit/new'
-    | '/_authenticated/crawler/$id'
     | '/_authenticated/mega-audit/$id'
     | '/_authenticated/site-audit/$id'
     | '/_authenticated/tools/robots-txt-generator'
@@ -931,13 +907,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/crawler': {
-      id: '/_authenticated/crawler'
-      path: '/crawler'
-      fullPath: '/crawler'
-      preLoaderRoute: typeof AuthenticatedCrawlerRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/content-optimizer': {
       id: '/_authenticated/content-optimizer'
       path: '/content-optimizer'
@@ -1064,13 +1033,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMegaAuditIdRouteImport
       parentRoute: typeof AuthenticatedMegaAuditRoute
     }
-    '/_authenticated/crawler/$id': {
-      id: '/_authenticated/crawler/$id'
-      path: '/$id'
-      fullPath: '/crawler/$id'
-      preLoaderRoute: typeof AuthenticatedCrawlerIdRouteImport
-      parentRoute: typeof AuthenticatedCrawlerRoute
-    }
     '/_authenticated/audit/new': {
       id: '/_authenticated/audit/new'
       path: '/audit/new'
@@ -1108,17 +1070,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedCrawlerRouteChildren {
-  AuthenticatedCrawlerIdRoute: typeof AuthenticatedCrawlerIdRoute
-}
-
-const AuthenticatedCrawlerRouteChildren: AuthenticatedCrawlerRouteChildren = {
-  AuthenticatedCrawlerIdRoute: AuthenticatedCrawlerIdRoute,
-}
-
-const AuthenticatedCrawlerRouteWithChildren =
-  AuthenticatedCrawlerRoute._addFileChildren(AuthenticatedCrawlerRouteChildren)
 
 interface AuthenticatedMegaAuditRouteChildren {
   AuthenticatedMegaAuditIdRoute: typeof AuthenticatedMegaAuditIdRoute
@@ -1175,7 +1126,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChecklistRoute: typeof AuthenticatedChecklistRoute
   AuthenticatedCompetitorsRoute: typeof AuthenticatedCompetitorsRoute
   AuthenticatedContentOptimizerRoute: typeof AuthenticatedContentOptimizerRoute
-  AuthenticatedCrawlerRoute: typeof AuthenticatedCrawlerRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDisavowRoute: typeof AuthenticatedDisavowRoute
   AuthenticatedGapsRoute: typeof AuthenticatedGapsRoute
@@ -1221,7 +1171,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChecklistRoute: AuthenticatedChecklistRoute,
   AuthenticatedCompetitorsRoute: AuthenticatedCompetitorsRoute,
   AuthenticatedContentOptimizerRoute: AuthenticatedContentOptimizerRoute,
-  AuthenticatedCrawlerRoute: AuthenticatedCrawlerRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDisavowRoute: AuthenticatedDisavowRoute,
   AuthenticatedGapsRoute: AuthenticatedGapsRoute,

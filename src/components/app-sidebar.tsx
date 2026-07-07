@@ -28,7 +28,6 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "Keyword Discovery", url: "/keyword-discovery", icon: Search },
     { title: "People Also Search", url: "/people-also-search", icon: Users },
     { title: "People Also Ask", url: "/people-also-ask", icon: HelpCircle },
-    { title: "Site Crawler", url: "/crawler", icon: Network },
     { title: "Competitors & Backlinks", url: "/competitors", icon: Users },
     { title: "Gap Analysis", url: "/gaps", icon: GitCompareArrows },
     { title: "Toxic Backlinks", url: "/disavow", icon: ShieldAlert },
