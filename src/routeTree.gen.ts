@@ -54,6 +54,7 @@ import { Route as AuthenticatedAiSearchComparisonRouteImport } from './routes/_a
 import { Route as AuthenticatedAiPotentialRouteImport } from './routes/_authenticated/ai-potential'
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
 import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
+import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin-billing'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as SharedReportTokenRouteImport } from './routes/shared/report.$token'
 import { Route as AuthenticatedToolsRobotsTxtGeneratorRouteImport } from './routes/_authenticated/tools.robots-txt-generator'
@@ -62,7 +63,6 @@ import { Route as AuthenticatedMegaAuditIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
-import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as ApiReportsIdPdfRouteImport } from './routes/api/reports.$id.pdf'
 import { Route as ApiPublicHooksRunScheduledAuditsRouteImport } from './routes/api/public/hooks/run-scheduled-audits'
 
@@ -311,6 +311,12 @@ const AuthenticatedAiCitationsRoute =
     path: '/ai-citations',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminBillingRoute =
+  AuthenticatedAdminBillingRouteImport.update({
+    id: '/admin-billing',
+    path: '/admin-billing',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -354,12 +360,6 @@ const AuthenticatedAuditIdRoute = AuthenticatedAuditIdRouteImport.update({
   path: '/audit/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAdminBillingRoute =
-  AuthenticatedAdminBillingRouteImport.update({
-    id: '/billing',
-    path: '/billing',
-    getParentRoute: () => AuthenticatedAdminRoute,
-  } as any)
 const ApiReportsIdPdfRoute = ApiReportsIdPdfRouteImport.update({
   id: '/api/reports/$id/pdf',
   path: '/api/reports/$id/pdf',
@@ -377,7 +377,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
+  '/admin-billing': typeof AuthenticatedAdminBillingRoute
   '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-potential': typeof AuthenticatedAiPotentialRoute
@@ -418,7 +419,6 @@ export interface FileRoutesByFullPath {
   '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
-  '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
@@ -434,7 +434,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/admin': typeof AuthenticatedAdminRoute
+  '/admin-billing': typeof AuthenticatedAdminBillingRoute
   '/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/ai-potential': typeof AuthenticatedAiPotentialRoute
@@ -475,7 +476,6 @@ export interface FileRoutesByTo {
   '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
-  '/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
@@ -493,7 +493,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin-billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/ai-citations': typeof AuthenticatedAiCitationsRoute
   '/_authenticated/ai-detection': typeof AuthenticatedAiDetectionRoute
   '/_authenticated/ai-potential': typeof AuthenticatedAiPotentialRoute
@@ -534,7 +535,6 @@ export interface FileRoutesById {
   '/_authenticated/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
   '/checkout/$slug': typeof CheckoutSlugRoute
-  '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
@@ -553,6 +553,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/admin'
+    | '/admin-billing'
     | '/ai-citations'
     | '/ai-detection'
     | '/ai-potential'
@@ -593,7 +594,6 @@ export interface FileRouteTypes {
     | '/website-speed'
     | '/word-counter'
     | '/checkout/$slug'
-    | '/admin/billing'
     | '/audit/$id'
     | '/audit/bulk'
     | '/audit/new'
@@ -610,6 +610,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/admin'
+    | '/admin-billing'
     | '/ai-citations'
     | '/ai-detection'
     | '/ai-potential'
@@ -650,7 +651,6 @@ export interface FileRouteTypes {
     | '/website-speed'
     | '/word-counter'
     | '/checkout/$slug'
-    | '/admin/billing'
     | '/audit/$id'
     | '/audit/bulk'
     | '/audit/new'
@@ -668,6 +668,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/_authenticated/admin'
+    | '/_authenticated/admin-billing'
     | '/_authenticated/ai-citations'
     | '/_authenticated/ai-detection'
     | '/_authenticated/ai-potential'
@@ -708,7 +709,6 @@ export interface FileRouteTypes {
     | '/_authenticated/website-speed'
     | '/_authenticated/word-counter'
     | '/checkout/$slug'
-    | '/_authenticated/admin/billing'
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/bulk'
     | '/_authenticated/audit/new'
@@ -1049,6 +1049,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAiCitationsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/admin-billing': {
+      id: '/_authenticated/admin-billing'
+      path: '/admin-billing'
+      fullPath: '/admin-billing'
+      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -1105,13 +1112,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/admin/billing': {
-      id: '/_authenticated/admin/billing'
-      path: '/billing'
-      fullPath: '/admin/billing'
-      preLoaderRoute: typeof AuthenticatedAdminBillingRouteImport
-      parentRoute: typeof AuthenticatedAdminRoute
-    }
     '/api/reports/$id/pdf': {
       id: '/api/reports/$id/pdf'
       path: '/api/reports/$id/pdf'
@@ -1128,17 +1128,6 @@ declare module '@tanstack/react-router' {
     }
   }
 }
-
-interface AuthenticatedAdminRouteChildren {
-  AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
-}
-
-const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
-  AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
-}
-
-const AuthenticatedAdminRouteWithChildren =
-  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
 interface AuthenticatedMegaAuditRouteChildren {
   AuthenticatedMegaAuditIdRoute: typeof AuthenticatedMegaAuditIdRoute
@@ -1181,7 +1170,8 @@ const AuthenticatedToolsRouteWithChildren =
   AuthenticatedToolsRoute._addFileChildren(AuthenticatedToolsRouteChildren)
 
 interface AuthenticatedRouteRouteChildren {
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
   AuthenticatedAiCitationsRoute: typeof AuthenticatedAiCitationsRoute
   AuthenticatedAiDetectionRoute: typeof AuthenticatedAiDetectionRoute
   AuthenticatedAiPotentialRoute: typeof AuthenticatedAiPotentialRoute
@@ -1227,7 +1217,8 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
-  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
   AuthenticatedAiCitationsRoute: AuthenticatedAiCitationsRoute,
   AuthenticatedAiDetectionRoute: AuthenticatedAiDetectionRoute,
   AuthenticatedAiPotentialRoute: AuthenticatedAiPotentialRoute,

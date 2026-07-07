@@ -27,7 +27,7 @@ import {
 } from "@/lib/pricing.functions";
 import { checkIsAdmin } from "@/lib/admin.functions";
 
-export const Route = createFileRoute("/_authenticated/admin/billing")({
+export const Route = createFileRoute("/_authenticated/admin-billing")({
   head: () => ({ meta: [{ title: "Admin — Billing & bKash" }] }),
   component: AdminBillingPage,
 });
