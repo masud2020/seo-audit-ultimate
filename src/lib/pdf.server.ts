@@ -113,6 +113,7 @@ interface SiteAuditSummary {
   issue_counts: { high: number; medium: number; low: number };
   top_problems: { message: string; count: number; severity: "high"|"medium"|"low" }[];
   finished_at: string;
+  site_signals?: { id: string; title: string; score: number; checks: Check[] }[];
 }
 interface SiteAuditRec { section: string; summary?: string; fixes: { title: string; impact?: string; effort?: string; steps: string[] }[] }
 
