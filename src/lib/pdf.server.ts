@@ -217,26 +217,34 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
   spacer(2);
   text("Each check is tagged PASS (looks good), WARN (worth improving), FAIL (fix soon) or INFO (context only). Sections are scored 0-100 - 80+ is good, 60-79 needs work, below 60 is a serious problem.", { size: 9, color: [0.35, 0.35, 0.35] });
   spacer(6);
-  // ---- Status colour legend ----
-  {
-    const legend: { label: string; desc: string; color: [number, number, number] }[] = [
-      { label: "PASS", desc: "Check meets best practice.",       color: [0.2, 0.6, 0.3] },
-      { label: "WARN", desc: "Worth improving soon.",             color: [0.85, 0.6, 0.1] },
-      { label: "FAIL", desc: "Fix as soon as possible.",          color: [0.8, 0.2, 0.2] },
-      { label: "INFO", desc: "Context only, no action required.", color: [0.55, 0.55, 0.6] },
+  // Shared status legend — same totals as the segmented chart, so counts + % stay in sync.
+  const drawStatusLegend = (title: string) => {
+    const items: { key: keyof typeof totals; label: string; desc: string; color: [number, number, number] }[] = [
+      { key: "pass", label: "PASS", desc: "Check meets best practice.",       color: [0.2, 0.6, 0.3] },
+      { key: "warn", label: "WARN", desc: "Worth improving soon.",             color: [0.85, 0.6, 0.1] },
+      { key: "fail", label: "FAIL", desc: "Fix as soon as possible.",          color: [0.8, 0.2, 0.2] },
+      { key: "info", label: "INFO", desc: "Context only, no action required.", color: [0.55, 0.55, 0.6] },
     ];
-    ensure(legend.length * 16 + 6);
-    page.drawText("Status colour key", { x: M, y: y - 10, size: 10, font: bold, color: rgb(0.2, 0.2, 0.2) });
-    y -= 16;
-    for (const item of legend) {
-      ensure(14);
-      // colour swatch
-      page.drawRectangle({ x: M, y: y - 10, width: 10, height: 10, color: rgb(item.color[0], item.color[1], item.color[2]) });
-      page.drawText(item.label, { x: M + 16, y: y - 9, size: 9, font: bold, color: rgb(item.color[0], item.color[1], item.color[2]) });
-      page.drawText(item.desc, { x: M + 56, y: y - 9, size: 9, font, color: rgb(0.35, 0.35, 0.35) });
-      y -= 14;
+    const rowH = 18; // roomy enough to stay legible when zoomed out
+    ensure(items.length * rowH + 24);
+    page.drawText(title, { x: M, y: y - 11, size: 11, font: bold, color: rgb(0.2, 0.2, 0.2) });
+    y -= 18;
+    const swatch = 12;
+    for (const it of items) {
+      const n = totals[it.key];
+      const pct = totalChecks ? Math.round((n / totalChecks) * 100) : 0;
+      page.drawRectangle({ x: M, y: y - swatch, width: swatch, height: swatch, color: rgb(it.color[0], it.color[1], it.color[2]) });
+      page.drawText(it.label, { x: M + swatch + 8, y: y - swatch + 2, size: 10, font: bold, color: rgb(it.color[0], it.color[1], it.color[2]) });
+      const countStr = `${n} (${pct}%)`;
+      const cw = bold.widthOfTextAtSize(countStr, 10);
+      page.drawText(countStr, { x: M + swatch + 52, y: y - swatch + 2, size: 10, font: bold, color: rgb(0.15, 0.15, 0.15) });
+      page.drawText(it.desc, { x: M + swatch + 52 + cw + 12, y: y - swatch + 2, size: 9, font, color: rgb(0.35, 0.35, 0.35) });
+      y -= rowH;
     }
-  }
+    spacer(2);
+    text("Footnote: PASS = meets SEO best practice, WARN = worth improving, FAIL = fix soon (directly hurts rankings), INFO = context only, no action required.", { size: 8, color: [0.45, 0.45, 0.5] });
+  };
+  drawStatusLegend("Status colour key");
 
   // ============ PRIORITY ISSUES ============
   if (priority.length) {
@@ -283,6 +291,9 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
   spacer(2);
   text("How each area of the page performs. Lower scores are pulling the overall grade down.", { size: 10, color: [0.35, 0.35, 0.35] });
   spacer(8);
+  drawStatusLegend("Status colour key (matches the chart totals)");
+  spacer(6);
+  rule();
   const sorted = report.sections.slice().sort((a, b) => a.score - b.score);
   for (const s of sorted) {
     ensure(32);
