@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy, Globe, Link as LinkIcon, Zap, Smartphone, FileCode2, Braces } from "lucide-react";
 import { useBrand } from "@/components/brand-provider";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { checkAdminStatus } from "@/lib/admin.functions";
@@ -77,9 +77,25 @@ export function AppSidebar() {
   const { data: adminStatus } = useQuery({
     queryKey: ["admin-status"],
     queryFn: () => checkAdmin(),
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
   });
   const isAdmin = !!adminStatus?.isAdmin;
+
+  useEffect(() => {
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (
+        event === "SIGNED_IN" ||
+        event === "SIGNED_OUT" ||
+        event === "USER_UPDATED" ||
+        event === "TOKEN_REFRESHED"
+      ) {
+        qc.invalidateQueries({ queryKey: ["admin-status"] });
+      }
+    });
+    return () => sub.subscription.unsubscribe();
+  }, [qc]);
 
   const filtered = groups
     .map(g => ({
