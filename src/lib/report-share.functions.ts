@@ -76,9 +76,14 @@ export const revokeReportShare = createServerFn({ method: "POST" })
   });
 
 /** Public: resolve a share token to a report row. No auth required. */
+// Loosely typed record to keep the RPC serializer happy — the caller
+// treats the payload as a JSON blob and narrows via the normalizer.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type PublicReportRow = Record<string, any>;
+
 export const resolveReportShare = createServerFn({ method: "POST" })
   .inputValidator((v: unknown) => z.object({ token: z.string().min(10).max(128) }).parse(v))
-  .handler(async ({ data }): Promise<{ report: unknown; report_type: ReportType; expires_at: string }> => {
+  .handler(async ({ data }): Promise<{ report: PublicReportRow; report_type: ReportType; expires_at: string }> => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: share, error } = await supabaseAdmin
       .from("report_shares")
@@ -96,7 +101,7 @@ export const resolveReportShare = createServerFn({ method: "POST" })
     if (!row) throw new Response("Report no longer available", { status: 404 });
 
     // Strip any owner-identifying fields before returning to the public.
-    const safe = { ...(row as Record<string, unknown>) };
+    const safe: PublicReportRow = { ...(row as PublicReportRow) };
     delete safe.user_id;
     delete safe.owner_id;
     return { report: safe, report_type: share.report_type as ReportType, expires_at: String(share.expires_at) };
