@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, isRedirect } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/admin")({
       }
     } catch (e) {
       // rethrow router redirects
-      if (e && typeof e === "object" && "isRedirect" in (e as any)) throw e;
+      if (isRedirect(e)) throw e;
       throw redirect({ to: "/dashboard" });
     }
   },
