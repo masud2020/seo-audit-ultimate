@@ -111,7 +111,9 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     const detailLines = c.detail ? wrap(c.detail, font, 9, maxW) : [];
     const valStr = c.value != null && c.value !== "" ? String(c.value).slice(0, 240) : "";
     const valueLines = valStr ? wrap(valStr, font, 9, maxW) : [];
-    const rowH = Math.max(16, labelLines.length * 13 + detailLines.length * 12 + valueLines.length * 12 + 4);
+    const hint = (c.status === "fail" || c.status === "warn") ? fixHint(c) : "";
+    const hintLines = hint ? wrap(`How to fix: ${hint}`, font, 9, maxW) : [];
+    const rowH = Math.max(16, labelLines.length * 13 + detailLines.length * 12 + valueLines.length * 12 + hintLines.length * 12 + 4);
     ensure(rowH + 4);
     drawBadge(M, y, meta.label, meta.color, meta.bg);
     let ly = y;
@@ -127,8 +129,92 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
       page.drawText(line, { x: textX, y: ly - 9, size: 9, font, color: rgb(0.45, 0.45, 0.45) });
       ly -= 12;
     }
+    for (let i = 0; i < hintLines.length; i++) {
+      const col = meta.color;
+      page.drawText(hintLines[i], { x: textX, y: ly - 9, size: 9, font: i === 0 ? bold : font, color: rgb(col[0], col[1], col[2]) });
+      ly -= 12;
+    }
     y -= rowH + 4;
   };
+
+  // Static "how to fix" guidance mapped from common check IDs, with fallbacks by keyword.
+  const FIX_HINTS: Record<string, string> = {
+    title: "Write a unique <title> tag 30-60 characters long that describes the page and includes your main keyword.",
+    desc: "Add a unique meta description 120-160 characters long that summarises the page and invites a click.",
+    canonical: "Add a <link rel=\"canonical\" href=\"...\"> pointing to the preferred URL for this page to prevent duplicate content.",
+    "canonical-self": "Set the canonical tag to the page's own final URL to avoid ambiguity.",
+    hreflang: "Add hreflang tags for each language/region variant, including an x-default fallback.",
+    xdefault: "Add an hreflang=\"x-default\" tag pointing to the default language version.",
+    lang: "Set <html lang=\"xx\"> so browsers and search engines know the page language.",
+    charset: "Add <meta charset=\"utf-8\"> as the first tag inside <head>.",
+    viewport: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> so the page is mobile-friendly.",
+    favicon: "Add a favicon (<link rel=\"icon\" ...>) so browsers and search results display your brand icon.",
+    h1: "Add exactly one clear <h1> that describes the page's main topic.",
+    headings: "Use headings in order (H1 > H2 > H3) without skipping levels, and make sure each section has a heading.",
+    content: "Add more unique, useful body copy - aim for at least 300-500 well-structured words on key pages.",
+    "word-count": "Increase the page's word count with genuinely useful information relevant to the query.",
+    flesch: "Simplify writing: shorter sentences, common words, and clear paragraphs to improve readability.",
+    "keyword-diversity": "Broaden the vocabulary around your topic - mix synonyms and related terms instead of repeating one keyword.",
+    alt: "Add descriptive alt text to every meaningful <img>. Use alt=\"\" only for purely decorative images.",
+    "img-alt-cov": "Audit all images and add alt text where it is missing.",
+    "img-count": "Reduce the number of images or lazy-load them so the page stays fast.",
+    lazy: "Add loading=\"lazy\" to below-the-fold images so they don't block first paint.",
+    images: "Compress images (use WebP/AVIF) and add width/height attributes to reduce layout shift.",
+    links: "Fix broken links, add descriptive anchor text, and make sure important pages are linked internally.",
+    broken: "Fix or remove 404/broken links - use a link checker to catch new breakages regularly.",
+    "empty-links": "Give every link visible anchor text (or an aria-label) instead of leaving it blank.",
+    "internal-links": "Add more internal links between related pages so search engines can crawl your site.",
+    "external-links": "Only link out to reputable sources; add rel=\"nofollow sponsored\" where appropriate.",
+    robots: "Publish a /robots.txt file that allows crawling of important pages and points to your sitemap.",
+    "robots-exists": "Create a /robots.txt file at the site root.",
+    "robots-open": "Make sure robots.txt does not accidentally block search engines from your public pages.",
+    "robots-meta": "Remove any noindex/nofollow meta robots tags from pages you want indexed.",
+    "robots-sitemap": "Add a `Sitemap:` line in robots.txt pointing to your XML sitemap.",
+    sitemap: "Publish an XML sitemap and reference it from robots.txt and Google Search Console.",
+    "sitemap-exists": "Generate an XML sitemap at /sitemap.xml listing all indexable URLs.",
+    "sitemap-urls": "Include all canonical, indexable URLs in the sitemap and remove noindex/404 pages.",
+    jsonld: "Add JSON-LD structured data (Article, Product, Organization, FAQ, etc.) matching your content.",
+    structured: "Add and validate schema.org structured data with Google's Rich Results Test.",
+    https: "Serve every URL over HTTPS and 301-redirect http:// requests to https://.",
+    ssl: "Install a valid SSL certificate (e.g. Let's Encrypt) and renew it before expiry.",
+    hsts: "Add a Strict-Transport-Security header with a long max-age (e.g. 31536000; includeSubDomains).",
+    csp: "Add a Content-Security-Policy header to restrict which scripts, styles, and frames can load.",
+    xfo: "Add X-Frame-Options: SAMEORIGIN (or a frame-ancestors CSP) to block clickjacking.",
+    xcto: "Add X-Content-Type-Options: nosniff.",
+    referrer: "Add Referrer-Policy: strict-origin-when-cross-origin (or stricter).",
+    "perm-policy": "Add a Permissions-Policy header to disable browser features you don't use (camera, geolocation, etc.).",
+    coop: "Add Cross-Origin-Opener-Policy: same-origin for extra isolation.",
+    security: "Review your security headers - add HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy.",
+    performance: "Improve Core Web Vitals: compress images, defer non-critical JS, cache aggressively, and use a CDN.",
+    "performance-extra": "Preload critical assets, minify CSS/JS, and remove unused code to speed things up.",
+    cwv: "Optimise Core Web Vitals (LCP, INP, CLS) - fix slow images, blocking scripts, and layout shifts.",
+    ttfb: "Reduce Time To First Byte - use faster hosting, caching, and CDN edge delivery.",
+    size: "Reduce page weight - compress assets, split code, and remove unused libraries.",
+    dom: "Simplify DOM: fewer nested elements and total nodes to help rendering and interactivity.",
+    "blocking-js": "Defer or async non-critical <script> tags so they don't block the initial render.",
+    stylesheets: "Inline critical CSS and defer the rest so the page paints faster.",
+    cdn: "Serve static assets through a CDN so users get them from a nearby edge.",
+    mobile: "Test on real devices - use a responsive layout, tap targets 48x48+, and no horizontal scroll.",
+    accessibility: "Fix WCAG violations - colour contrast, focus states, keyboard navigation, and ARIA labels.",
+    "button-names": "Give every <button> visible text or an aria-label so screen readers can announce it.",
+    "input-labels": "Associate every <input> with a <label> (via for/id) so forms are accessible.",
+    "skip-link": "Add a visually-hidden \"Skip to main content\" link as the first focusable element.",
+    meta: "Fill in missing meta tags (title, description, viewport, charset, Open Graph, Twitter card).",
+    onpage: "Tighten on-page basics: unique title, meta description, one H1, and clear body content.",
+    ga: "Install web analytics (Google Analytics 4, Plausible, etc.) so you can measure improvements.",
+    notfound: "Serve a helpful 404 page with search and links back to key sections.",
+  };
+  function fixHint(c: Check): string {
+    const direct = FIX_HINTS[c.id];
+    if (direct) return direct;
+    const lower = (c.label || "").toLowerCase();
+    if (lower.includes("open graph") || lower.includes("og:")) return "Add Open Graph tags (og:title, og:description, og:image, og:url, og:type) for rich social previews.";
+    if (lower.includes("twitter")) return "Add Twitter Card tags (twitter:card, twitter:title, twitter:description, twitter:image).";
+    if (lower.includes("gsc") || lower.includes("search console")) return "Connect Google Search Console, verify ownership, and act on the coverage/performance data it reports.";
+    if (lower.includes("ai")) return "Improve on-page clarity, add schema, and publish authoritative content so AI answer engines can cite you.";
+    if (c.status === "fail") return "Address this issue - it directly hurts SEO. See the AI Recommendations section for step-by-step guidance.";
+    return "Improve this item when you have time - it holds back your SEO potential.";
+  }
 
   // Totals
   const totals = { pass: 0, warn: 0, fail: 0, info: 0 };
