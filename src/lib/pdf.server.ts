@@ -23,6 +23,23 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
+// Shared vertical-metrics helpers so every text call lands on the same baseline
+// grid and every centered label sits visually centered inside its box.
+// - ascentOf: distance from baseline to the top of a capital letter.
+// - lineAdvanceOf: baseline-to-baseline distance for stacked lines.
+// - centerBaselineY: baseline y that visually centers text inside a box whose
+//   top edge is `topY` and whose height is `boxH`.
+function ascentOf(f: PDFFont, size: number): number {
+  return f.heightAtSize(size, { descender: false });
+}
+function lineAdvanceOf(f: PDFFont, size: number): number {
+  return f.heightAtSize(size) + 1;
+}
+function centerBaselineY(topY: number, boxH: number, f: PDFFont, size: number): number {
+  const asc = ascentOf(f, size);
+  return topY - (boxH - asc) / 2 - asc;
+}
+
 export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
