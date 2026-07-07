@@ -22,7 +22,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ShieldAlert, ShieldCheck, Trash2, KeyRound, Ban, CheckCircle2, Search, Loader2 } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Trash2, KeyRound, Ban, CheckCircle2, Search, Loader2, UserCog } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { getProfileByUserId, updateProfileAsAdmin } from "@/lib/profile.functions";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   // Authorization is enforced by the in-page AdminGate and by assertAdmin
@@ -170,6 +175,7 @@ function UsersPanel() {
                       >
                         {u.is_admin ? "Revoke admin" : "Make admin"}
                       </Button>
+                      <AdminEditProfileButton userId={u.id} email={u.email} />
                       {u.email && (
                         <Button
                           size="sm" variant="ghost" title="Send password reset"
