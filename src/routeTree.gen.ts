@@ -57,6 +57,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as SharedReportTokenRouteImport } from './routes/shared/report.$token'
 import { Route as AuthenticatedToolsRobotsTxtGeneratorRouteImport } from './routes/_authenticated/tools.robots-txt-generator'
 import { Route as AuthenticatedSiteAuditIdRouteImport } from './routes/_authenticated/site-audit.$id'
+import { Route as AuthenticatedMegaAuditIdRouteImport } from './routes/_authenticated/mega-audit.$id'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
@@ -327,6 +328,12 @@ const AuthenticatedSiteAuditIdRoute =
     path: '/$id',
     getParentRoute: () => AuthenticatedSiteAuditRoute,
   } as any)
+const AuthenticatedMegaAuditIdRoute =
+  AuthenticatedMegaAuditIdRouteImport.update({
+    id: '/$id',
+    path: '/$id',
+    getParentRoute: () => AuthenticatedMegaAuditRoute,
+  } as any)
 const AuthenticatedCrawlerIdRoute = AuthenticatedCrawlerIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -387,7 +394,7 @@ export interface FileRoutesByFullPath {
   '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
-  '/mega-audit': typeof AuthenticatedMegaAuditRoute
+  '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -408,6 +415,7 @@ export interface FileRoutesByFullPath {
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/mega-audit/$id': typeof AuthenticatedMegaAuditIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/shared/report/$token': typeof SharedReportTokenRoute
@@ -442,7 +450,7 @@ export interface FileRoutesByTo {
   '/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
-  '/mega-audit': typeof AuthenticatedMegaAuditRoute
+  '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -463,6 +471,7 @@ export interface FileRoutesByTo {
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/mega-audit/$id': typeof AuthenticatedMegaAuditIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/shared/report/$token': typeof SharedReportTokenRoute
@@ -499,7 +508,7 @@ export interface FileRoutesById {
   '/_authenticated/html-validator': typeof AuthenticatedHtmlValidatorRoute
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
-  '/_authenticated/mega-audit': typeof AuthenticatedMegaAuditRoute
+  '/_authenticated/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
@@ -520,6 +529,7 @@ export interface FileRoutesById {
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
   '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
+  '/_authenticated/mega-audit/$id': typeof AuthenticatedMegaAuditIdRoute
   '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/_authenticated/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/shared/report/$token': typeof SharedReportTokenRoute
@@ -577,6 +587,7 @@ export interface FileRouteTypes {
     | '/audit/bulk'
     | '/audit/new'
     | '/crawler/$id'
+    | '/mega-audit/$id'
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
     | '/shared/report/$token'
@@ -632,6 +643,7 @@ export interface FileRouteTypes {
     | '/audit/bulk'
     | '/audit/new'
     | '/crawler/$id'
+    | '/mega-audit/$id'
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
     | '/shared/report/$token'
@@ -688,6 +700,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit/bulk'
     | '/_authenticated/audit/new'
     | '/_authenticated/crawler/$id'
+    | '/_authenticated/mega-audit/$id'
     | '/_authenticated/site-audit/$id'
     | '/_authenticated/tools/robots-txt-generator'
     | '/shared/report/$token'
@@ -1044,6 +1057,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSiteAuditIdRouteImport
       parentRoute: typeof AuthenticatedSiteAuditRoute
     }
+    '/_authenticated/mega-audit/$id': {
+      id: '/_authenticated/mega-audit/$id'
+      path: '/$id'
+      fullPath: '/mega-audit/$id'
+      preLoaderRoute: typeof AuthenticatedMegaAuditIdRouteImport
+      parentRoute: typeof AuthenticatedMegaAuditRoute
+    }
     '/_authenticated/crawler/$id': {
       id: '/_authenticated/crawler/$id'
       path: '/$id'
@@ -1100,6 +1120,20 @@ const AuthenticatedCrawlerRouteChildren: AuthenticatedCrawlerRouteChildren = {
 const AuthenticatedCrawlerRouteWithChildren =
   AuthenticatedCrawlerRoute._addFileChildren(AuthenticatedCrawlerRouteChildren)
 
+interface AuthenticatedMegaAuditRouteChildren {
+  AuthenticatedMegaAuditIdRoute: typeof AuthenticatedMegaAuditIdRoute
+}
+
+const AuthenticatedMegaAuditRouteChildren: AuthenticatedMegaAuditRouteChildren =
+  {
+    AuthenticatedMegaAuditIdRoute: AuthenticatedMegaAuditIdRoute,
+  }
+
+const AuthenticatedMegaAuditRouteWithChildren =
+  AuthenticatedMegaAuditRoute._addFileChildren(
+    AuthenticatedMegaAuditRouteChildren,
+  )
+
 interface AuthenticatedSiteAuditRouteChildren {
   AuthenticatedSiteAuditIdRoute: typeof AuthenticatedSiteAuditIdRoute
 }
@@ -1150,7 +1184,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHtmlValidatorRoute: typeof AuthenticatedHtmlValidatorRoute
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
-  AuthenticatedMegaAuditRoute: typeof AuthenticatedMegaAuditRoute
+  AuthenticatedMegaAuditRoute: typeof AuthenticatedMegaAuditRouteWithChildren
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
   AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
@@ -1196,7 +1230,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHtmlValidatorRoute: AuthenticatedHtmlValidatorRoute,
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
-  AuthenticatedMegaAuditRoute: AuthenticatedMegaAuditRoute,
+  AuthenticatedMegaAuditRoute: AuthenticatedMegaAuditRouteWithChildren,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
   AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
