@@ -48,14 +48,15 @@ interface Options {
   targetKeyword?: string | null;
   maxPages: number;
   semrushKey?: string | null;
+  psiKey?: string | null;
   verifiedSites: string[];
   onProgress?: MegaProgressCb;
 }
 
-async function pageReportWithSignals(url: string, opts: { semrushKey?: string | null; verifiedSites: string[] }): Promise<AuditReport> {
+async function pageReportWithSignals(url: string, opts: { semrushKey?: string | null; psiKey?: string | null; verifiedSites: string[] }): Promise<AuditReport> {
   const report = await runAudit(url);
   const [psi, redir, gsc, sr, ai] = await Promise.allSettled([
-    psiSection(report.final_url),
+    psiSection(report.final_url, opts.psiKey ?? null),
     redirectChainSection(url),
     gscSection({ url: report.final_url, verifiedSites: opts.verifiedSites }),
     semrushSection({ url: report.final_url, apiKey: opts.semrushKey ?? null }),
@@ -90,12 +91,12 @@ export async function runMegaAudit(opts: Options): Promise<MegaAuditResult> {
   await emit(5, "Starting mega audit…");
 
   // Kick off the biggest jobs in parallel: single-page + site + competitor.
-  const pagePromise = pageReportWithSignals(opts.targetUrl, { semrushKey: opts.semrushKey, verifiedSites: opts.verifiedSites });
+  const pagePromise = pageReportWithSignals(opts.targetUrl, { semrushKey: opts.semrushKey, psiKey: opts.psiKey, verifiedSites: opts.verifiedSites });
   const sitePromise = runSiteAudit(
     opts.targetUrl,
     opts.maxPages,
     async (n) => { await emit(15 + Math.min(50, Math.round((n / opts.maxPages) * 50)), `Crawling & auditing pages (${n}/${opts.maxPages})…`); },
-    { semrushKey: opts.semrushKey, verifiedSites: opts.verifiedSites },
+    { semrushKey: opts.semrushKey, psiKey: opts.psiKey, verifiedSites: opts.verifiedSites },
   );
   const compPromise = opts.competitorUrl
     ? competitorSnapshot(opts.competitorUrl, { semrushKey: opts.semrushKey })
@@ -106,7 +107,7 @@ export async function runMegaAudit(opts: Options): Promise<MegaAuditResult> {
 
   await emit(70, "Fetching site-wide external signals…");
   const site_signals: Section[] = site.summary.site_signals ?? await siteSignals({
-    startUrl: opts.targetUrl, semrushKey: opts.semrushKey, verifiedSites: opts.verifiedSites,
+    startUrl: opts.targetUrl, semrushKey: opts.semrushKey, psiKey: opts.psiKey, verifiedSites: opts.verifiedSites,
   }).catch(() => []);
 
   await emit(90, "Scoring & compiling report…");
