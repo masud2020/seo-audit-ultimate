@@ -159,7 +159,7 @@ function ApiKeysForm() {
   const { data } = useQuery({ queryKey: ["api-settings"], queryFn: () => get() });
   const [form, setForm] = useState({
     provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "",
-    serpapi_key: "", semrush_key: "", moz_token: "", majestic_key: "", sender_email: "", sender_name: "", dataforseo_login: "", dataforseo_password: "",
+    serpapi_key: "", semrush_key: "", moz_token: "", majestic_key: "", psi_key: "", sender_email: "", sender_name: "", dataforseo_login: "", dataforseo_password: "",
   });
   useEffect(() => { if (data) setForm({
     provider: data.provider ?? "lovable",
@@ -172,6 +172,7 @@ function ApiKeysForm() {
     semrush_key: (data as { semrush_key?: string }).semrush_key ?? "",
     moz_token: (data as { moz_token?: string }).moz_token ?? "",
     majestic_key: (data as { majestic_key?: string }).majestic_key ?? "",
+    psi_key: (data as { psi_key?: string }).psi_key ?? "",
     sender_email: (data as { sender_email?: string }).sender_email ?? "",
     sender_name: (data as { sender_name?: string }).sender_name ?? "",
     dataforseo_login: (data as { dataforseo_login?: string }).dataforseo_login ?? "",
@@ -236,6 +237,11 @@ function ApiKeysForm() {
         <p className="text-xs text-muted-foreground mt-1">Powers Trust Flow (TF) and Citation Flow (CF). Get one at majestic.com/account/api-key.</p>
       </div>
       <TestDomainMetricsKeys />
+      <div>
+        <Label>PageSpeed Insights API key</Label>
+        <Input type="password" value={form.psi_key} onChange={(e) => setForm({ ...form, psi_key: e.target.value })} placeholder="AIza…" autoComplete="off" />
+        <p className="text-xs text-muted-foreground mt-1">Powers Core Web Vitals in audits. Anonymous PSI works but is capped at 25 req/day/IP. Create a key at console.cloud.google.com → APIs & Services → Credentials, and enable the <em>PageSpeed Insights API</em>.</p>
+      </div>
       <div>
         <Label>DataForSEO login</Label>
         <Input value={form.dataforseo_login} onChange={(e) => setForm({ ...form, dataforseo_login: e.target.value })} placeholder="you@example.com" autoComplete="off" />

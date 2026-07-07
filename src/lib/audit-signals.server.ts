@@ -19,9 +19,9 @@ function score(checks: Check[]): number {
 // ---------- 1. PageSpeed / Core Web Vitals ----------
 // Uses Google's anonymous PSI endpoint (25 req/day/IP). Add PSI_API_KEY
 // as a project secret to unlock the higher-quota authenticated tier.
-export async function psiSection(url: string): Promise<Section | null> {
+export async function psiSection(url: string, apiKey?: string | null): Promise<Section | null> {
   const strategy = "mobile";
-  const key = process.env.PSI_API_KEY;
+  const key = apiKey || process.env.PSI_API_KEY;
   const params = new URLSearchParams({ url, strategy, category: "performance" });
   params.append("category", "seo");
   params.append("category", "accessibility");
@@ -336,9 +336,9 @@ export async function gscSiteSection(opts: { startUrl: string; verifiedSites: st
 }
 
 // ---------- 7. Site-wide signals bundle (used by whole-site audit) ----------
-export async function siteSignals(opts: { startUrl: string; semrushKey?: string | null; verifiedSites: string[] }): Promise<Section[]> {
+export async function siteSignals(opts: { startUrl: string; semrushKey?: string | null; psiKey?: string | null; verifiedSites: string[] }): Promise<Section[]> {
   const [psi, redir, gsc, sr, ai] = await Promise.allSettled([
-    psiSection(opts.startUrl),
+    psiSection(opts.startUrl, opts.psiKey ?? null),
     redirectChainSection(opts.startUrl),
     gscSiteSection({ startUrl: opts.startUrl, verifiedSites: opts.verifiedSites }),
     semrushSection({ url: opts.startUrl, apiKey: opts.semrushKey ?? null }),

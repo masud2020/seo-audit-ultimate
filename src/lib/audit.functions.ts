@@ -22,15 +22,17 @@ export const startAudit = createServerFn({ method: "POST" })
       try {
         const { psiSection, redirectChainSection, gscSection, semrushSection, aiVisibilitySection } = await import("./audit-signals.server");
         // Look up user's Semrush key + verified GSC sites in parallel with the signal calls.
-        const [semrushKeyRow, gscRow] = await Promise.all([
-          supabase.from("api_settings").select("semrush_key").eq("user_id", userId).maybeSingle(),
+        const [settingsRow, gscRow] = await Promise.all([
+          supabase.from("api_settings").select("semrush_key,psi_key").eq("user_id", userId).maybeSingle(),
           supabase.from("gsc_verifications").select("site_url,verified").eq("user_id", userId).eq("verified", true),
         ]);
-        const semrushKey = (semrushKeyRow.data as { semrush_key?: string } | null)?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+        const settings = settingsRow.data as { semrush_key?: string; psi_key?: string } | null;
+        const semrushKey = settings?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+        const psiKey = settings?.psi_key || process.env.PSI_API_KEY || null;
         const verifiedSites = (gscRow.data ?? []).map((s) => s.site_url as string);
 
         const [psi, redir, gsc, sr, ai] = await Promise.allSettled([
-          psiSection(report.final_url),
+          psiSection(report.final_url, psiKey),
           redirectChainSection(data.url),
           gscSection({ url: report.final_url, verifiedSites }),
           semrushSection({ url: report.final_url, apiKey: semrushKey }),
