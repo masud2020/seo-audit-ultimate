@@ -26,7 +26,7 @@ function Tools() {
         <Tool icon={Feather} title="Hemingway Editor" desc="External writing editor for clarity and grade level." external="https://hemingwayapp.com" />
         <Tool icon={Radio} title="Ping Sites" desc="Notify Google, Bing and IndexNow of updates." to="/ping" />
         <Tool icon={TrendingUp} title="Keyword Rank Tracker" desc="Track keyword positions over time." to="/keywords" />
-        <Tool icon={Bot} title="AI Visibility" desc="How your content shows up in AI answers." to="/ai-visibility" />
+        <Tool icon={Bot} title="AI Citation Checker" desc="How your content shows up in AI answers." to="/ai-citations" />
         <Tool icon={FileCode} title="Robots.txt Generator" desc="Build Allow / Disallow rules and download robots.txt." to="/tools/robots-txt-generator" />
       </div>
       <Card className="p-6">
