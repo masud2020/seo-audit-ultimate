@@ -1,4 +1,4 @@
-import { createFileRoute, Link, redirect, isRedirect } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApiSettings, saveApiSettings } from "@/lib/misc.functions";
@@ -14,18 +14,9 @@ import { toast } from "sonner";
 import { ShieldAlert, CheckCircle2, XCircle, ExternalLink, PlugZap, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/settings")({
-  // Server-side admin gate: non-admins are redirected before the page renders.
-  // Every underlying server function additionally re-checks admin, so this is
-  // defense-in-depth rather than the sole authorization boundary.
-  beforeLoad: async () => {
-    try {
-      const { isAdmin } = await checkIsAdmin();
-      if (!isAdmin) throw redirect({ to: "/dashboard" });
-    } catch (e) {
-      if (isRedirect(e)) throw e;
-      throw redirect({ to: "/dashboard" });
-    }
-  },
+  // Authorization is enforced by the in-page AdminGate and by assertAdmin
+  // inside every server function. A beforeLoad redirect caused false-positive
+  // kicks during preload/session-hydration races.
   component: Settings,
 });
 
