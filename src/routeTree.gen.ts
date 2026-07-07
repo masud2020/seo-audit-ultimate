@@ -14,6 +14,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CheckoutSlugRouteImport } from './routes/checkout.$slug'
 import { Route as AuthenticatedWordCounterRouteImport } from './routes/_authenticated/word-counter'
 import { Route as AuthenticatedWebsiteSpeedRouteImport } from './routes/_authenticated/website-speed'
 import { Route as AuthenticatedToolsRouteImport } from './routes/_authenticated/tools'
@@ -45,6 +46,7 @@ import { Route as AuthenticatedCompetitorsRouteImport } from './routes/_authenti
 import { Route as AuthenticatedChecklistRouteImport } from './routes/_authenticated/checklist'
 import { Route as AuthenticatedCalendarRouteImport } from './routes/_authenticated/calendar'
 import { Route as AuthenticatedBrokenLinksRouteImport } from './routes/_authenticated/broken-links'
+import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedBacklinkMonitorRouteImport } from './routes/_authenticated/backlink-monitor'
 import { Route as AuthenticatedBacklinkCheckerRouteImport } from './routes/_authenticated/backlink-checker'
 import { Route as AuthenticatedAiSearchRankRouteImport } from './routes/_authenticated/ai-search-rank'
@@ -85,6 +87,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckoutSlugRoute = CheckoutSlugRouteImport.update({
+  id: '/checkout/$slug',
+  path: '/checkout/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWordCounterRoute =
@@ -256,6 +263,11 @@ const AuthenticatedBrokenLinksRoute =
     path: '/broken-links',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
+  id: '/billing',
+  path: '/billing',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBacklinkMonitorRoute =
   AuthenticatedBacklinkMonitorRouteImport.update({
     id: '/backlink-monitor',
@@ -366,6 +378,7 @@ export interface FileRoutesByFullPath {
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
@@ -397,6 +410,7 @@ export interface FileRoutesByFullPath {
   '/tools': typeof AuthenticatedToolsRouteWithChildren
   '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
+  '/checkout/$slug': typeof CheckoutSlugRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
@@ -420,6 +434,7 @@ export interface FileRoutesByTo {
   '/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
+  '/billing': typeof AuthenticatedBillingRoute
   '/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/calendar': typeof AuthenticatedCalendarRoute
   '/checklist': typeof AuthenticatedChecklistRoute
@@ -451,6 +466,7 @@ export interface FileRoutesByTo {
   '/tools': typeof AuthenticatedToolsRouteWithChildren
   '/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/word-counter': typeof AuthenticatedWordCounterRoute
+  '/checkout/$slug': typeof CheckoutSlugRoute
   '/audit/$id': typeof AuthenticatedAuditIdRoute
   '/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/audit/new': typeof AuthenticatedAuditNewRoute
@@ -476,6 +492,7 @@ export interface FileRoutesById {
   '/_authenticated/ai-search-rank': typeof AuthenticatedAiSearchRankRoute
   '/_authenticated/backlink-checker': typeof AuthenticatedBacklinkCheckerRoute
   '/_authenticated/backlink-monitor': typeof AuthenticatedBacklinkMonitorRoute
+  '/_authenticated/billing': typeof AuthenticatedBillingRoute
   '/_authenticated/broken-links': typeof AuthenticatedBrokenLinksRoute
   '/_authenticated/calendar': typeof AuthenticatedCalendarRoute
   '/_authenticated/checklist': typeof AuthenticatedChecklistRoute
@@ -507,6 +524,7 @@ export interface FileRoutesById {
   '/_authenticated/tools': typeof AuthenticatedToolsRouteWithChildren
   '/_authenticated/website-speed': typeof AuthenticatedWebsiteSpeedRoute
   '/_authenticated/word-counter': typeof AuthenticatedWordCounterRoute
+  '/checkout/$slug': typeof CheckoutSlugRoute
   '/_authenticated/audit/$id': typeof AuthenticatedAuditIdRoute
   '/_authenticated/audit/bulk': typeof AuthenticatedAuditBulkRoute
   '/_authenticated/audit/new': typeof AuthenticatedAuditNewRoute
@@ -532,6 +550,7 @@ export interface FileRouteTypes {
     | '/ai-search-rank'
     | '/backlink-checker'
     | '/backlink-monitor'
+    | '/billing'
     | '/broken-links'
     | '/calendar'
     | '/checklist'
@@ -563,6 +582,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/website-speed'
     | '/word-counter'
+    | '/checkout/$slug'
     | '/audit/$id'
     | '/audit/bulk'
     | '/audit/new'
@@ -586,6 +606,7 @@ export interface FileRouteTypes {
     | '/ai-search-rank'
     | '/backlink-checker'
     | '/backlink-monitor'
+    | '/billing'
     | '/broken-links'
     | '/calendar'
     | '/checklist'
@@ -617,6 +638,7 @@ export interface FileRouteTypes {
     | '/tools'
     | '/website-speed'
     | '/word-counter'
+    | '/checkout/$slug'
     | '/audit/$id'
     | '/audit/bulk'
     | '/audit/new'
@@ -641,6 +663,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ai-search-rank'
     | '/_authenticated/backlink-checker'
     | '/_authenticated/backlink-monitor'
+    | '/_authenticated/billing'
     | '/_authenticated/broken-links'
     | '/_authenticated/calendar'
     | '/_authenticated/checklist'
@@ -672,6 +695,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tools'
     | '/_authenticated/website-speed'
     | '/_authenticated/word-counter'
+    | '/checkout/$slug'
     | '/_authenticated/audit/$id'
     | '/_authenticated/audit/bulk'
     | '/_authenticated/audit/new'
@@ -689,6 +713,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  CheckoutSlugRoute: typeof CheckoutSlugRoute
   SharedReportTokenRoute: typeof SharedReportTokenRoute
   ApiPublicHooksRunScheduledAuditsRoute: typeof ApiPublicHooksRunScheduledAuditsRoute
   ApiReportsIdPdfRoute: typeof ApiReportsIdPdfRoute
@@ -729,6 +754,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkout/$slug': {
+      id: '/checkout/$slug'
+      path: '/checkout/$slug'
+      fullPath: '/checkout/$slug'
+      preLoaderRoute: typeof CheckoutSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/word-counter': {
@@ -948,6 +980,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBrokenLinksRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/billing': {
+      id: '/_authenticated/billing'
+      path: '/billing'
+      fullPath: '/billing'
+      preLoaderRoute: typeof AuthenticatedBillingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/backlink-monitor': {
       id: '/_authenticated/backlink-monitor'
       path: '/backlink-monitor'
@@ -1119,6 +1158,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAiSearchRankRoute: typeof AuthenticatedAiSearchRankRoute
   AuthenticatedBacklinkCheckerRoute: typeof AuthenticatedBacklinkCheckerRoute
   AuthenticatedBacklinkMonitorRoute: typeof AuthenticatedBacklinkMonitorRoute
+  AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
   AuthenticatedBrokenLinksRoute: typeof AuthenticatedBrokenLinksRoute
   AuthenticatedCalendarRoute: typeof AuthenticatedCalendarRoute
   AuthenticatedChecklistRoute: typeof AuthenticatedChecklistRoute
@@ -1164,6 +1204,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAiSearchRankRoute: AuthenticatedAiSearchRankRoute,
   AuthenticatedBacklinkCheckerRoute: AuthenticatedBacklinkCheckerRoute,
   AuthenticatedBacklinkMonitorRoute: AuthenticatedBacklinkMonitorRoute,
+  AuthenticatedBillingRoute: AuthenticatedBillingRoute,
   AuthenticatedBrokenLinksRoute: AuthenticatedBrokenLinksRoute,
   AuthenticatedCalendarRoute: AuthenticatedCalendarRoute,
   AuthenticatedChecklistRoute: AuthenticatedChecklistRoute,
@@ -1209,6 +1250,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  CheckoutSlugRoute: CheckoutSlugRoute,
   SharedReportTokenRoute: SharedReportTokenRoute,
   ApiPublicHooksRunScheduledAuditsRoute: ApiPublicHooksRunScheduledAuditsRoute,
   ApiReportsIdPdfRoute: ApiReportsIdPdfRoute,
