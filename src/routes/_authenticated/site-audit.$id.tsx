@@ -7,6 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Loader2, ExternalLink, AlertTriangle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { ExecutiveSummary } from "@/components/reports/ExecutiveSummary";
+import { ExportMenu } from "@/components/reports/ExportMenu";
+import { AiRecommendationsPanel } from "@/components/reports/AiRecommendationsPanel";
+import { normalizeSiteAudit } from "@/lib/report-core";
 
 export const Route = createFileRoute("/_authenticated/site-audit/$id")({ component: Detail });
 
@@ -62,6 +66,7 @@ function Detail() {
   const summary = data.summary as unknown as Summary;
   const pages = (data.pages as unknown as Page[]) ?? [];
   const issues = (data.issues as unknown as Issue[]) ?? [];
+  const normalized = normalizeSiteAudit(data as unknown as Record<string, unknown>);
 
   return (
     <div className="space-y-5">
@@ -73,11 +78,16 @@ function Detail() {
           </h1>
           <p className="text-xs text-muted-foreground">Finished {new Date(summary.finished_at).toLocaleString()} · {summary.pages_audited} pages · {summary.pages_failed} failed</p>
         </div>
-        <div className="text-right">
-          <div className="text-xs text-muted-foreground">Overall site score</div>
-          <div className={`text-4xl font-bold ${scoreCls(summary.overall_score)}`}>{summary.overall_score}</div>
+        <div className="flex items-center gap-3">
+          <ExportMenu report={normalized} />
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">Overall site score</div>
+            <div className={`text-4xl font-bold ${scoreCls(summary.overall_score)}`}>{summary.overall_score}</div>
+          </div>
         </div>
       </div>
+
+      <ExecutiveSummary report={normalized} />
 
       <div className="grid gap-3 md:grid-cols-4">
         <Card className="p-4"><div className="text-xs text-muted-foreground">Pages</div><div className="text-2xl font-semibold">{summary.pages_audited}</div></Card>
@@ -85,6 +95,8 @@ function Detail() {
         <Card className="p-4"><div className="text-xs text-muted-foreground">Medium</div><div className="text-2xl font-semibold text-amber-400">{summary.issue_counts.medium}</div></Card>
         <Card className="p-4"><div className="text-xs text-muted-foreground">Low</div><div className="text-2xl font-semibold text-muted-foreground">{summary.issue_counts.low}</div></Card>
       </div>
+
+      <AiRecommendationsPanel report={normalized} />
 
       <Tabs defaultValue="sections">
         <TabsList>
