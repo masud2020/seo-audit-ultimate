@@ -11,7 +11,7 @@ export interface ActivityLogRow {
   path: string | null;
   ip: string | null;
   user_agent: string | null;
-  metadata: unknown;
+  metadata: Record<string, string | number | boolean | null> | null;
   created_at: string;
   email?: string | null;
 }
