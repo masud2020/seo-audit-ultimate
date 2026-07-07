@@ -1020,12 +1020,14 @@ export async function buildSiteAuditPdf(
       while (display.length > 1 && f.widthOfTextAtSize(display + "…", size) > maxW) display = display.slice(0, -1);
       display = display + "…";
     }
-    ensure(size + 4);
-    const lineY = y - size;
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
+    ensure(lh);
+    const lineY = y - asc;
     page.drawText(display, { x, y: lineY, size, font: f, color: rgb(color[0], color[1], color[2]) });
     const w = Math.min(f.widthOfTextAtSize(display, size), maxW);
     addUriLink(page, [x, lineY - 1, x + w, lineY + size], url);
-    y -= size + 3;
+    y -= lh;
   };
 
   const s = data.summary;
