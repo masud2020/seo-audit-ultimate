@@ -216,13 +216,48 @@ export async function runAudit(rawUrl: string): Promise<AuditReport> {
   // ==== Structured data ====
   const jsonLdBlocks = all(html, /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi).map(m => m[1]);
   let ldTypes: string[] = [];
+  const ldValidations: Array<{ type: string; missing: string[] }> = [];
+  const requiredFields: Record<string, string[]> = {
+    Article: ["headline", "author", "datePublished"],
+    NewsArticle: ["headline", "author", "datePublished"],
+    BlogPosting: ["headline", "author", "datePublished"],
+    Product: ["name", "image", "offers"],
+    Organization: ["name", "url"],
+    LocalBusiness: ["name", "address", "telephone"],
+    BreadcrumbList: ["itemListElement"],
+    FAQPage: ["mainEntity"],
+    HowTo: ["name", "step"],
+    Event: ["name", "startDate", "location"],
+    Recipe: ["name", "recipeIngredient", "recipeInstructions"],
+    VideoObject: ["name", "thumbnailUrl", "uploadDate"],
+  };
   for (const b of jsonLdBlocks) {
-    try { const j = JSON.parse(b); const t = Array.isArray(j) ? j.map(x=>x["@type"]) : [j["@type"]]; ldTypes.push(...t.flat().filter(Boolean)); } catch { /* ignore */ }
+    try {
+      const j = JSON.parse(b);
+      const items = Array.isArray(j) ? j : [j];
+      for (const item of items) {
+        const t = item["@type"];
+        const types = (Array.isArray(t) ? t : [t]).filter(Boolean).map(String);
+        ldTypes.push(...types);
+        for (const typeName of types) {
+          const req = requiredFields[typeName];
+          if (!req) continue;
+          const missing = req.filter((f) => item[f] == null || (Array.isArray(item[f]) && item[f].length === 0));
+          if (missing.length) ldValidations.push({ type: typeName, missing });
+        }
+      }
+    } catch { /* ignore */ }
   }
   const sdChecks: Check[] = [
     { id: "jsonld", label: "JSON-LD structured data", status: jsonLdBlocks.length > 0 ? "pass" : "warn", detail: `${jsonLdBlocks.length} blocks`, value: ldTypes.join(", ") },
+    ...ldValidations.map((v, i): Check => ({
+      id: `ld-req-${v.type}-${i}`,
+      label: `${v.type} required fields`,
+      status: "fail",
+      detail: `Missing: ${v.missing.join(", ")}`,
+    })),
   ];
-  sections.push({ id: "structured", title: "Structure Markup", checks: sdChecks, score: scoreFromChecks(sdChecks), data: { types: ldTypes } });
+  sections.push({ id: "structured", title: "Structure Markup", checks: sdChecks, score: scoreFromChecks(sdChecks), data: { types: ldTypes, validations: ldValidations } });
 
   // ==== Security / SSL / HTTPS ====
   const isHttps = finalUrl.startsWith("https://");
