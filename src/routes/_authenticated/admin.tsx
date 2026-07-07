@@ -307,3 +307,95 @@ function AdminEditProfileButton({ userId, email }: { userId: string; email: stri
     </Dialog>
   );
 }
+
+function ActivityLogsPanel() {
+  const list = useServerFn(listActivityLogs);
+  const [q, setQ] = useState("");
+  const [action, setAction] = useState("");
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
+    queryKey: ["admin-activity", action],
+    queryFn: () => list({ data: { action: action || undefined, limit: 200 } }),
+  });
+  const logs: ActivityLogRow[] = data?.logs ?? [];
+  const filtered = logs.filter((l) => {
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return (
+      (l.ip ?? "").toLowerCase().includes(s) ||
+      (l.path ?? "").toLowerCase().includes(s) ||
+      (l.action ?? "").toLowerCase().includes(s) ||
+      (l.email ?? "").toLowerCase().includes(s) ||
+      (l.user_id ?? "").includes(s)
+    );
+  });
+
+  const actions = Array.from(new Set(logs.map((l) => l.action))).sort();
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Activity Logs</h2>
+          <p className="text-sm text-muted-foreground">
+            Latest {logs.length} events · IPs, actions, and pages
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={action}
+            onChange={(e) => setAction(e.target.value)}
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            <option value="">All actions</option>
+            {actions.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search ip, path, user" className="pl-8 h-9" />
+          </div>
+          <Button size="sm" variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Refresh"}
+          </Button>
+        </div>
+      </div>
+
+      {isLoading && <div className="p-6 text-sm text-muted-foreground">Loading activity…</div>}
+      {error && <div className="p-4 text-sm text-destructive">{error instanceof Error ? error.message : "Failed to load activity"}</div>}
+
+      {!isLoading && !error && (
+        <div className="rounded border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>When</TableHead>
+                <TableHead>User</TableHead>
+                <TableHead>Action</TableHead>
+                <TableHead>Path</TableHead>
+                <TableHead>IP</TableHead>
+                <TableHead>User agent</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell className="text-xs whitespace-nowrap">{new Date(l.created_at).toLocaleString()}</TableCell>
+                  <TableCell className="text-xs">
+                    <div>{l.email ?? "—"}</div>
+                    <div className="text-muted-foreground font-mono">{l.user_id ? l.user_id.slice(0, 8) + "…" : "anon"}</div>
+                  </TableCell>
+                  <TableCell><Badge variant="secondary">{l.action}</Badge></TableCell>
+                  <TableCell className="text-xs font-mono max-w-[240px] truncate" title={l.path ?? ""}>{l.path ?? "—"}</TableCell>
+                  <TableCell className="text-xs font-mono">{l.ip ?? "—"}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground max-w-[240px] truncate" title={l.user_agent ?? ""}>{l.user_agent ?? "—"}</TableCell>
+                </TableRow>
+              ))}
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">No activity yet</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Card>
+  );
+}
