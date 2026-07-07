@@ -366,6 +366,16 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
           y -= 12;
         }
       }
+      // How to fix
+      {
+        const hint = fixHint(p.check);
+        const lines = wrap(`How to fix: ${hint}`, font, 9, W - M - titleX);
+        for (let i = 0; i < lines.length; i++) {
+          ensure(12);
+          page.drawText(lines[i], { x: titleX, y: y - 9, size: 9, font: i === 0 ? bold : font, color: rgb(meta.color[0], meta.color[1], meta.color[2]) });
+          y -= 12;
+        }
+      }
       spacer(8);
     });
   }
