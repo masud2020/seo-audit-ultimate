@@ -221,3 +221,53 @@ export const runDomainMetrics = createServerFn({ method: "POST" })
     });
     return { ...result, run_id };
   });
+
+export type TestKeysResult = {
+  moz: { configured: boolean; ok: boolean; message: string; latencyMs: number };
+  majestic: { configured: boolean; ok: boolean; message: string; latencyMs: number };
+};
+
+export const testDomainMetricsKeys = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context as unknown as Ctx;
+    const { data: apiRow } = await supabase
+      .from("api_settings").select("moz_token,majestic_key").eq("user_id", userId).maybeSingle();
+    const row = (apiRow ?? {}) as { moz_token?: string; majestic_key?: string };
+    const mozToken = row.moz_token || process.env.MOZ_API_TOKEN || null;
+    const majesticKey = row.majestic_key || process.env.MAJESTIC_API_KEY || null;
+    const probeDomain = "moz.com";
+
+    const out: TestKeysResult = {
+      moz: { configured: !!mozToken, ok: false, message: "Not configured", latencyMs: 0 },
+      majestic: { configured: !!majesticKey, ok: false, message: "Not configured", latencyMs: 0 },
+    };
+
+    if (mozToken) {
+      const t0 = Date.now();
+      try {
+        const m = await fetchMoz(probeDomain, mozToken);
+        out.moz = {
+          configured: true, ok: true, latencyMs: Date.now() - t0,
+          message: `Connected · DA ${m.domain_authority ?? "—"} · PA ${m.page_authority ?? "—"} · Spam ${m.spam_score ?? "—"}`,
+        };
+      } catch (e) {
+        out.moz = { configured: true, ok: false, latencyMs: Date.now() - t0, message: e instanceof Error ? e.message : "Moz test failed" };
+      }
+    }
+
+    if (majesticKey) {
+      const t0 = Date.now();
+      try {
+        const mj = await fetchMajestic(probeDomain, majesticKey);
+        out.majestic = {
+          configured: true, ok: true, latencyMs: Date.now() - t0,
+          message: `Connected · TF ${mj.trust_flow ?? "—"} · CF ${mj.citation_flow ?? "—"}`,
+        };
+      } catch (e) {
+        out.majestic = { configured: true, ok: false, latencyMs: Date.now() - t0, message: e instanceof Error ? e.message : "Majestic test failed" };
+      }
+    }
+
+    return out;
+  });
