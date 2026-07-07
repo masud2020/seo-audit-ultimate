@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { toCsv, type NormalizedReport } from "@/lib/report-core";
 import { createReportShare } from "@/lib/report-share.functions";
+import { listSectionRecommendations } from "@/lib/ai-recs.functions";
 
 function download(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -26,6 +27,8 @@ export function ExportMenu({ report }: { report: NormalizedReport }) {
   const [shareUrl, setShareUrl] = useState("");
   const [copied, setCopied] = useState(false);
   const share = useServerFn(createReportShare);
+  const listRecs = useServerFn(listSectionRecommendations);
+  const [csvBusy, setCsvBusy] = useState(false);
   const createShare = useMutation({
     mutationFn: () => share({ data: { report_id: report.id, report_type: report.type, expires_in_days: Number(expiryDays) } }),
     onSuccess: (r) => {
@@ -38,6 +41,21 @@ export function ExportMenu({ report }: { report: NormalizedReport }) {
 
   const filenameBase = `${report.type}-${(report.title || "report").replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}`;
 
+  const exportCsv = async () => {
+    setCsvBusy(true);
+    try {
+      let recs: Awaited<ReturnType<typeof listRecs>> = [];
+      try {
+        recs = await listRecs({ data: { report_id: report.id, report_type: report.type } });
+      } catch {
+        // Non-fatal: export data without AI recs.
+      }
+      download(`${filenameBase}.csv`, toCsv(report, recs), "text/csv;charset=utf-8");
+    } finally {
+      setCsvBusy(false);
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -45,8 +63,9 @@ export function ExportMenu({ report }: { report: NormalizedReport }) {
           <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-2" />Export</Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => download(`${filenameBase}.csv`, toCsv(report), "text/csv;charset=utf-8")}>
-            <FileSpreadsheet className="h-4 w-4 mr-2" />Download CSV
+          <DropdownMenuItem disabled={csvBusy} onSelect={(e) => { e.preventDefault(); void exportCsv(); }}>
+            {csvBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
+            Download CSV
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => {
             const url = `/api/reports/${report.id}/pdf?type=${report.type}`;

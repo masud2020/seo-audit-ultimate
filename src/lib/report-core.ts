@@ -374,12 +374,39 @@ function csvCell(v: unknown): string {
   return `"${s.replace(/"/g, '""').replace(/\r?\n/g, " ").slice(0, 500)}"`;
 }
 
-export function toCsv(report: NormalizedReport): string {
+export interface CsvRecommendation {
+  section_slug: string;
+  summary?: string;
+  fixes?: Array<{ title: string; impact?: string; effort?: string; steps?: string[] }>;
+}
+
+export function toCsv(report: NormalizedReport, recs: CsvRecommendation[] = []): string {
   const header = ["section", "check", "status", "severity", "value", "detail"];
   const rows = [header.join(",")];
   for (const section of report.sections) {
     for (const f of section.findings) {
       rows.push([section.title, f.label, f.status, f.severity ?? "", f.value ?? "", f.detail ?? ""].map(csvCell).join(","));
+    }
+  }
+  if (recs.length) {
+    const titleBySlug = new Map(report.sections.map((s) => [s.id, s.title]));
+    rows.push("");
+    rows.push(["section", "recommendation", "impact", "effort", "step_number", "step"].map(csvCell).join(","));
+    for (const r of recs) {
+      const sectionTitle = titleBySlug.get(r.section_slug) ?? r.section_slug;
+      if (r.summary) {
+        rows.push([sectionTitle, "Summary", "", "", "", r.summary].map(csvCell).join(","));
+      }
+      for (const fix of r.fixes ?? []) {
+        const steps = fix.steps ?? [];
+        if (!steps.length) {
+          rows.push([sectionTitle, fix.title, fix.impact ?? "", fix.effort ?? "", "", ""].map(csvCell).join(","));
+          continue;
+        }
+        steps.forEach((step, i) => {
+          rows.push([sectionTitle, fix.title, fix.impact ?? "", fix.effort ?? "", String(i + 1), step].map(csvCell).join(","));
+        });
+      }
     }
   }
   return rows.join("\n");
