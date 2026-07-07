@@ -201,13 +201,13 @@ export const upsertPlan = createServerFn({ method: "POST" })
   .inputValidator(validate(planInput))
   .handler(async ({ context, data }): Promise<{ ok: true }> => {
     await assertAdmin(context);
-    const payload = { ...data, description: data.description ?? null };
-    if (data.id) {
-      const { error } = await context.supabase.from("pricing_plans").update(payload).eq("id", data.id);
+    const { id, ...rest } = data;
+    const payload = { ...rest, description: data.description ?? null };
+    if (id) {
+      const { error } = await context.supabase.from("pricing_plans").update(payload).eq("id", id);
       if (error) throw new Error(error.message);
     } else {
-      const { id: _drop, ...ins } = payload;
-      const { error } = await context.supabase.from("pricing_plans").insert(ins);
+      const { error } = await context.supabase.from("pricing_plans").insert(payload);
       if (error) throw new Error(error.message);
     }
     return { ok: true };
