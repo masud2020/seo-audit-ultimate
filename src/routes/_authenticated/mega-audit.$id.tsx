@@ -1,12 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { getMegaAudit } from "@/lib/mega-audit.functions";
+import { generateMegaAuditPdf } from "@/lib/pdf.functions";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Loader2, ExternalLink, Sparkles } from "lucide-react";
+import { Loader2, ExternalLink, Sparkles, Download } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/mega-audit/$id")({ component: Detail });
 
@@ -64,6 +67,7 @@ function SectionCard({ section }: { section: Section }) {
 function Detail() {
   const { id } = Route.useParams();
   const fn = useServerFn(getMegaAudit);
+  const pdfFn = useServerFn(generateMegaAuditPdf);
   const { data, isLoading } = useQuery({
     queryKey: ["mega-audit", id],
     queryFn: () => fn({ data: { id } }),
@@ -71,6 +75,19 @@ function Detail() {
       const d = q.state.data as { status?: string } | undefined;
       return d?.status === "running" || d?.status === "pending" ? 2500 : false;
     },
+  });
+  const mPdf = useMutation({
+    mutationFn: () => pdfFn({ data: { mega_audit_id: id } }),
+    onSuccess: (d) => {
+      const bytes = Uint8Array.from(atob(d.base64), (c) => c.charCodeAt(0));
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = d.filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "PDF failed"),
   });
 
   if (isLoading || !data) return <div className="flex items-center gap-2 text-sm text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" />Loading mega audit…</div>;
@@ -111,6 +128,10 @@ function Detail() {
         <div className="text-right">
           <div className="text-xs text-muted-foreground">Mega score</div>
           <div className={`text-5xl font-bold ${scoreCls(r.mega_score)}`}>{r.mega_score}</div>
+          <Button size="sm" variant="outline" className="mt-2" onClick={() => mPdf.mutate()} disabled={mPdf.isPending}>
+            {mPdf.isPending ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Download className="h-4 w-4 mr-1" />}
+            Export PDF
+          </Button>
         </div>
       </div>
 

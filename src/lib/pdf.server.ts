@@ -99,6 +99,164 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
 interface CrawlPage { url: string; status: number; title: string; description: string; h1_count: number; word_count: number; bytes: number; duration_ms: number; images_missing_alt: number; noindex: boolean; }
 interface CrawlIssue { url: string; severity: "high"|"medium"|"low"; message: string; }
 
+// ============= MEGA AUDIT PDF =============
+interface MegaCheck { id: string; label: string; status: "pass"|"warn"|"fail"|"info"; detail?: string; value?: string | number | null }
+interface MegaSection { id: string; title: string; score: number; checks: MegaCheck[] }
+interface MegaPageReport { url: string; final_url: string; overall_score: number; sections: MegaSection[] }
+interface MegaCompetitor { url: string; overall_score: number | null; semrush?: MegaSection | null; ai?: MegaSection | null; error?: string }
+interface MegaResults {
+  target_url: string;
+  competitor_url?: string | null;
+  target_keyword?: string | null;
+  finished_at: string;
+  page: MegaPageReport;
+  site: { summary: { overall_score: number; pages_audited: number; pages_failed: number; avg_by_section: Record<string, number>; issue_counts: { high: number; medium: number; low: number }; top_problems: { message: string; count: number; severity: "high"|"medium"|"low" }[] }; pages: { url: string; overall_score: number | null }[]; issues: { url: string; severity: "high"|"medium"|"low"; message: string }[] };
+  site_signals: MegaSection[];
+  competitor?: MegaCompetitor | null;
+  mega_score: number;
+  score_breakdown: { label: string; score: number; weight: number }[];
+  priority_actions: { severity: "high"|"medium"|"low"; message: string; count?: number; source: string }[];
+}
+
+export async function buildMegaAuditPdf(r: MegaResults): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const W = 595, H = 842, M = 48;
+  let page: PDFPage = doc.addPage([W, H]);
+  let y = H - M;
+  const newPage = () => { page = doc.addPage([W, H]); y = H - M; };
+  const ensure = (n: number) => { if (y - n < M) newPage(); };
+  const text = (t: string, opts: { size?: number; bold?: boolean; color?: [number, number, number] } = {}) => {
+    const size = opts.size ?? 10;
+    const f = opts.bold ? bold : font;
+    const c = opts.color ?? [0.1, 0.1, 0.1];
+    for (const line of wrap(t, f, size, W - M * 2)) {
+      ensure(size + 4);
+      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= size + 3;
+    }
+  };
+  const spacer = (n = 6) => { y -= n; };
+  const rule = () => { ensure(6); page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) }); y -= 8; };
+  const scoreColor = (n: number | null | undefined): [number, number, number] => {
+    const v = n ?? 0;
+    return v >= 80 ? [0.2, 0.6, 0.3] : v >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
+  };
+  const sevColor = (sev: string): [number, number, number] => sev === "high" ? [0.8, 0.2, 0.2] : sev === "medium" ? [0.85, 0.6, 0.1] : [0.5, 0.5, 0.5];
+  const sevLabel = (sev: string) => sev.toUpperCase();
+  const renderSection = (s: MegaSection) => {
+    ensure(40);
+    text(`${s.title}   (${s.score}/100)`, { size: 13, bold: true, color: scoreColor(s.score) });
+    spacer(2);
+    for (const c of s.checks) {
+      const tag = c.status === "pass" ? "[PASS]" : c.status === "warn" ? "[WARN]" : c.status === "fail" ? "[FAIL]" : "[INFO]";
+      const col: [number, number, number] = c.status === "pass" ? [0.2, 0.6, 0.3] : c.status === "warn" ? [0.85, 0.6, 0.1] : c.status === "fail" ? [0.8, 0.2, 0.2] : [0.4, 0.4, 0.4];
+      text(`${tag} ${c.label}${c.value != null && c.value !== "" ? ` - ${String(c.value).slice(0, 140)}` : ""}`, { size: 10, bold: true, color: col });
+      if (c.detail) text(c.detail, { size: 9, color: [0.35, 0.35, 0.35] });
+      spacer(2);
+    }
+    spacer(4);
+    rule();
+  };
+
+  // Cover
+  text("Mega SEO Audit Report", { size: 24, bold: true });
+  spacer(6);
+  text(r.target_url, { size: 12, color: [0.35, 0.35, 0.35] });
+  text(`Finished ${new Date(r.finished_at).toLocaleString()}`, { size: 9, color: [0.5, 0.5, 0.5] });
+  if (r.competitor_url) text(`Competitor: ${r.competitor_url}`, { size: 10, color: [0.35, 0.35, 0.35] });
+  if (r.target_keyword) text(`Target keyword: ${r.target_keyword}`, { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(12);
+  rule();
+  text("Mega Score", { size: 12, bold: true, color: [0.35, 0.35, 0.35] });
+  spacer(2);
+  text(`${r.mega_score} / 100`, { size: 28, bold: true, color: scoreColor(r.mega_score) });
+  spacer(10);
+
+  text("Score Breakdown", { size: 13, bold: true });
+  spacer(2);
+  for (const s of r.score_breakdown) {
+    text(`- ${s.label}: ${s.score}/100 (weight ${(s.weight * 100).toFixed(0)}%)`, { size: 10, color: scoreColor(s.score) });
+  }
+  spacer(8);
+  rule();
+
+  // Priority actions
+  ensure(60);
+  text("Priority Action Plan", { size: 18, bold: true });
+  spacer(2);
+  text("Ranked by severity across the homepage, whole-site crawl and external signals.", { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(6);
+  if (!r.priority_actions.length) {
+    text("No priority issues found. Nice work.", { size: 11, color: [0.2, 0.6, 0.3] });
+  } else {
+    r.priority_actions.slice(0, 40).forEach((a, i) => {
+      ensure(34);
+      text(`${i + 1}. [${sevLabel(a.severity)}] ${a.message}`, { size: 11, bold: true, color: sevColor(a.severity) });
+      text(`   Source: ${a.source}${a.count ? ` · Affects ${a.count} page${a.count === 1 ? "" : "s"}` : ""}`, { size: 9, color: [0.4, 0.4, 0.4] });
+      spacer(4);
+    });
+  }
+
+  // Homepage audit
+  newPage();
+  text("Homepage Audit", { size: 18, bold: true });
+  spacer(2);
+  text(`${r.page.url} - overall ${r.page.overall_score}/100`, { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
+  for (const s of r.page.sections) renderSection(s);
+
+  // Whole-site summary
+  newPage();
+  text("Whole-site Audit", { size: 18, bold: true });
+  spacer(2);
+  const ss = r.site.summary;
+  text(`Site score: ${ss.overall_score}/100 · ${ss.pages_audited} pages audited · ${ss.pages_failed} failed`, { size: 10, color: [0.35, 0.35, 0.35] });
+  text(`Issues: ${ss.issue_counts.high} high, ${ss.issue_counts.medium} medium, ${ss.issue_counts.low} low`, { size: 10, color: [0.35, 0.35, 0.35] });
+  spacer(8);
+  text("Section averages", { size: 13, bold: true });
+  spacer(2);
+  for (const [id, sc] of Object.entries(ss.avg_by_section)) {
+    text(`- ${id}: ${sc}/100`, { size: 10, color: scoreColor(sc) });
+  }
+  spacer(6);
+  if (ss.top_problems?.length) {
+    text("Top recurring problems", { size: 13, bold: true });
+    spacer(2);
+    for (const p of ss.top_problems.slice(0, 20)) {
+      text(`[${sevLabel(p.severity)}] ${p.message} - ${p.count} page${p.count === 1 ? "" : "s"}`, { size: 10, color: sevColor(p.severity) });
+    }
+  }
+
+  // External signals
+  if (r.site_signals?.length) {
+    newPage();
+    text("External Signals", { size: 18, bold: true });
+    spacer(2);
+    text("PageSpeed, Google Search Console, Semrush and AI visibility.", { size: 10, color: [0.35, 0.35, 0.35] });
+    spacer(6);
+    for (const s of r.site_signals) renderSection(s);
+  }
+
+  // Competitor
+  if (r.competitor) {
+    newPage();
+    text("Competitor Comparison", { size: 18, bold: true });
+    spacer(2);
+    text(`${r.competitor.url}`, { size: 10, color: [0.35, 0.35, 0.35] });
+    spacer(6);
+    const gap = r.competitor.overall_score == null ? null : r.page.overall_score - r.competitor.overall_score;
+    text(`Your score: ${r.page.overall_score}   ·   Competitor: ${r.competitor.overall_score ?? "-"}   ·   Gap: ${gap == null ? "-" : (gap > 0 ? "+" : "") + gap}`, { size: 11, bold: true });
+    spacer(6);
+    if (r.competitor.error) text(`Competitor audit error: ${r.competitor.error}`, { size: 10, color: [0.8, 0.2, 0.2] });
+    if (r.competitor.semrush) renderSection(r.competitor.semrush);
+    if (r.competitor.ai) renderSection(r.competitor.ai);
+  }
+
+  return await doc.save();
+}
+
 export async function buildCrawlPdf(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }): Promise<Uint8Array> {
   return buildCrawlPdfImpl(crawl);
 }
