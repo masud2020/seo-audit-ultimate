@@ -158,7 +158,7 @@ function ApiKeysForm() {
   const { data } = useQuery({ queryKey: ["api-settings"], queryFn: () => get() });
   const [form, setForm] = useState({
     provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "",
-    serpapi_key: "", semrush_key: "", sender_email: "", sender_name: "", dataforseo_login: "", dataforseo_password: "",
+    serpapi_key: "", semrush_key: "", moz_token: "", majestic_key: "", sender_email: "", sender_name: "", dataforseo_login: "", dataforseo_password: "",
   });
   useEffect(() => { if (data) setForm({
     provider: data.provider ?? "lovable",
@@ -169,6 +169,8 @@ function ApiKeysForm() {
     claude_key: data.claude_key ?? "",
     serpapi_key: (data as { serpapi_key?: string }).serpapi_key ?? "",
     semrush_key: (data as { semrush_key?: string }).semrush_key ?? "",
+    moz_token: (data as { moz_token?: string }).moz_token ?? "",
+    majestic_key: (data as { majestic_key?: string }).majestic_key ?? "",
     sender_email: (data as { sender_email?: string }).sender_email ?? "",
     sender_name: (data as { sender_name?: string }).sender_name ?? "",
     dataforseo_login: (data as { dataforseo_login?: string }).dataforseo_login ?? "",
@@ -221,6 +223,16 @@ function ApiKeysForm() {
         <Label>Semrush API key (fallback)</Label>
         <Input type="password" value={form.semrush_key} onChange={(e) => setForm({ ...form, semrush_key: e.target.value })} placeholder="••••••••" />
         <p className="text-xs text-muted-foreground mt-1">Only used if the Semrush Workspace Connector isn't linked.</p>
+      </div>
+      <div>
+        <Label>Moz API token</Label>
+        <Input type="password" value={form.moz_token} onChange={(e) => setForm({ ...form, moz_token: e.target.value })} placeholder="••••••••" autoComplete="off" />
+        <p className="text-xs text-muted-foreground mt-1">Powers Page Authority (PA) and Spam Score in the Domain Metrics tool. Create at moz.com/products/api → your token.</p>
+      </div>
+      <div>
+        <Label>Majestic API key</Label>
+        <Input type="password" value={form.majestic_key} onChange={(e) => setForm({ ...form, majestic_key: e.target.value })} placeholder="••••••••" autoComplete="off" />
+        <p className="text-xs text-muted-foreground mt-1">Powers Trust Flow (TF) and Citation Flow (CF). Get one at majestic.com/account/api-key.</p>
       </div>
       <div>
         <Label>DataForSEO login</Label>
