@@ -35,6 +35,7 @@ import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_aut
 import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
 import { Route as AuthenticatedPendingApprovalRouteImport } from './routes/_authenticated/pending-approval'
 import { Route as AuthenticatedMegaAuditRouteImport } from './routes/_authenticated/mega-audit'
+import { Route as AuthenticatedLlmVisibilityRouteImport } from './routes/_authenticated/llm-visibility'
 import { Route as AuthenticatedLinkManagementRouteImport } from './routes/_authenticated/link-management'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
 import { Route as AuthenticatedKeywordDiscoveryRouteImport } from './routes/_authenticated/keyword-discovery'
@@ -210,6 +211,12 @@ const AuthenticatedMegaAuditRoute = AuthenticatedMegaAuditRouteImport.update({
   path: '/mega-audit',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedLlmVisibilityRoute =
+  AuthenticatedLlmVisibilityRouteImport.update({
+    id: '/llm-visibility',
+    path: '/llm-visibility',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLinkManagementRoute =
   AuthenticatedLinkManagementRouteImport.update({
     id: '/link-management',
@@ -436,6 +443,7 @@ export interface FileRoutesByFullPath {
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/link-management': typeof AuthenticatedLinkManagementRoute
+  '/llm-visibility': typeof AuthenticatedLlmVisibilityRoute
   '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/pending-approval': typeof AuthenticatedPendingApprovalRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -498,6 +506,7 @@ export interface FileRoutesByTo {
   '/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/link-management': typeof AuthenticatedLinkManagementRoute
+  '/llm-visibility': typeof AuthenticatedLlmVisibilityRoute
   '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/pending-approval': typeof AuthenticatedPendingApprovalRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -562,6 +571,7 @@ export interface FileRoutesById {
   '/_authenticated/keyword-discovery': typeof AuthenticatedKeywordDiscoveryRoute
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/link-management': typeof AuthenticatedLinkManagementRoute
+  '/_authenticated/llm-visibility': typeof AuthenticatedLlmVisibilityRoute
   '/_authenticated/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
   '/_authenticated/pending-approval': typeof AuthenticatedPendingApprovalRoute
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
@@ -626,6 +636,7 @@ export interface FileRouteTypes {
     | '/keyword-discovery'
     | '/keywords'
     | '/link-management'
+    | '/llm-visibility'
     | '/mega-audit'
     | '/pending-approval'
     | '/people-also-ask'
@@ -688,6 +699,7 @@ export interface FileRouteTypes {
     | '/keyword-discovery'
     | '/keywords'
     | '/link-management'
+    | '/llm-visibility'
     | '/mega-audit'
     | '/pending-approval'
     | '/people-also-ask'
@@ -751,6 +763,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keyword-discovery'
     | '/_authenticated/keywords'
     | '/_authenticated/link-management'
+    | '/_authenticated/llm-visibility'
     | '/_authenticated/mega-audit'
     | '/_authenticated/pending-approval'
     | '/_authenticated/people-also-ask'
@@ -979,6 +992,13 @@ declare module '@tanstack/react-router' {
       path: '/mega-audit'
       fullPath: '/mega-audit'
       preLoaderRoute: typeof AuthenticatedMegaAuditRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/llm-visibility': {
+      id: '/_authenticated/llm-visibility'
+      path: '/llm-visibility'
+      fullPath: '/llm-visibility'
+      preLoaderRoute: typeof AuthenticatedLlmVisibilityRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/link-management': {
@@ -1295,6 +1315,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKeywordDiscoveryRoute: typeof AuthenticatedKeywordDiscoveryRoute
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedLinkManagementRoute: typeof AuthenticatedLinkManagementRoute
+  AuthenticatedLlmVisibilityRoute: typeof AuthenticatedLlmVisibilityRoute
   AuthenticatedMegaAuditRoute: typeof AuthenticatedMegaAuditRouteWithChildren
   AuthenticatedPendingApprovalRoute: typeof AuthenticatedPendingApprovalRoute
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
@@ -1346,6 +1367,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKeywordDiscoveryRoute: AuthenticatedKeywordDiscoveryRoute,
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedLinkManagementRoute: AuthenticatedLinkManagementRoute,
+  AuthenticatedLlmVisibilityRoute: AuthenticatedLlmVisibilityRoute,
   AuthenticatedMegaAuditRoute: AuthenticatedMegaAuditRouteWithChildren,
   AuthenticatedPendingApprovalRoute: AuthenticatedPendingApprovalRoute,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
