@@ -316,11 +316,6 @@ export async function buildSiteAuditPdf(
     }
   }
 
-  // ============ AI RECOMMENDATIONS ============
-  if (recs.length) {
-    // (external signals handled below)
-  }
-
   // ============ SITE-WIDE EXTERNAL SIGNALS ============
   if (s.site_signals && s.site_signals.length) {
     newPage();
