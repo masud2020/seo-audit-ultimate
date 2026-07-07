@@ -37,7 +37,7 @@ export const startSiteAudit = createServerFn({ method: "POST" })
       const result = await runSiteAudit(data.start_url, data.max_pages, async (n) => {
         // Best-effort progress; ignore write errors.
         try { await supabase.from("site_audits").update({ pages_audited: n }).eq("id", id); } catch { /* ignore */ }
-      }, { semrushKey, verifiedSites });
+      }, { semrushKey, psiKey, verifiedSites });
       await supabase.from("site_audits").update({
         status: "complete",
         pages_audited: result.pages.length,
