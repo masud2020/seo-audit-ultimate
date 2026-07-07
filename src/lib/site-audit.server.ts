@@ -1,6 +1,7 @@
 // Whole-site audit engine: BFS-crawl same-origin pages, run per-page audit, aggregate.
 import { runCrawl } from "./crawler.server";
 import { runAudit, type AuditReport } from "./audit-engine.server";
+import type { Section } from "./audit-engine.server";
 
 export interface SitePageAudit {
   url: string;
@@ -23,6 +24,7 @@ export interface SiteAuditSummary {
   issue_counts: { high: number; medium: number; low: number };
   top_problems: { message: string; count: number; severity: "high" | "medium" | "low" }[];
   finished_at: string;
+  site_signals?: Section[];
 }
 
 async function pMap<T, R>(items: T[], concurrency: number, fn: (item: T, i: number) => Promise<R>): Promise<R[]> {
@@ -55,6 +57,7 @@ export async function runSiteAudit(
   startUrl: string,
   maxPages: number,
   onProgress?: (n: number) => Promise<void> | void,
+  signalsOpts?: { semrushKey?: string | null; verifiedSites: string[] },
 ): Promise<{ pages: SitePageAudit[]; issues: SiteIssue[]; summary: SiteAuditSummary }> {
   // 1. Discovery via existing crawler
   const { pages: crawlPages, issues: crawlIssues } = await runCrawl(startUrl, maxPages);
@@ -132,6 +135,17 @@ export async function runSiteAudit(
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
+  // 4. Site-wide external signals (Phase 2). Isolated failures never block the audit.
+  let site_signals: Section[] = [];
+  if (signalsOpts) {
+    try {
+      const { siteSignals } = await import("./audit-signals.server");
+      site_signals = await siteSignals({ startUrl, semrushKey: signalsOpts.semrushKey, verifiedSites: signalsOpts.verifiedSites });
+    } catch (e) {
+      console.error("Site signals failed", e);
+    }
+  }
+
   return {
     pages: audited,
     issues: allIssues,
@@ -144,6 +158,7 @@ export async function runSiteAudit(
       issue_counts,
       top_problems,
       finished_at: new Date().toISOString(),
+      site_signals,
     },
   };
 }
