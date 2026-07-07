@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getProfileByUserId, updateProfileAsAdmin } from "@/lib/profile.functions";
 import { useEffect } from "react";
 import { listActivityLogs, type ActivityLogRow } from "@/lib/activity.functions";
+import { listApprovals, setUserApproval, type ApprovalListItem } from "@/lib/approval.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   // Authorization is enforced by the in-page AdminGate and by assertAdmin
@@ -224,6 +225,7 @@ function UsersPanel() {
       )}
     </Card>
     <ActivityLogsPanel />
+    <ApprovalsPanel />
     </div>
   );
 }
