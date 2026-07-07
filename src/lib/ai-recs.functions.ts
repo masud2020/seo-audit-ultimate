@@ -25,6 +25,7 @@ const inputSchema = z.object({
   section_slug: z.string().min(1).max(80),
   section_title: z.string().min(1).max(200),
   findings: z.array(findingSchema).max(60),
+  force: z.boolean().optional(),
 });
 
 function coerceRecs(raw: unknown): { summary: string; fixes: Fix[] } {
@@ -46,8 +47,8 @@ export const generateSectionRecommendations = createServerFn({ method: "POST" })
   .handler(async ({ data, context }): Promise<SectionRecommendations> => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = context.supabase as any;
-    // Cache hit?
-    const { data: cached } = await supabase
+    // Cache hit? (skipped when force=true)
+    const { data: cached } = data.force ? { data: null } : await supabase
       .from("report_recommendations")
       .select("summary,fixes,model")
       .eq("report_id", data.report_id)
