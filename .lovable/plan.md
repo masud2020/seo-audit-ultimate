@@ -1,70 +1,106 @@
-# Phase 5 — Six new tools
+## Goal
 
-Six tools, each on its own route with sidebar entries. All server-side work goes through `createServerFn` (auth-gated); no new external accounts required except optional keys already handled in `/settings`.
+Make every audit and tool report comprehensive:
+- Deeper checks per report
+- AI-generated fix recommendations per section
+- Executive summary with category scores + priority-ranked issue list
+- Export as PDF, CSV, and shareable link
 
-## 1. Broken Link Checker — `/broken-links`
-- Reuses the existing crawler pipeline to collect all internal + external links from up to N pages.
-- Server fn `checkBrokenLinks(project_id | url, limit)`: HEAD/GET each link with a 10s timeout, bucket into `2xx`, `3xx`, `4xx`, `5xx`, `timeout`, `dns-error`.
-- Persist run in new `link_checks` table (run + `link_check_items`) so results survive reload; CSV export.
-- UI: run button, progress, filter by status, source-page column, "Recheck" action per row.
+## Reports in scope
 
-## 2. Backlink Monitoring — `/backlink-monitor`
-- New `monitored_backlinks` table: `{ id, user_id, source_url, target_url, first_seen_at, last_seen_at, last_status, lost_at }`.
-- Two data sources: (a) manual add from user, (b) auto-import from Semrush backlinks (uses existing connector/fallback key).
-- Weekly `pg_cron` hits `/api/public/hooks/backlink-check` which re-fetches Semrush for each target domain, diffs against stored rows, flips `lost_at` when a link disappears, and inserts new ones.
-- UI: list with status badges (Live / Lost / New this week), lost-links counter, manual "Check now" button, CSV export.
+1. **Single-URL SEO audit** — `/audit/:id` (`audit-engine.server.ts`)
+2. **Whole-site audit** — `/site-audit/:id` (`crawler.server.ts`)
+3. **Tool reports** — backlink checker, website speed, responsive, HTML validator, schema validator (`site-tools.server.ts`)
 
-## 3. AI Content Detection — `/ai-detection`
-- Heuristic scorer that runs entirely on the Lovable AI Gateway using `google/gemini-2.5-flash` — no third-party detector key needed.
-- Sends the text with a strict JSON schema prompt: returns `ai_probability` (0-1), `confidence`, `signals` (repetition, burstiness, perplexity-style commentary, hedging), and a short explanation.
-- UI: textarea (up to 10k chars) + URL option (Firecrawl scrape → markdown). Result card with big % score, verdict badge (Human / Mixed / Likely AI), signal list.
+## 1. Deeper checks
 
-## 4. AI Citation Checker — `/ai-citations`
-- Given a target domain and a list of prompts (defaults derived from Semrush top keywords for the domain), asks 3 Lovable AI models (`gemini-2.5-flash`, `gpt-5-mini`, `gemini-2.5-pro`) each prompt with web-answer style system message.
-- Server fn parses model responses for domain mentions and outbound URLs; records per-model hit/miss + snippet.
-- Persist results in `ai_citation_runs` + `ai_citation_results` so runs can be revisited.
-- UI: prompt input (comma or newline separated), model breakdown, citation coverage % per prompt, table of snippets showing where the domain appeared.
+**Single-URL audit** — add sections:
+- Core Web Vitals proxies: TTFB, transferred bytes, DOM size, render-blocking resources, image count/size
+- Accessibility basics: lang attr, image alt coverage %, color-contrast heuristic on inline styles, form labels
+- Security headers: HSTS, CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy
+- Open Graph completeness: og:image dimensions/format check, twitter:card, twitter:image
+- International SEO: hreflang tags, canonical vs. self, language declaration
+- Structured data: parse ALL JSON-LD blocks, list types found, validate required fields for Article/Product/Organization/BreadcrumbList/FAQ/HowTo
+- Content quality: word count, keyword density top-10, reading level (Flesch), duplicate H1, empty headings
 
-## 5. AI Citation Potential — `/ai-potential`
-- Given a URL: Firecrawl scrapes markdown + metadata, then Lovable AI scores the page against citation-worthiness criteria (unique data, quotable stats, clear structure, entity clarity, citable claims, freshness). Returns 0-100 score + prioritized rewrite recommendations.
-- No new table — one-off analysis rendered inline; user can re-run.
-- UI: URL input, radial score, criteria breakdown with pass/fail, "Copy recommendations" and PDF export via existing `pdf.server.ts`.
+**Whole-site audit** — add:
+- Orphan page detection (pages with 0 internal inbound links)
+- Duplicate title/description across pages
+- Broken internal links summary
+- Redirect chain depth per URL
+- Depth-from-root metric
+- Sitemap vs. crawled diff (in sitemap but not crawled / crawled but not in sitemap)
+- Robots.txt disallow coverage
 
-## 6. SEO Blog Feed — `/seo-news`
-- Aggregates RSS from Search Engine Journal, Moz, Ahrefs, Semrush, Majestic, Search Engine Land, Search Engine Roundtable.
-- Server fn `fetchSeoNews()` fetches each feed with 8s timeout, parses XML in-worker (small XML parser — no native deps), merges and sorts by date. 15-minute in-memory cache per worker.
-- Sources list is server-owned but editable through a `blog_sources` table (name, url, enabled). Seed with defaults; admin-only edit UI at `/seo-news/sources`.
-- UI: card feed with source badge, published date, title, snippet, external link. Filter by source, search box, "Refresh" button.
+**Tool reports** — add:
+- Backlink checker: authority score, follow/nofollow ratio, top anchor texts, referring TLDs, lost/new deltas when Semrush is connected
+- Website speed: TTFB, total bytes, request count estimate, gzip/br compression check, cache-control headers, image weight breakdown
+- Responsive check: capture screenshots at 375/768/1024/1440 via headless render (or use viewport-based CSS heuristics if headless not available on Workers — fall back to DOM/viewport-meta analysis)
+- HTML validator: nvvhtml-style rule set — orphan tags, deprecated elements, duplicate IDs, missing required attrs, malformed nesting
+- Schema validator: pass/fail per JSON-LD block against schema.org required fields, Google rich-result eligibility (Article, Product, Recipe, FAQ, Event, LocalBusiness, VideoObject)
 
-## Migrations (single migration)
-- `link_checks` + `link_check_items`
-- `monitored_backlinks`
-- `ai_citation_runs` + `ai_citation_results`
-- `blog_sources` (seeded)
-- All with `user_id`-scoped RLS + GRANTs.
+## 2. AI recommendations per section
 
-## Files
-Created:
-- `src/lib/broken-links.functions.ts`
-- `src/lib/backlink-monitor.functions.ts`
-- `src/lib/ai-detection.functions.ts`
-- `src/lib/ai-citations.functions.ts`
-- `src/lib/ai-potential.functions.ts`
-- `src/lib/seo-news.functions.ts` + `src/lib/seo-news.server.ts` (XML parsing)
-- `src/routes/_authenticated/broken-links.tsx`
-- `src/routes/_authenticated/backlink-monitor.tsx`
-- `src/routes/_authenticated/ai-detection.tsx`
-- `src/routes/_authenticated/ai-citations.tsx`
-- `src/routes/_authenticated/ai-potential.tsx`
-- `src/routes/_authenticated/seo-news.tsx`
-- `src/routes/api/public/hooks/backlink-check.ts` (pg_cron webhook)
-- One combined SQL migration
+- New server fn `generateSectionRecommendations(sectionSlug, findings)` in `src/lib/ai-recs.functions.ts`
+- Calls Lovable AI Gateway (google/gemini-2.5-flash) with structured output: `{ summary, top_fixes: [{title, steps[], impact, effort}] }`
+- Cached per (report_id, section_slug) in a new `report_recommendations` table
+- Rendered in each report section under a collapsible "AI recommendations" panel
+- User clicks "Generate recommendations" per section (not automatic) to keep AI cost predictable
 
-Edited:
-- `src/components/app-sidebar.tsx` — new group "AI Search & Monitoring" with the six entries.
+## 3. Executive summary + scores
 
-## Open questions before I build
+Every report gains a top-of-page summary card:
+- **Overall score** 0–100
+- **Category scores**: Technical, On-page, Content, Performance, Accessibility, Security, Schema
+- **Priority issues**: top 10 sorted by (severity × impact)
+- **Health delta** vs previous run of the same URL (when history exists)
 
-1. **AI detection provider** — I plan to use the Lovable AI Gateway (no extra key). If you want a dedicated detector (Originality.ai, GPTZero, Copyleaks) I'll swap it in and request a secret.
-2. **Backlink monitoring scope** — auto-import from Semrush on first save (top 100 backlinks), or manual-only? I'll default to "manual + one-click Semrush import" unless you say otherwise.
-3. **Blog sources** — happy with SEJ / Moz / Ahrefs / Semrush / Majestic / Search Engine Land / Search Engine Roundtable, or want a different mix?
+Scoring lives in `src/lib/scoring.ts` — pure fn taking the report shape and returning `{ overall, categories, priorityIssues[] }`. Rendered by a new `<ExecutiveSummary>` component reused across all three report types.
+
+## 4. Export
+
+- **CSV**: client-side flatten via `papaparse` — one row per check/issue with columns `section, check, status, severity, message, recommendation`
+- **PDF**: server-generated on demand. New route `/api/reports/:id/pdf` builds an HTML shell (executive summary + all sections + AI recs) and returns it — client uses browser print or `print-js` to save as PDF. (No Puppeteer — not supported on Workers.)
+- **Shareable link**: new `report_shares` table with `id, report_id, report_type, expires_at, created_by`. Public route `/shared/report/:token` renders a read-only view (no user data, no destructive actions). RLS: rows insertable by owner; `/shared/:token` fetch goes through a server fn using `supabaseAdmin` after verifying the token exists and hasn't expired.
+
+## Data model changes
+
+New tables (with GRANTs + RLS):
+- `report_recommendations` — `id, report_id, report_type, section_slug, summary, fixes jsonb, created_at`
+- `report_shares` — `id, token (unique), report_id, report_type, expires_at, created_by, created_at`
+
+Existing report tables (`site_audits`, `site_crawls`, `tool_runs`) already store full JSON payloads — extended checks slot into the existing `report`/`data` jsonb column with additive keys, no schema migration needed for the checks themselves.
+
+## Files to add/edit
+
+Add:
+- `src/lib/scoring.ts` — scoring engine
+- `src/lib/ai-recs.functions.ts` + `.server.ts` — AI recommendations
+- `src/lib/report-export.ts` — CSV builder
+- `src/lib/report-share.functions.ts` — share tokens
+- `src/routes/api/reports.$id.pdf.ts` — printable HTML endpoint
+- `src/routes/shared/report.$token.tsx` — public share view
+- `src/components/reports/ExecutiveSummary.tsx`
+- `src/components/reports/AiRecommendations.tsx`
+- `src/components/reports/ExportMenu.tsx`
+- migration: `report_recommendations`, `report_shares` + RLS + GRANTs
+
+Edit:
+- `src/lib/audit-engine.server.ts` — add security/accessibility/i18n/CWV/schema sections
+- `src/lib/crawler.server.ts` — add orphans, duplicates, depth, sitemap diff
+- `src/lib/site-tools.server.ts` — deepen every tool
+- `src/routes/_authenticated/audit.$id.tsx`, `site-audit.$id.tsx`, and the 5 tool routes — mount ExecutiveSummary + AiRecommendations + ExportMenu
+
+## Rollout order (single implementation pass)
+
+1. Migration (tables + RLS + GRANTs)
+2. `scoring.ts` + `ExecutiveSummary` + `ExportMenu` (CSV) — wire into all 7 report pages
+3. Deeper checks in audit-engine, crawler, and each tool
+4. AI recs fn + component, wire per section
+5. PDF endpoint + share tokens + public shared route
+
+## Out of scope
+
+- Real Lighthouse / headless-Chrome CWV (Workers can't run Chromium)
+- Historical trend charts beyond the previous-run delta
+- Semrush-dependent extras when the user hasn't connected Semrush (graceful fallback with a "connect Semrush" hint)
