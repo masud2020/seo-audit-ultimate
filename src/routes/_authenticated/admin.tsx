@@ -22,7 +22,12 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ShieldAlert, ShieldCheck, Trash2, KeyRound, Ban, CheckCircle2, Search, Loader2 } from "lucide-react";
+import { ShieldAlert, ShieldCheck, Trash2, KeyRound, Ban, CheckCircle2, Search, Loader2, UserCog } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { getProfileByUserId, updateProfileAsAdmin } from "@/lib/profile.functions";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   // Authorization is enforced by the in-page AdminGate and by assertAdmin
@@ -170,6 +175,7 @@ function UsersPanel() {
                       >
                         {u.is_admin ? "Revoke admin" : "Make admin"}
                       </Button>
+                      <AdminEditProfileButton userId={u.id} email={u.email} />
                       {u.email && (
                         <Button
                           size="sm" variant="ghost" title="Send password reset"
@@ -215,5 +221,85 @@ function UsersPanel() {
         </div>
       )}
     </Card>
+  );
+}
+
+function AdminEditProfileButton({ userId, email }: { userId: string; email: string | null }) {
+  const [open, setOpen] = useState(false);
+  const load = useServerFn(getProfileByUserId);
+  const save = useServerFn(updateProfileAsAdmin);
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-profile", userId],
+    queryFn: () => load({ data: { userId } }),
+    enabled: open,
+  });
+  const [form, setForm] = useState({ display_name: "", avatar_url: "", bio: "", company: "", website: "" });
+  useEffect(() => {
+    if (data) setForm({
+      display_name: data.display_name ?? "",
+      avatar_url: data.avatar_url ?? "",
+      bio: data.bio ?? "",
+      company: data.company ?? "",
+      website: data.website ?? "",
+    });
+    else if (open && !isLoading) setForm({ display_name: "", avatar_url: "", bio: "", company: "", website: "" });
+  }, [data, open, isLoading]);
+  const mut = useMutation({
+    mutationFn: () => save({ data: { userId, ...form } }),
+    onSuccess: () => {
+      toast.success("Profile updated");
+      qc.invalidateQueries({ queryKey: ["admin-profile", userId] });
+      setOpen(false);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <Button size="sm" variant="ghost" title="Edit profile" onClick={() => setOpen(true)}>
+        <UserCog className="h-4 w-4" />
+      </Button>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Edit profile — {email ?? userId.slice(0, 8)}</DialogTitle>
+        </DialogHeader>
+        {isLoading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground py-6">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading…
+          </div>
+        ) : (
+          <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); mut.mutate(); }}>
+            <div className="grid gap-2">
+              <Label htmlFor="ap-name">Display name</Label>
+              <Input id="ap-name" value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} maxLength={120} />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ap-avatar">Avatar URL</Label>
+              <Input id="ap-avatar" type="url" value={form.avatar_url} onChange={(e) => setForm({ ...form, avatar_url: e.target.value })} />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="grid gap-2">
+                <Label htmlFor="ap-company">Company</Label>
+                <Input id="ap-company" value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} maxLength={200} />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="ap-website">Website</Label>
+                <Input id="ap-website" type="url" value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })} />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="ap-bio">Bio</Label>
+              <Textarea id="ap-bio" rows={3} value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} maxLength={1000} />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={mut.isPending}>
+                {mut.isPending ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</>) : "Save"}
+              </Button>
+            </DialogFooter>
+          </form>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

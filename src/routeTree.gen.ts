@@ -26,6 +26,7 @@ import { Route as AuthenticatedScheduledRouteImport } from './routes/_authentica
 import { Route as AuthenticatedResponsiveCheckRouteImport } from './routes/_authenticated/responsive-check'
 import { Route as AuthenticatedRankTrackingRouteImport } from './routes/_authenticated/rank-tracking'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenticated/preferences'
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_authenticated/people-also-search'
@@ -150,6 +151,11 @@ const AuthenticatedRankTrackingRoute =
 const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedPreferencesRoute =
@@ -378,6 +384,7 @@ export interface FileRoutesByFullPath {
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
@@ -431,6 +438,7 @@ export interface FileRoutesByTo {
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
   '/preferences': typeof AuthenticatedPreferencesRoute
+  '/profile': typeof AuthenticatedProfileRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/responsive-check': typeof AuthenticatedResponsiveCheckRoute
@@ -486,6 +494,7 @@ export interface FileRoutesById {
   '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
   '/_authenticated/preferences': typeof AuthenticatedPreferencesRoute
+  '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
   '/_authenticated/rank-tracking': typeof AuthenticatedRankTrackingRoute
   '/_authenticated/responsive-check': typeof AuthenticatedResponsiveCheckRoute
@@ -541,6 +550,7 @@ export interface FileRouteTypes {
     | '/people-also-search'
     | '/ping'
     | '/preferences'
+    | '/profile'
     | '/projects'
     | '/rank-tracking'
     | '/responsive-check'
@@ -594,6 +604,7 @@ export interface FileRouteTypes {
     | '/people-also-search'
     | '/ping'
     | '/preferences'
+    | '/profile'
     | '/projects'
     | '/rank-tracking'
     | '/responsive-check'
@@ -648,6 +659,7 @@ export interface FileRouteTypes {
     | '/_authenticated/people-also-search'
     | '/_authenticated/ping'
     | '/_authenticated/preferences'
+    | '/_authenticated/profile'
     | '/_authenticated/projects'
     | '/_authenticated/rank-tracking'
     | '/_authenticated/responsive-check'
@@ -801,6 +813,13 @@ declare module '@tanstack/react-router' {
       path: '/projects'
       fullPath: '/projects'
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/profile': {
+      id: '/_authenticated/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof AuthenticatedProfileRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/preferences': {
@@ -1118,6 +1137,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
   AuthenticatedPreferencesRoute: typeof AuthenticatedPreferencesRoute
+  AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
   AuthenticatedRankTrackingRoute: typeof AuthenticatedRankTrackingRoute
   AuthenticatedResponsiveCheckRoute: typeof AuthenticatedResponsiveCheckRoute
@@ -1162,6 +1182,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,
   AuthenticatedPreferencesRoute: AuthenticatedPreferencesRoute,
+  AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
   AuthenticatedRankTrackingRoute: AuthenticatedRankTrackingRoute,
   AuthenticatedResponsiveCheckRoute: AuthenticatedResponsiveCheckRoute,

@@ -3,7 +3,7 @@ import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGrou
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy, Globe, Link as LinkIcon, Zap, Smartphone, FileCode2, Braces } from "lucide-react";
+import { LayoutDashboard, PlayCircle, History, TrendingUp, ListChecks, CalendarDays, Type as TypeIcon, Radio, Bot, Settings, LogOut, Search, Wrench, Network, Users, FolderKanban, CalendarClock, Sparkles, LineChart, Layers, ShieldCheck, GitCompareArrows, ShieldAlert, Link2Off, Rss, Quote, ScanText, SlidersHorizontal, UserCog, HelpCircle, Trophy, Globe, Link as LinkIcon, Zap, Smartphone, FileCode2, Braces, UserCircle } from "lucide-react";
 import { useBrand } from "@/components/brand-provider";
 import { useEffect, useState } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -58,6 +58,7 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "Schema Validator", url: "/schema-validator", icon: Braces },
   ]},
   { label: "Settings", items: [
+    { title: "Your Profile", url: "/profile", icon: UserCircle },
     { title: "API Settings", url: "/settings", icon: Settings },
     { title: "Preferences & Branding", url: "/preferences", icon: SlidersHorizontal },
     { title: "Search Console", url: "/gsc", icon: ShieldCheck },
