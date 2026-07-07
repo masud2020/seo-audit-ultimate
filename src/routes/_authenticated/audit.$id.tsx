@@ -15,7 +15,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ExecutiveSummary } from "@/components/reports/ExecutiveSummary";
-import { ExportMenu } from "@/components/reports/ExportMenu";
 import { AiRecommendationsPanel } from "@/components/reports/AiRecommendationsPanel";
 import { normalizeAudit } from "@/lib/report-core";
 
@@ -106,7 +105,6 @@ function AuditPage() {
             <div className="text-xs text-muted-foreground">Overall score</div>
             <div className={`text-3xl font-bold ${scoreClass(report.overall_score)}`}>{report.overall_score}</div>
           </div>
-          <ExportMenu report={normalized} />
           <Button variant="outline" onClick={() => mPdf.mutate()} disabled={mPdf.isPending}>{mPdf.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}Export PDF</Button>
           <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
             <DialogTrigger asChild><Button variant="outline"><Mail className="h-4 w-4 mr-2" />Email PDF</Button></DialogTrigger>
