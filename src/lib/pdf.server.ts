@@ -23,6 +23,23 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   return lines;
 }
 
+// Shared vertical-metrics helpers so every text call lands on the same baseline
+// grid and every centered label sits visually centered inside its box.
+// - ascentOf: distance from baseline to the top of a capital letter.
+// - lineAdvanceOf: baseline-to-baseline distance for stacked lines.
+// - centerBaselineY: baseline y that visually centers text inside a box whose
+//   top edge is `topY` and whose height is `boxH`.
+function ascentOf(f: PDFFont, size: number): number {
+  return f.heightAtSize(size, { descender: false });
+}
+function lineAdvanceOf(f: PDFFont, size: number): number {
+  return f.heightAtSize(size) + 1;
+}
+function centerBaselineY(topY: number, boxH: number, f: PDFFont, size: number): number {
+  const asc = ascentOf(f, size);
+  return topY - (boxH - asc) / 2 - asc;
+}
+
 export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
@@ -59,10 +76,12 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
     const lines = wrap(t, f, size, W - M * 2);
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
     for (const line of lines) {
-      ensure(size + 4);
-      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
-      y -= size + 3;
+      ensure(lh);
+      page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= lh;
     }
   };
   const spacer = (n = 6) => { y -= n; };
@@ -86,7 +105,7 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     const w = bold.widthOfTextAtSize(label, size) + padX * 2;
     const h = size + padY * 2;
     page.drawRectangle({ x, y: yTop - h, width: w, height: h, color: rgb(bg[0], bg[1], bg[2]) });
-    page.drawText(label, { x: x + padX, y: yTop - h + padY + 1, size, font: bold, color: rgb(color[0], color[1], color[2]) });
+    page.drawText(label, { x: x + padX, y: centerBaselineY(yTop, h, bold, size), size, font: bold, color: rgb(color[0], color[1], color[2]) });
     return w;
   };
   // Section header with a colored left bar.
@@ -98,10 +117,12 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     page.drawRectangle({ x: M, y: y - barH, width: W - M * 2, height: barH, color: rgb(0.97, 0.97, 0.99) });
     // Colored accent bar on the left
     page.drawRectangle({ x: M, y: y - barH, width: 4, height: barH, color: rgb(col[0], col[1], col[2]) });
-    page.drawText(sanitize(title), { x: M + 14, y: y - 18, size: 13, font: bold, color: rgb(0.1, 0.1, 0.1) });
+    const titleSize = 13;
+    page.drawText(sanitize(title), { x: M + 14, y: centerBaselineY(y, barH, bold, titleSize), size: titleSize, font: bold, color: rgb(0.1, 0.1, 0.1) });
     const scoreStr = `${score}/100`;
-    const sw = bold.widthOfTextAtSize(scoreStr, 12);
-    page.drawText(scoreStr, { x: W - M - sw - 8, y: y - 18, size: 12, font: bold, color: rgb(col[0], col[1], col[2]) });
+    const scoreSize = 12;
+    const sw = bold.widthOfTextAtSize(scoreStr, scoreSize);
+    page.drawText(scoreStr, { x: W - M - sw - 8, y: centerBaselineY(y, barH, bold, scoreSize), size: scoreSize, font: bold, color: rgb(col[0], col[1], col[2]) });
     y -= barH + 8;
   };
   // Anchors so Priority Issues can link into Detailed Findings.
@@ -787,10 +808,12 @@ export async function buildMegaAuditPdf(r: MegaResults): Promise<Uint8Array> {
     const size = opts.size ?? 10;
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
     for (const line of wrap(t, f, size, W - M * 2)) {
-      ensure(size + 4);
-      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
-      y -= size + 3;
+      ensure(lh);
+      page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= lh;
     }
   };
   const spacer = (n = 6) => { y -= n; };
@@ -947,10 +970,12 @@ export async function buildSiteAuditPdf(
     const size = opts.size ?? 10;
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
     for (const line of wrap(t, f, size, W - M * 2)) {
-      ensure(size + 4);
-      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
-      y -= size + 3;
+      ensure(lh);
+      page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= lh;
     }
   };
   const spacer = (n = 6) => { y -= n; };
@@ -995,12 +1020,14 @@ export async function buildSiteAuditPdf(
       while (display.length > 1 && f.widthOfTextAtSize(display + "…", size) > maxW) display = display.slice(0, -1);
       display = display + "…";
     }
-    ensure(size + 4);
-    const lineY = y - size;
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
+    ensure(lh);
+    const lineY = y - asc;
     page.drawText(display, { x, y: lineY, size, font: f, color: rgb(color[0], color[1], color[2]) });
     const w = Math.min(f.widthOfTextAtSize(display, size), maxW);
     addUriLink(page, [x, lineY - 1, x + w, lineY + size], url);
-    y -= size + 3;
+    y -= lh;
   };
 
   const s = data.summary;
@@ -1347,7 +1374,9 @@ async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: numb
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
     const lines = wrap(t, f, size, W - M * 2);
-    for (const line of lines) { ensure(size + 4); page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) }); y -= size + 3; }
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
+    for (const line of lines) { ensure(lh); page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) }); y -= lh; }
   };
 
   text("Site Crawl Report", { size: 22, bold: true });

@@ -13,6 +13,8 @@ function wrap(text: string, font: PDFFont, size: number, maxWidth: number): stri
   if (cur) lines.push(cur);
   return lines;
 }
+function ascentOf(f: PDFFont, size: number): number { return f.heightAtSize(size, { descender: false }); }
+function lineAdvanceOf(f: PDFFont, size: number): number { return f.heightAtSize(size) + 1; }
 
 const TOOL_LABEL: Record<string, string> = {
   broken_links: "Broken Link Checker",
@@ -42,10 +44,12 @@ export async function buildToolRunPdf(run: ToolRunRow): Promise<Uint8Array> {
     const size = opts.size ?? 10;
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
     for (const line of wrap(t, f, size, W - M * 2)) {
-      ensure(size + 4);
-      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
-      y -= size + 3;
+      ensure(lh);
+      page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= lh;
     }
   };
   const spacer = (n = 6) => { y -= n; };
