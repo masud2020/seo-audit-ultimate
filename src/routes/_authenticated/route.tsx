@@ -4,6 +4,7 @@ import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/s
 import { AppSidebar } from "@/components/app-sidebar";
 import { BrandProvider, useBrand } from "@/components/brand-provider";
 import { NotificationsBell } from "@/components/notifications-bell";
+import { AppFooter } from "@/components/app-footer";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -24,6 +25,7 @@ function Layout() {
           <SidebarInset className="flex flex-col">
             <LayoutHeader />
             <main className="flex-1 p-6"><Outlet /></main>
+            <AppFooter />
           </SidebarInset>
         </div>
       </SidebarProvider>
