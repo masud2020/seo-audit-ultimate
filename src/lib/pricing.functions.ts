@@ -150,7 +150,7 @@ export const submitBkashPayment = createServerFn({ method: "POST" })
 export const getMyBilling = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<{ subscription: UserSubscription | null; payments: BkashPayment[] }> => {
-    const [{ data: subRow }, { data: pays }] = await Promise.all([
+    const [{ data: subRow }, { data: pays }, { data: isAdmin }] = await Promise.all([
       context.supabase
         .from("user_subscriptions")
         .select("id,user_id,plan_slug,status,started_at,expires_at,source")
@@ -165,8 +165,22 @@ export const getMyBilling = createServerFn({ method: "GET" })
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(50),
+      context.supabase.rpc("has_role", { _user_id: context.userId, _role: "admin" }),
     ]);
-    return { subscription: (subRow as UserSubscription | null) ?? null, payments: (pays ?? []) as BkashPayment[] };
+    let subscription = (subRow as UserSubscription | null) ?? null;
+    if (isAdmin) {
+      // Admins get an auto-extending lifetime plan — never expires, no renewal needed.
+      subscription = {
+        id: subscription?.id ?? "admin-lifetime",
+        user_id: context.userId,
+        plan_slug: subscription?.plan_slug ?? "lifetime",
+        status: "active",
+        started_at: subscription?.started_at ?? new Date().toISOString(),
+        expires_at: null,
+        source: "admin",
+      };
+    }
+    return { subscription, payments: (pays ?? []) as BkashPayment[] };
   });
 
 // ---------------- Admin ----------------
