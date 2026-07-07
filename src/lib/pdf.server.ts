@@ -487,6 +487,13 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     spacer(8);
   }
 
+  // Wire Priority Issues cross-links to their Detailed Findings anchors.
+  for (const link of pendingCrossLinks) {
+    const target = checkAnchors.get(link.check);
+    if (!target) continue;
+    addInternalLink(link.page, link.rect, target.page.ref, target.y);
+  }
+
   // ============ AI RECOMMENDATIONS ============
   if (recs.length) {
     newPage();
