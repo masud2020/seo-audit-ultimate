@@ -110,6 +110,46 @@ export function normalizeSiteAudit(row: AnyRec): NormalizedReport {
   const bySection = (summary.avg_by_section ?? {}) as Record<string, number>;
   const topProblems = Array.isArray(summary.top_problems) ? (summary.top_problems as AnyRec[]) : [];
 
+  // Map recurring problem messages to a section id so per-section recs get real findings.
+  const SECTION_KEYWORDS: Array<[string, string[]]> = [
+    ["security", ["hsts", "content-security-policy", "csp", "x-content-type", "referrer-policy", "x-frame", "frame-ancestors", "permissions-policy"]],
+    ["ssl", ["ssl", "tls", "certificate", "https"]],
+    ["meta", ["title tag", "meta description", "og:", "twitter:", "canonical tag"]],
+    ["onpage", ["h1", "heading", "single h1"]],
+    ["accessibility", ["accessible name", "alt text", "aria", "form label", "landmark"]],
+    ["images", ["image", "missing alt", "img"]],
+    ["i18n", ["hreflang", "lang attribute"]],
+    ["performance-extra", ["render-blocking", "unminified", "defer", "async"]],
+    ["performance", ["ttfb", "load time", "page weight", "compression", "cache-control", "cdn", "core web vitals"]],
+    ["structured", ["schema", "structured data", "json-ld", "microdata"]],
+    ["sitemap", ["sitemap"]],
+    ["robots", ["robots.txt", "noindex", "meta robots"]],
+    ["notfound", ["404", "not found"]],
+    ["broken", ["broken link", "dead link"]],
+    ["links", ["internal link", "external link", "nofollow"]],
+    ["mobile", ["viewport", "mobile", "responsive"]],
+    ["favicon", ["favicon"]],
+    ["content", ["word count", "content length", "keyword", "duplicate content"]],
+  ];
+  function inferSection(message: string): string {
+    const m = message.toLowerCase();
+    for (const [sec, kws] of SECTION_KEYWORDS) if (kws.some((k) => m.includes(k))) return sec;
+    return "top-problems";
+  }
+  const findingsBySection = new Map<string, Finding[]>();
+  topProblems.forEach((p, i) => {
+    const sec = inferSection(String(p.message ?? ""));
+    const list = findingsBySection.get(sec) ?? [];
+    list.push({
+      id: `${sec}-p${i}`,
+      label: String(p.message ?? ""),
+      status: (p.severity === "high" ? "fail" : p.severity === "medium" ? "warn" : "info") as Status,
+      severity: p.severity as Severity,
+      detail: `${p.count} pages affected`,
+    });
+    findingsBySection.set(sec, list);
+  });
+
   const sections: Section[] = [
     {
       id: "overview",
@@ -129,13 +169,13 @@ export function normalizeSiteAudit(row: AnyRec): NormalizedReport {
       title: id.charAt(0).toUpperCase() + id.slice(1),
       category: categoryFor(id),
       score,
-      findings: [] as Finding[],
+      findings: findingsBySection.get(id) ?? [],
     })),
     {
       id: "top-problems",
       title: "Top recurring problems",
       category: "Technical",
-      findings: topProblems.map((p, i) => ({
+      findings: findingsBySection.get("top-problems") ?? topProblems.map((p, i) => ({
         id: `p-${i}`,
         label: String(p.message ?? ""),
         status: (p.severity === "high" ? "fail" : p.severity === "medium" ? "warn" : "info") as Status,

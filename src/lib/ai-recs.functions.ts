@@ -121,3 +121,97 @@ export const listSectionRecommendations = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return ((rows ?? []) as Array<{ section_slug: string; summary: string; fixes: Fix[] }>);
   });
+
+// Bulk: iterate every section with failing/warning findings, generate + persist
+// recs for any that don't already have cached rows. Used to populate the PDF
+// export end-to-end for a whole report.
+const bulkSectionSchema = z.object({
+  slug: z.string().min(1).max(80),
+  title: z.string().min(1).max(200),
+  findings: z.array(findingSchema).max(60),
+});
+const bulkInputSchema = z.object({
+  report_id: z.string().uuid(),
+  report_type: z.enum(REPORT_TYPES),
+  sections: z.array(bulkSectionSchema).min(1).max(40),
+});
+
+export const generateAllRecommendations = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((v: unknown) => bulkInputSchema.parse(v))
+  .handler(async ({ data, context }): Promise<{ generated: number; skipped: number; failed: number; errors: string[] }> => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = context.supabase as any;
+
+    // Which sections already have cached rows? Skip those.
+    const { data: existingRows } = await supabase
+      .from("report_recommendations")
+      .select("section_slug,fixes")
+      .eq("report_id", data.report_id)
+      .eq("report_type", data.report_type);
+    const cached = new Set<string>(
+      ((existingRows ?? []) as Array<{ section_slug: string; fixes: unknown[] }>)
+        .filter((r) => Array.isArray(r.fixes) && r.fixes.length > 0)
+        .map((r) => r.section_slug),
+    );
+
+    const { callAi, extractJson } = await import("./ai.server");
+    const model = "google/gemini-2.5-flash";
+    const system = "You are a senior SEO / web performance auditor. Reply with STRICT JSON only, no prose.";
+
+    let generated = 0, skipped = 0, failed = 0;
+    const errors: string[] = [];
+
+    for (const section of data.sections) {
+      if (cached.has(section.slug)) { skipped++; continue; }
+
+      const failing = section.findings.filter((f) => f.status === "fail" || f.status === "warn");
+      if (!failing.length) {
+        await supabase.from("report_recommendations").upsert({
+          user_id: context.userId,
+          report_id: data.report_id,
+          report_type: data.report_type,
+          section_slug: section.slug,
+          summary: "No failing or warning checks in this section — nothing to fix.",
+          fixes: [],
+          model: null,
+        }, { onConflict: "report_id,report_type,section_slug" });
+        skipped++;
+        continue;
+      }
+
+      const user = [
+        `Report section: "${section.title}"`,
+        `Failing / warning checks (JSON):`,
+        JSON.stringify(failing),
+        "",
+        `Return JSON exactly of the shape:`,
+        `{"summary":"1-3 sentence executive summary","fixes":[{"title":"...","impact":"high|medium|low","effort":"low|medium|high","steps":["step 1","step 2","step 3"]}]}`,
+        `Rules: up to 5 fixes, most impactful first. Each fix has 2-5 concrete, code- or config-level steps. Never invent facts not in the findings.`,
+      ].join("\n");
+
+      try {
+        const text = await callAi({ model, system, user, json: true, temperature: 0.2 });
+        const parsed = extractJson<Record<string, unknown>>(text);
+        const { summary, fixes } = coerceRecs(parsed);
+        await supabase.from("report_recommendations").upsert({
+          user_id: context.userId,
+          report_id: data.report_id,
+          report_type: data.report_type,
+          section_slug: section.slug,
+          summary,
+          fixes,
+          model,
+        }, { onConflict: "report_id,report_type,section_slug" });
+        generated++;
+      } catch (e) {
+        failed++;
+        const msg = e instanceof Error ? e.message : String(e);
+        errors.push(`${section.slug}: ${msg}`);
+        // 429/402 are terminal for the whole batch — stop early rather than looping.
+        if (/\b(402|429|rate[_ -]?limit|credits?)\b/i.test(msg)) break;
+      }
+    }
+
+    return { generated, skipped, failed, errors };
+  });
