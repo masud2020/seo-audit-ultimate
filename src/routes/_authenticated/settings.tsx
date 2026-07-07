@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getApiSettings, saveApiSettings } from "@/lib/misc.functions";
 import { checkIsAdmin, getConnectorStatus, testConnector } from "@/lib/admin.functions";
+import { testDomainMetricsKeys, type TestKeysResult } from "@/lib/domain-metrics.functions";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -234,6 +235,7 @@ function ApiKeysForm() {
         <Input type="password" value={form.majestic_key} onChange={(e) => setForm({ ...form, majestic_key: e.target.value })} placeholder="••••••••" autoComplete="off" />
         <p className="text-xs text-muted-foreground mt-1">Powers Trust Flow (TF) and Citation Flow (CF). Get one at majestic.com/account/api-key.</p>
       </div>
+      <TestDomainMetricsKeys />
       <div>
         <Label>DataForSEO login</Label>
         <Input value={form.dataforseo_login} onChange={(e) => setForm({ ...form, dataforseo_login: e.target.value })} placeholder="you@example.com" autoComplete="off" />
@@ -255,5 +257,62 @@ function ApiKeysForm() {
       </div>
       <Button onClick={() => m.mutate()} disabled={m.isPending}>{m.isPending ? "Saving…" : "Save API Keys"}</Button>
     </Card>
+  );
+}
+
+function TestDomainMetricsKeys() {
+  const test = useServerFn(testDomainMetricsKeys);
+  const [pending, setPending] = useState(false);
+  const [result, setResult] = useState<TestKeysResult | null>(null);
+  const run = async () => {
+    setPending(true);
+    try {
+      const r = await test();
+      setResult(r);
+      const bothOk = r.moz.ok && r.majestic.ok;
+      const anyConfigured = r.moz.configured || r.majestic.configured;
+      if (!anyConfigured) toast.error("No Moz or Majestic keys configured yet — save keys first.");
+      else if (bothOk) toast.success("Both keys verified");
+      else toast.error("One or more keys failed — see details below");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Test failed");
+    } finally {
+      setPending(false);
+    }
+  };
+  const Row = ({ label, r }: { label: string; r: TestKeysResult["moz"] }) => (
+    <div className="flex items-start justify-between gap-3 rounded-md border p-2">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-medium text-sm">{label}</span>
+          {!r.configured
+            ? <Badge variant="secondary">Not configured</Badge>
+            : r.ok
+              ? <Badge variant="default" className="gap-1"><CheckCircle2 className="h-3 w-3" />OK · {r.latencyMs}ms</Badge>
+              : <Badge variant="destructive" className="gap-1"><XCircle className="h-3 w-3" />Failed · {r.latencyMs}ms</Badge>}
+        </div>
+        <p className={`text-xs mt-1 break-all ${r.ok ? "text-muted-foreground" : "text-destructive"}`}>{r.message}</p>
+      </div>
+    </div>
+  );
+  return (
+    <div className="rounded-lg border p-3 space-y-3 bg-muted/30">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-medium">Test Moz & Majestic keys</div>
+          <p className="text-xs text-muted-foreground">Runs a live probe against <code>moz.com</code>. Save first if you just changed a key.</p>
+        </div>
+        <Button variant="secondary" size="sm" onClick={run} disabled={pending}>
+          {pending ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <PlugZap className="mr-1 h-3 w-3" />}
+          {pending ? "Testing…" : "Test keys"}
+        </Button>
+      </div>
+      {result && (
+        <div className="grid gap-2">
+          <Row label="Moz (DA / PA / Spam)" r={result.moz} />
+          <Row label="Majestic (TF / CF)" r={result.majestic} />
+        </div>
+      )}
+    </div>
   );
 }
