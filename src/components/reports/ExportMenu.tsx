@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { toCsv, type NormalizedReport } from "@/lib/report-core";
 import { createReportShare } from "@/lib/report-share.functions";
 import { listSectionRecommendations } from "@/lib/ai-recs.functions";
+import { generateSiteAuditPdf } from "@/lib/pdf.functions";
 
 function download(filename: string, content: string, mime: string) {
   const blob = new Blob([content], { type: mime });
@@ -29,6 +30,8 @@ export function ExportMenu({ report }: { report: NormalizedReport }) {
   const share = useServerFn(createReportShare);
   const listRecs = useServerFn(listSectionRecommendations);
   const [csvBusy, setCsvBusy] = useState(false);
+  const sitePdf = useServerFn(generateSiteAuditPdf);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const createShare = useMutation({
     mutationFn: () => share({ data: { report_id: report.id, report_type: report.type, expires_in_days: Number(expiryDays) } }),
     onSuccess: (r) => {
@@ -56,6 +59,26 @@ export function ExportMenu({ report }: { report: NormalizedReport }) {
     }
   };
 
+  const exportSiteAuditPdf = async () => {
+    setPdfBusy(true);
+    try {
+      const { base64, filename } = await sitePdf({ data: { site_audit_id: report.id } });
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate PDF");
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -67,6 +90,12 @@ export function ExportMenu({ report }: { report: NormalizedReport }) {
             {csvBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileSpreadsheet className="h-4 w-4 mr-2" />}
             Download CSV
           </DropdownMenuItem>
+          {report.type === "site_audit" && (
+            <DropdownMenuItem disabled={pdfBusy} onSelect={(e) => { e.preventDefault(); void exportSiteAuditPdf(); }}>
+              {pdfBusy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+              Download PDF
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem onClick={() => {
             const url = `/api/reports/${report.id}/pdf?type=${report.type}`;
             window.open(url, "_blank", "noopener");
