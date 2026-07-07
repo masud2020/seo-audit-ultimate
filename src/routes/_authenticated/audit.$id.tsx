@@ -14,6 +14,10 @@ import { Label } from "@/components/ui/label";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { toast } from "sonner";
+import { ExecutiveSummary } from "@/components/reports/ExecutiveSummary";
+import { ExportMenu } from "@/components/reports/ExportMenu";
+import { AiRecommendationsPanel } from "@/components/reports/AiRecommendationsPanel";
+import { normalizeAudit } from "@/lib/report-core";
 
 export const Route = createFileRoute("/_authenticated/audit/$id")({ component: AuditPage });
 
@@ -85,6 +89,7 @@ function AuditPage() {
 
   const report = data.sections as unknown as Report;
   const recs = (data.ai_recommendations ?? []) as unknown as AiRec[];
+  const normalized = normalizeAudit(data as unknown as Record<string, unknown>);
 
   return (
     <div className="space-y-6">
@@ -101,6 +106,7 @@ function AuditPage() {
             <div className="text-xs text-muted-foreground">Overall score</div>
             <div className={`text-3xl font-bold ${scoreClass(report.overall_score)}`}>{report.overall_score}</div>
           </div>
+          <ExportMenu report={normalized} />
           <Button variant="outline" onClick={() => mPdf.mutate()} disabled={mPdf.isPending}>{mPdf.isPending ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}Export PDF</Button>
           <Dialog open={emailOpen} onOpenChange={setEmailOpen}>
             <DialogTrigger asChild><Button variant="outline"><Mail className="h-4 w-4 mr-2" />Email PDF</Button></DialogTrigger>
@@ -116,6 +122,8 @@ function AuditPage() {
           </Dialog>
         </div>
       </div>
+
+      <ExecutiveSummary report={normalized} />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {report.sections.map(s => (
@@ -139,6 +147,8 @@ function AuditPage() {
           </Card>
         ))}
       </div>
+
+      <AiRecommendationsPanel report={normalized} />
 
       {recs.length > 0 && (
         <Card className="p-5">

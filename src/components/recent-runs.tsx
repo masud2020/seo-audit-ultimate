@@ -7,7 +7,7 @@ import { History } from "lucide-react";
 
 type RunRow = { id: string; label: string | null; created_at: string; status: string; input: unknown; result: unknown };
 
-export function RecentRuns<TResult>({ tool, onLoad }: { tool: string; onLoad: (row: { input: unknown; result: TResult; label: string | null }) => void }) {
+export function RecentRuns<TResult>({ tool, onLoad }: { tool: string; onLoad: (row: { id: string; input: unknown; result: TResult; label: string | null }) => void }) {
   const list = useServerFn(listToolRuns);
   const qc = useQueryClient();
   const { data } = useQuery({
@@ -30,7 +30,7 @@ export function RecentRuns<TResult>({ tool, onLoad }: { tool: string; onLoad: (r
               <span className="font-medium">{r.label ?? "Run"}</span>
               <span className="text-muted-foreground ml-2">{new Date(r.created_at).toLocaleString()}</span>
             </div>
-            <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => onLoad({ input: r.input, result: r.result as TResult, label: r.label })}>Load</Button>
+            <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => onLoad({ id: r.id, input: r.input, result: r.result as TResult, label: r.label })}>Load</Button>
           </li>
         ))}
       </ul>

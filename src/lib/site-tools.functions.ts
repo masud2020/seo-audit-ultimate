@@ -45,14 +45,14 @@ export const runBacklinkChecker = createServerFn({ method: "POST" })
       }
     }
     const foundCount = rows.filter((r) => r.found).length;
-    await logToolRun({
+    const run_id = await logToolRun({
       supabase, userId, tool: "backlink_checker", status: "success",
       label: `${targetHost} · ${foundCount}/${rows.length} linking`,
       input: data as unknown as Record<string, unknown>,
       result: { target: targetUrl, rows } as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
-    return { target: targetUrl, rows };
+    return { target: targetUrl, rows, run_id };
   });
 
 // ============================================================
@@ -75,6 +75,7 @@ export type SpeedResult = {
   cdn: string | null;
   score: number;
   suggestions: string[];
+  run_id?: string | null;
 };
 
 export const runWebsiteSpeed = createServerFn({ method: "POST" })
@@ -112,14 +113,14 @@ export const runWebsiteSpeed = createServerFn({ method: "POST" })
       cache_control: r.headers["cache-control"] ?? "",
       gzip, cdn: cdnHeader, score, suggestions,
     };
-    await logToolRun({
+    const run_id = await logToolRun({
       supabase, userId, tool: "website_speed", status: "success",
       label: `${new URL(r.finalUrl).host} · ${score}/100 · ${r.total_ms}ms`,
       input: data as unknown as Record<string, unknown>,
       result: result as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
-    return result;
+    return { ...result, run_id };
   });
 
 // ============================================================
@@ -138,6 +139,7 @@ export type ResponsiveResult = {
   fixed_width_elements: number;
   score: number;
   issues: string[];
+  run_id?: string | null;
 };
 
 export const runResponsiveCheck = createServerFn({ method: "POST" })
@@ -178,14 +180,14 @@ export const runResponsiveCheck = createServerFn({ method: "POST" })
       media_queries, picture_tags, srcset_imgs, total_imgs,
       flexible_units_pct, fixed_width_elements, score, issues,
     };
-    await logToolRun({
+    const run_id = await logToolRun({
       supabase, userId, tool: "responsive_check", status: "success",
       label: `${new URL(r.finalUrl).host} · ${score}/100`,
       input: data as unknown as Record<string, unknown>,
       result: result as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
-    return result;
+    return { ...result, run_id };
   });
 
 // ============================================================
@@ -202,6 +204,7 @@ export type HtmlResult = {
   issues: HtmlIssue[];
   totals: { errors: number; warnings: number };
   score: number;
+  run_id?: string | null;
 };
 
 export const runHtmlValidator = createServerFn({ method: "POST" })
@@ -258,14 +261,14 @@ export const runHtmlValidator = createServerFn({ method: "POST" })
     const warnings = issues.filter((i) => i.severity === "warning").length;
     const score = Math.max(0, 100 - errors * 12 - warnings * 4);
     const result: HtmlResult = { url: r.finalUrl, doctype, lang, title, meta_description, charset, issues, totals: { errors, warnings }, score };
-    await logToolRun({
+    const run_id = await logToolRun({
       supabase, userId, tool: "html_validator", status: "success",
       label: `${new URL(r.finalUrl).host} · ${errors}E / ${warnings}W`,
       input: data as unknown as Record<string, unknown>,
       result: result as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
-    return result;
+    return { ...result, run_id };
   });
 
 // ============================================================
@@ -287,6 +290,7 @@ export type SchemaResult = {
   errors: number;
   score: number;
   suggestions: string[];
+  run_id?: string | null;
 };
 
 export const runSchemaValidator = createServerFn({ method: "POST" })
@@ -367,12 +371,12 @@ export const runSchemaValidator = createServerFn({ method: "POST" })
     score = Math.max(0, Math.min(100, score));
 
     const result: SchemaResult = { url: r.finalUrl, blocks, by_format, by_type, errors, score, suggestions };
-    await logToolRun({
+    const run_id = await logToolRun({
       supabase, userId, tool: "schema_validator", status: "success",
       label: `${new URL(r.finalUrl).host} · ${blocks.length} block(s)`,
       input: data as unknown as Record<string, unknown>,
       result: result as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
-    return result;
+    return { ...result, run_id };
   });

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Link as LinkIcon, CheckCircle2, XCircle } from "lucide-react";
 import { runBacklinkChecker, type BacklinkRow } from "@/lib/site-tools.functions";
 import { RecentRuns } from "@/components/recent-runs";
+import { ToolReportExtras } from "@/components/reports/ToolReportExtras";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -15,19 +16,21 @@ import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/_authenticated/backlink-checker")({ component: Page });
 
-type Result = { target: string; rows: BacklinkRow[] };
+type Result = { target: string; rows: BacklinkRow[]; run_id?: string | null };
 
 function Page() {
   const run = useServerFn(runBacklinkChecker);
   const [target, setTarget] = useState("");
   const [sources, setSources] = useState("");
   const [loaded, setLoaded] = useState<Result | null>(null);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const mut = useMutation({
     mutationFn: () => run({ data: { target, sources } }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
     onSuccess: (r) => { setLoaded(null); toast.success(`${r.rows.filter(x => x.found).length}/${r.rows.length} sources linking`); },
   });
   const view = mut.data ?? loaded;
+  const runId = (mut.data as Result | undefined)?.run_id ?? loadedId;
   return (
     <div className="space-y-4 max-w-5xl">
       <div>
@@ -43,14 +46,16 @@ function Page() {
           {mut.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Checking…</> : "Check backlinks"}
         </Button></div>
       </Card>
-      <RecentRuns<Result> tool="backlink_checker" onLoad={({ input, result }) => {
+      <RecentRuns<Result> tool="backlink_checker" onLoad={({ id, input, result }) => {
         const i = input as { target?: string; sources?: string };
         if (i?.target) setTarget(i.target);
         if (i?.sources) setSources(i.sources);
         setLoaded(result);
+        setLoadedId(id);
       }} />
       {view && (
         <div className="space-y-3">
+          {runId && <ToolReportExtras runId={runId} tool="backlink_checker" label={`Backlinks · ${view.target}`} result={view} />}
           {view.rows.map((r, idx) => (
             <Card key={idx} className="p-3">
               <div className="flex items-center justify-between mb-1 gap-2">

@@ -216,13 +216,48 @@ export async function runAudit(rawUrl: string): Promise<AuditReport> {
   // ==== Structured data ====
   const jsonLdBlocks = all(html, /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi).map(m => m[1]);
   let ldTypes: string[] = [];
+  const ldValidations: Array<{ type: string; missing: string[] }> = [];
+  const requiredFields: Record<string, string[]> = {
+    Article: ["headline", "author", "datePublished"],
+    NewsArticle: ["headline", "author", "datePublished"],
+    BlogPosting: ["headline", "author", "datePublished"],
+    Product: ["name", "image", "offers"],
+    Organization: ["name", "url"],
+    LocalBusiness: ["name", "address", "telephone"],
+    BreadcrumbList: ["itemListElement"],
+    FAQPage: ["mainEntity"],
+    HowTo: ["name", "step"],
+    Event: ["name", "startDate", "location"],
+    Recipe: ["name", "recipeIngredient", "recipeInstructions"],
+    VideoObject: ["name", "thumbnailUrl", "uploadDate"],
+  };
   for (const b of jsonLdBlocks) {
-    try { const j = JSON.parse(b); const t = Array.isArray(j) ? j.map(x=>x["@type"]) : [j["@type"]]; ldTypes.push(...t.flat().filter(Boolean)); } catch { /* ignore */ }
+    try {
+      const j = JSON.parse(b);
+      const items = Array.isArray(j) ? j : [j];
+      for (const item of items) {
+        const t = item["@type"];
+        const types = (Array.isArray(t) ? t : [t]).filter(Boolean).map(String);
+        ldTypes.push(...types);
+        for (const typeName of types) {
+          const req = requiredFields[typeName];
+          if (!req) continue;
+          const missing = req.filter((f) => item[f] == null || (Array.isArray(item[f]) && item[f].length === 0));
+          if (missing.length) ldValidations.push({ type: typeName, missing });
+        }
+      }
+    } catch { /* ignore */ }
   }
   const sdChecks: Check[] = [
     { id: "jsonld", label: "JSON-LD structured data", status: jsonLdBlocks.length > 0 ? "pass" : "warn", detail: `${jsonLdBlocks.length} blocks`, value: ldTypes.join(", ") },
+    ...ldValidations.map((v, i): Check => ({
+      id: `ld-req-${v.type}-${i}`,
+      label: `${v.type} required fields`,
+      status: "fail",
+      detail: `Missing: ${v.missing.join(", ")}`,
+    })),
   ];
-  sections.push({ id: "structured", title: "Structure Markup", checks: sdChecks, score: scoreFromChecks(sdChecks), data: { types: ldTypes } });
+  sections.push({ id: "structured", title: "Structure Markup", checks: sdChecks, score: scoreFromChecks(sdChecks), data: { types: ldTypes, validations: ldValidations } });
 
   // ==== Security / SSL / HTTPS ====
   const isHttps = finalUrl.startsWith("https://");
@@ -238,6 +273,17 @@ export async function runAudit(rawUrl: string): Promise<AuditReport> {
     { id: "referrer", label: "Referrer-Policy", status: refPolicy ? "pass" : "warn" },
   ];
   sections.push({ id: "ssl", title: "SSL & Security Headers", checks: sslChecks, score: scoreFromChecks(sslChecks) });
+
+  // ==== Expanded security headers ====
+  const xfo = res.headers.get("x-frame-options");
+  const permPolicy = res.headers.get("permissions-policy");
+  const coop = res.headers.get("cross-origin-opener-policy");
+  const secExtra: Check[] = [
+    { id: "xfo", label: "X-Frame-Options / frame-ancestors", status: xfo || /frame-ancestors/i.test(csp || "") ? "pass" : "warn", value: xfo || (csp && /frame-ancestors/i.test(csp) ? "via CSP" : "") },
+    { id: "perm-policy", label: "Permissions-Policy", status: permPolicy ? "pass" : "warn", value: permPolicy || "" },
+    { id: "coop", label: "Cross-Origin-Opener-Policy", status: coop ? "pass" : "info", value: coop || "" },
+  ];
+  sections.push({ id: "security", title: "Additional Security Headers", checks: secExtra, score: scoreFromChecks(secExtra) });
 
   // ==== Performance / page weight / DOM ====
   const bytes = new TextEncoder().encode(html).length;
@@ -268,6 +314,44 @@ export async function runAudit(rawUrl: string): Promise<AuditReport> {
     { id: "ga", label: "Google Analytics / Tag Manager", status: hasGA ? "pass" : "info" },
   ];
   sections.push({ id: "mobile", title: "Mobile & Analytics", checks: mobileChecks, score: scoreFromChecks(mobileChecks) });
+
+  // ==== Accessibility basics ====
+  const inputTagsA11y = all(html, /<input\b[^>]*>/gi).map((m) => m[0]);
+  const inputsLabelable = inputTagsA11y.filter((t) => /\baria-label\s*=/i.test(t) || /\baria-labelledby\s*=/i.test(t) || /\bid\s*=/i.test(t)).length;
+  const buttonBlocks = all(html, /<button\b([^>]*)>([\s\S]*?)<\/button>/gi);
+  const buttonsNamed = buttonBlocks.filter((m) => m[2].replace(/<[^>]+>/g, "").trim().length > 0 || /\baria-label\s*=/i.test(m[1])).length;
+  const skipLink = /<a[^>]*href=["']#(?:main|content|skip)/i.test(html);
+  const emptyLinks = all(html, /<a\b[^>]*>\s*<\/a>/gi).length;
+  const accessibility: Check[] = [
+    { id: "lang-a11y", label: "Document language declared", status: lang ? "pass" : "fail", value: lang || "missing" },
+    { id: "img-alt-cov", label: "Image alt coverage", status: imgs.length === 0 ? "info" : imgsWithoutAlt === 0 ? "pass" : imgsWithoutAlt < imgs.length / 2 ? "warn" : "fail", detail: `${imgs.length - imgsWithoutAlt}/${imgs.length} have alt text` },
+    { id: "input-labels", label: "Form inputs are labelable", status: inputTagsA11y.length === 0 ? "info" : inputsLabelable === inputTagsA11y.length ? "pass" : "warn", detail: `${inputsLabelable}/${inputTagsA11y.length} inputs have id/aria-label` },
+    { id: "button-names", label: "Buttons have accessible names", status: buttonBlocks.length === 0 ? "info" : buttonsNamed === buttonBlocks.length ? "pass" : "warn", detail: `${buttonsNamed}/${buttonBlocks.length} buttons have text or aria-label` },
+    { id: "skip-link", label: "Skip-to-content link", status: skipLink ? "pass" : "info" },
+    { id: "empty-links", label: "No empty <a> elements", status: emptyLinks === 0 ? "pass" : "warn", detail: `${emptyLinks} empty link(s)` },
+  ];
+  sections.push({ id: "accessibility", title: "Accessibility Basics", checks: accessibility, score: scoreFromChecks(accessibility) });
+
+  // ==== International SEO / hreflang ====
+  const hreflangs = all(html, /<link\b[^>]*rel=["']alternate["'][^>]*hreflang=["']([^"']+)["'][^>]*href=["']([^"']+)["']/gi).map((m) => ({ hreflang: m[1], href: m[2] }));
+  const hasXDefault = hreflangs.some((h) => h.hreflang.toLowerCase() === "x-default");
+  const canonicalSelf = canonical ? (() => { try { return new URL(canonical, finalUrl).toString() === finalUrl; } catch { return false; } })() : false;
+  const i18nChecks: Check[] = [
+    { id: "hreflang", label: "hreflang alternates", status: hreflangs.length > 0 ? "pass" : "info", detail: `${hreflangs.length} alternate(s)` },
+    { id: "xdefault", label: "hreflang x-default present", status: hreflangs.length === 0 ? "info" : hasXDefault ? "pass" : "warn" },
+    { id: "canonical-self", label: "Canonical points to the same URL", status: !canonical ? "warn" : canonicalSelf ? "pass" : "info", detail: canonical ? (canonicalSelf ? "self-canonical" : `points to ${canonical}`) : "no canonical set" },
+  ];
+  sections.push({ id: "i18n", title: "International SEO", checks: i18nChecks, score: scoreFromChecks(i18nChecks), data: { hreflangs } });
+
+  // ==== Render-blocking / performance additions ====
+  const stylesheets = (html.match(/<link\b[^>]*rel\s*=\s*["']stylesheet["']/gi) ?? []).length;
+  const headBlock = html.match(/<head\b[\s\S]*?<\/head>/i)?.[0] ?? "";
+  const headScripts = (headBlock.match(/<script\b(?![^>]*\b(?:async|defer)\b)[^>]*>/gi) ?? []).length;
+  const perfExtras: Check[] = [
+    { id: "stylesheets", label: "External stylesheets", status: stylesheets <= 3 ? "pass" : stylesheets <= 6 ? "warn" : "fail", detail: `${stylesheets} <link rel="stylesheet">` },
+    { id: "blocking-js", label: "Render-blocking scripts in <head>", status: headScripts === 0 ? "pass" : headScripts <= 2 ? "warn" : "fail", detail: `${headScripts} sync script(s) in <head>` },
+  ];
+  sections.push({ id: "performance-extra", title: "Render Blocking", checks: perfExtras, score: scoreFromChecks(perfExtras) });
 
   const overall = Math.round(sections.reduce((a,s)=>a+s.score,0) / sections.length);
 

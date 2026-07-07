@@ -737,6 +737,75 @@ export type Database = {
         }
         Relationships: []
       }
+      report_recommendations: {
+        Row: {
+          created_at: string
+          fixes: Json
+          id: string
+          model: string | null
+          report_id: string
+          report_type: string
+          section_slug: string
+          summary: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          fixes?: Json
+          id?: string
+          model?: string | null
+          report_id: string
+          report_type: string
+          section_slug: string
+          summary?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          fixes?: Json
+          id?: string
+          model?: string | null
+          report_id?: string
+          report_type?: string
+          section_slug?: string
+          summary?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      report_shares: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          report_id: string
+          report_type: string
+          token: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          report_id: string
+          report_type: string
+          token: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          report_id?: string
+          report_type?: string
+          token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       scheduled_audits: {
         Row: {
           cadence: string

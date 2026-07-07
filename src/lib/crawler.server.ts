@@ -27,6 +27,8 @@ export interface CrawlPage {
   images_missing_alt: number;
   internal_links: number;
   external_links: number;
+  depth: number;
+  inbound_links: number;
 }
 export interface CrawlIssue { url: string; severity: "high" | "medium" | "low"; message: string; }
 
@@ -34,13 +36,17 @@ export async function runCrawl(startUrl: string, maxPages: number): Promise<{ pa
   const start = new URL(startUrl.startsWith("http") ? startUrl : `https://${startUrl}`);
   const origin = start.origin;
   const visited = new Set<string>();
-  const queue: string[] = [start.toString()];
+  const queue: Array<{ url: string; depth: number }> = [{ url: start.toString(), depth: 0 }];
   const pages: CrawlPage[] = [];
   const issues: CrawlIssue[] = [];
   const titles = new Map<string, string[]>();
+  const descriptions = new Map<string, string[]>();
+  const inboundCount = new Map<string, number>();
 
   while (queue.length && pages.length < maxPages) {
-    const url = queue.shift()!;
+    const item = queue.shift()!;
+    const url = item.url;
+    const depth = item.depth;
     if (visited.has(url)) continue;
     visited.add(url);
 
@@ -77,12 +83,13 @@ export async function runCrawl(startUrl: string, maxPages: number): Promise<{ pa
           internal_links++;
           abs.hash = "";
           const clean = abs.toString();
-          if (!visited.has(clean) && pages.length + queue.length < maxPages * 3) queue.push(clean);
+          inboundCount.set(clean, (inboundCount.get(clean) ?? 0) + 1);
+          if (!visited.has(clean) && pages.length + queue.length < maxPages * 3) queue.push({ url: clean, depth: depth + 1 });
         } else external_links++;
       } catch { /* skip */ }
     }
 
-    pages.push({ url, status: res.status, title, description, h1_count, word_count, bytes, duration_ms: duration, canonical, noindex, images_missing_alt, internal_links, external_links });
+    pages.push({ url, status: res.status, title, description, h1_count, word_count, bytes, duration_ms: duration, canonical, noindex, images_missing_alt, internal_links, external_links, depth, inbound_links: 0 });
 
     // Per-page issues
     if (res.status >= 400) issues.push({ url, severity: "high", message: `HTTP ${res.status}` });
@@ -97,14 +104,48 @@ export async function runCrawl(startUrl: string, maxPages: number): Promise<{ pa
     if (images_missing_alt > 0) issues.push({ url, severity: "low", message: `${images_missing_alt} image(s) missing alt text` });
     if (bytes > 500_000) issues.push({ url, severity: "low", message: `Large page (${(bytes/1024).toFixed(0)} KB)` });
     if (duration > 3000) issues.push({ url, severity: "medium", message: `Slow response (${duration} ms)` });
+    if (depth > 4) issues.push({ url, severity: "low", message: `Deep page (${depth} clicks from root)` });
 
     if (title) { const arr = titles.get(title) || []; arr.push(url); titles.set(title, arr); }
+    if (description) { const arr = descriptions.get(description) || []; arr.push(url); descriptions.set(description, arr); }
   }
+
+  // Backfill inbound-link counts on each page from what we learned during traversal.
+  for (const p of pages) p.inbound_links = inboundCount.get(p.url) ?? 0;
 
   // Duplicate title issues
   for (const [title, urls] of titles) {
     if (urls.length > 1) for (const u of urls) issues.push({ url: u, severity: "medium", message: `Duplicate title (${urls.length} pages): "${title.slice(0, 60)}"` });
   }
+
+  // Duplicate description issues
+  for (const [desc, urls] of descriptions) {
+    if (urls.length > 1) for (const u of urls) issues.push({ url: u, severity: "low", message: `Duplicate meta description (${urls.length} pages)` });
+  }
+
+  // Orphan pages (no inbound internal links from what we crawled). Start URL excluded.
+  const startUrlClean = start.toString().replace(/#.*$/, "");
+  for (const p of pages) {
+    if (p.url !== startUrlClean && (p.inbound_links ?? 0) === 0) {
+      issues.push({ url: p.url, severity: "medium", message: "Orphan page — no inbound internal links" });
+    }
+  }
+
+  // Sitemap vs crawled diff (best-effort)
+  try {
+    const smRes = await safeFetch(`${origin}/sitemap.xml`);
+    if (smRes.ok) {
+      const xml = await smRes.text();
+      const smUrls = new Set(Array.from(xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)).map((m) => m[1].trim()));
+      const crawled = new Set(pages.map((p) => p.url));
+      for (const u of smUrls) if (!crawled.has(u)) issues.push({ url: u, severity: "low", message: "In sitemap but not crawled (may be uncrawlable or beyond max_pages)" });
+      let orphanFromCrawl = 0;
+      for (const p of pages) if (!smUrls.has(p.url)) orphanFromCrawl++;
+      if (orphanFromCrawl && smUrls.size > 0) {
+        issues.push({ url: origin, severity: "low", message: `${orphanFromCrawl} crawled URL(s) missing from sitemap.xml` });
+      }
+    }
+  } catch { /* ignore sitemap fetch errors */ }
 
   return { pages, issues };
 }

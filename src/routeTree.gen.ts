@@ -53,12 +53,14 @@ import { Route as AuthenticatedAiPotentialRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAiDetectionRouteImport } from './routes/_authenticated/ai-detection'
 import { Route as AuthenticatedAiCitationsRouteImport } from './routes/_authenticated/ai-citations'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as SharedReportTokenRouteImport } from './routes/shared/report.$token'
 import { Route as AuthenticatedToolsRobotsTxtGeneratorRouteImport } from './routes/_authenticated/tools.robots-txt-generator'
 import { Route as AuthenticatedSiteAuditIdRouteImport } from './routes/_authenticated/site-audit.$id'
 import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authenticated/crawler.$id'
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
+import { Route as ApiReportsIdPdfRouteImport } from './routes/api/reports.$id.pdf'
 import { Route as ApiPublicHooksRunScheduledAuditsRouteImport } from './routes/api/public/hooks/run-scheduled-audits'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -302,6 +304,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const SharedReportTokenRoute = SharedReportTokenRouteImport.update({
+  id: '/shared/report/$token',
+  path: '/shared/report/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedToolsRobotsTxtGeneratorRoute =
   AuthenticatedToolsRobotsTxtGeneratorRouteImport.update({
     id: '/robots-txt-generator',
@@ -333,6 +340,11 @@ const AuthenticatedAuditIdRoute = AuthenticatedAuditIdRouteImport.update({
   id: '/audit/$id',
   path: '/audit/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiReportsIdPdfRoute = ApiReportsIdPdfRouteImport.update({
+  id: '/api/reports/$id/pdf',
+  path: '/api/reports/$id/pdf',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicHooksRunScheduledAuditsRoute =
   ApiPublicHooksRunScheduledAuditsRouteImport.update({
@@ -391,7 +403,9 @@ export interface FileRoutesByFullPath {
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
+  '/shared/report/$token': typeof SharedReportTokenRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
+  '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -443,7 +457,9 @@ export interface FileRoutesByTo {
   '/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
+  '/shared/report/$token': typeof SharedReportTokenRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
+  '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -497,7 +513,9 @@ export interface FileRoutesById {
   '/_authenticated/crawler/$id': typeof AuthenticatedCrawlerIdRoute
   '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/_authenticated/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
+  '/shared/report/$token': typeof SharedReportTokenRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
+  '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -551,7 +569,9 @@ export interface FileRouteTypes {
     | '/crawler/$id'
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
+    | '/shared/report/$token'
     | '/api/public/hooks/run-scheduled-audits'
+    | '/api/reports/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -603,7 +623,9 @@ export interface FileRouteTypes {
     | '/crawler/$id'
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
+    | '/shared/report/$token'
     | '/api/public/hooks/run-scheduled-audits'
+    | '/api/reports/$id/pdf'
   id:
     | '__root__'
     | '/'
@@ -656,7 +678,9 @@ export interface FileRouteTypes {
     | '/_authenticated/crawler/$id'
     | '/_authenticated/site-audit/$id'
     | '/_authenticated/tools/robots-txt-generator'
+    | '/shared/report/$token'
     | '/api/public/hooks/run-scheduled-audits'
+    | '/api/reports/$id/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -665,7 +689,9 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  SharedReportTokenRoute: typeof SharedReportTokenRoute
   ApiPublicHooksRunScheduledAuditsRoute: typeof ApiPublicHooksRunScheduledAuditsRoute
+  ApiReportsIdPdfRoute: typeof ApiReportsIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -978,6 +1004,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/shared/report/$token': {
+      id: '/shared/report/$token'
+      path: '/shared/report/$token'
+      fullPath: '/shared/report/$token'
+      preLoaderRoute: typeof SharedReportTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/tools/robots-txt-generator': {
       id: '/_authenticated/tools/robots-txt-generator'
       path: '/robots-txt-generator'
@@ -1019,6 +1052,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/audit/$id'
       preLoaderRoute: typeof AuthenticatedAuditIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/reports/$id/pdf': {
+      id: '/api/reports/$id/pdf'
+      path: '/api/reports/$id/pdf'
+      fullPath: '/api/reports/$id/pdf'
+      preLoaderRoute: typeof ApiReportsIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/run-scheduled-audits': {
       id: '/api/public/hooks/run-scheduled-audits'
@@ -1166,8 +1206,20 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  SharedReportTokenRoute: SharedReportTokenRoute,
   ApiPublicHooksRunScheduledAuditsRoute: ApiPublicHooksRunScheduledAuditsRoute,
+  ApiReportsIdPdfRoute: ApiReportsIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
