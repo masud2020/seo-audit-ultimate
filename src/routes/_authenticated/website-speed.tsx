@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { Loader2, Zap } from "lucide-react";
 import { runWebsiteSpeed, type SpeedResult } from "@/lib/site-tools.functions";
 import { RecentRuns } from "@/components/recent-runs";
+import { ToolReportExtras } from "@/components/reports/ToolReportExtras";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,12 +23,14 @@ function Page() {
   const run = useServerFn(runWebsiteSpeed);
   const [url, setUrl] = useState("");
   const [loaded, setLoaded] = useState<SpeedResult | null>(null);
+  const [loadedId, setLoadedId] = useState<string | null>(null);
   const mut = useMutation({
     mutationFn: () => run({ data: { url } }),
     onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
     onSuccess: (r) => { setLoaded(null); toast.success(`Speed score ${r.score}/100`); },
   });
   const v = mut.data ?? loaded;
+  const runId = (mut.data as SpeedResult | undefined)?.run_id ?? loadedId;
   return (
     <div className="space-y-4 max-w-5xl">
       <div>
@@ -40,13 +43,15 @@ function Page() {
           {mut.isPending ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Testing…</> : "Test speed"}
         </Button>
       </Card>
-      <RecentRuns<SpeedResult> tool="website_speed" onLoad={({ input, result }) => {
+      <RecentRuns<SpeedResult> tool="website_speed" onLoad={({ id, input, result }) => {
         const i = input as { url?: string };
         if (i?.url) setUrl(i.url);
         setLoaded(result);
+        setLoadedId(id);
       }} />
       {v && (
         <>
+          {runId && <ToolReportExtras runId={runId} tool="website_speed" label={`Speed · ${new URL(v.url).host}`} result={v} />}
           <Card className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="text-sm truncate">{v.url}</div>
