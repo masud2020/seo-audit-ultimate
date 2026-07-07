@@ -264,3 +264,87 @@ export async function aiVisibilitySection(url: string): Promise<Section | null> 
   ];
   return { id: "ai-visibility", title: "AI Search Visibility", checks, score: score(checks), data: { models: parsed, prompt } };
 }
+
+// ---------- 6. Site-level GSC (28d totals + top queries, no per-URL filter) ----------
+export async function gscSiteSection(opts: { startUrl: string; verifiedSites: string[] }): Promise<Section | null> {
+  const lovable = process.env.LOVABLE_API_KEY;
+  const gsc = process.env.GOOGLE_SEARCH_CONSOLE_API_KEY;
+  if (!lovable || !gsc) {
+    return {
+      id: "gsc-site", title: "Google Search Console (site)", score: 50,
+      checks: [{ id: "gsc-site-unlinked", label: "Google Search Console", status: "info", detail: "Not connected — connect GSC in Workspace Connectors to see impressions, clicks and top queries across your whole site." }],
+    };
+  }
+  const origin = (() => { try { return new URL(opts.startUrl).origin + "/"; } catch { return ""; } })();
+  const siteUrl = opts.verifiedSites.find((s) => s === origin || s === origin.replace("://", "://www.")) ?? null;
+  if (!siteUrl) {
+    return {
+      id: "gsc-site", title: "Google Search Console (site)", score: 50,
+      checks: [{ id: "gsc-site-not-verified", label: "Search Console property", status: "warn", detail: `No verified property found for ${origin}. Verify this site in the GSC page inside the app to enable live search data.` }],
+    };
+  }
+  const headers = { Authorization: `Bearer ${lovable}`, "X-Connection-Api-Key": gsc, "Content-Type": "application/json" };
+  const end = new Date();
+  const start = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000);
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const endpoint = `${GSC_GATEWAY}/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/searchAnalytics/query`;
+
+  const [totalsR, queryR, pageR] = await Promise.allSettled([
+    fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), rowLimit: 1 }) }),
+    fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: ["query"], rowLimit: 10 }) }),
+    fetch(endpoint, { method: "POST", headers, body: JSON.stringify({ startDate: fmt(start), endDate: fmt(end), dimensions: ["page"], rowLimit: 10 }) }),
+  ]);
+
+  const checks: Check[] = [];
+  const data: Record<string, unknown> = { siteUrl };
+
+  if (totalsR.status === "fulfilled" && totalsR.value.ok) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const j: any = await totalsR.value.json();
+    const row = (j.rows ?? [])[0];
+    const clicks = row?.clicks ?? 0;
+    const imps = row?.impressions ?? 0;
+    const ctr = row?.ctr != null ? +(row.ctr * 100).toFixed(2) : 0;
+    const pos = row?.position != null ? +row.position.toFixed(1) : null;
+    data.totals = { clicks, impressions: imps, ctr, position: pos };
+    checks.push({ id: "gsc-site-imp", label: "Site impressions (28d)", status: imps > 0 ? "pass" : "warn", value: imps });
+    checks.push({ id: "gsc-site-clicks", label: "Site clicks (28d)", status: clicks > 0 ? "pass" : "warn", value: clicks });
+    checks.push({ id: "gsc-site-ctr", label: "Average CTR", status: ctr >= 2 ? "pass" : ctr > 0 ? "warn" : "info", value: `${ctr}%` });
+    if (pos != null) checks.push({ id: "gsc-site-pos", label: "Average position", status: pos <= 10 ? "pass" : pos <= 20 ? "warn" : "fail", value: pos });
+  } else {
+    checks.push({ id: "gsc-site-totals-err", label: "Search performance", status: "info", detail: totalsR.status === "rejected" ? (totalsR.reason as Error)?.message : `HTTP ${totalsR.value.status}` });
+  }
+
+  if (queryR.status === "fulfilled" && queryR.value.ok) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const j: any = await queryR.value.json();
+    const rows = (j.rows ?? []) as Array<{ keys: string[]; clicks: number; impressions: number; ctr: number; position: number }>;
+    const topQ = rows.map((r) => ({ query: r.keys[0], clicks: r.clicks, impressions: r.impressions, position: +r.position.toFixed(1), ctr: +(r.ctr * 100).toFixed(2) }));
+    data.topQueries = topQ;
+    checks.push({ id: "gsc-site-topq", label: "Top search queries (28d)", status: topQ.length ? "info" : "warn", detail: topQ.length ? topQ.slice(0, 3).map((q) => `${q.query} (pos ${q.position})`).join(" · ") : "No queries in last 28 days" });
+  }
+  if (pageR.status === "fulfilled" && pageR.value.ok) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const j: any = await pageR.value.json();
+    const rows = (j.rows ?? []) as Array<{ keys: string[]; clicks: number; impressions: number; ctr: number; position: number }>;
+    const topP = rows.map((r) => ({ url: r.keys[0], clicks: r.clicks, impressions: r.impressions, position: +r.position.toFixed(1), ctr: +(r.ctr * 100).toFixed(2) }));
+    data.topPages = topP;
+    checks.push({ id: "gsc-site-topp", label: "Top pages by impressions", status: topP.length ? "info" : "warn", detail: topP.length ? `${topP.length} pages with search impressions in last 28 days` : "No pages ranking yet" });
+  }
+
+  return { id: "gsc-site", title: "Google Search Console (site, 28d)", checks, score: score(checks), data };
+}
+
+// ---------- 7. Site-wide signals bundle (used by whole-site audit) ----------
+export async function siteSignals(opts: { startUrl: string; semrushKey?: string | null; verifiedSites: string[] }): Promise<Section[]> {
+  const [psi, redir, gsc, sr, ai] = await Promise.allSettled([
+    psiSection(opts.startUrl),
+    redirectChainSection(opts.startUrl),
+    gscSiteSection({ startUrl: opts.startUrl, verifiedSites: opts.verifiedSites }),
+    semrushSection({ url: opts.startUrl, apiKey: opts.semrushKey ?? null }),
+    aiVisibilitySection(opts.startUrl),
+  ]);
+  const out: Section[] = [];
+  for (const r of [psi, redir, gsc, sr, ai]) if (r.status === "fulfilled" && r.value) out.push(r.value);
+  return out;
+}
