@@ -11,7 +11,7 @@ export interface ActivityLogRow {
   path: string | null;
   ip: string | null;
   user_agent: string | null;
-  metadata: Record<string, unknown>;
+  metadata: unknown;
   created_at: string;
   email?: string | null;
 }
@@ -47,7 +47,7 @@ export const recordActivity = createServerFn({ method: "POST" })
       path: data.path ?? null,
       ip,
       user_agent: ua,
-      metadata: data.metadata ?? {},
+      metadata: (data.metadata ?? {}) as never,
     });
     return { ok: true };
   });
