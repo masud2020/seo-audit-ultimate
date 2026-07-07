@@ -6,13 +6,15 @@ import { Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { generateSectionRecommendations, listSectionRecommendations, type Fix } from "@/lib/ai-recs.functions";
+import { generateAllRecommendations, generateSectionRecommendations, listSectionRecommendations, type Fix } from "@/lib/ai-recs.functions";
 import type { NormalizedReport, Section } from "@/lib/report-core";
 
 type ReportType = NormalizedReport["type"];
 
 export function AiRecommendationsPanel({ report }: { report: NormalizedReport }) {
   const list = useServerFn(listSectionRecommendations);
+  const qc = useQueryClient();
+  const bulk = useServerFn(generateAllRecommendations);
   const { data: cached } = useQuery({
     queryKey: ["ai-recs", report.type, report.id],
     queryFn: () => list({ data: { report_id: report.id, report_type: report.type } }),
@@ -22,6 +24,33 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
   for (const r of cached ?? []) cachedMap.set(r.section_slug, { summary: r.summary, fixes: r.fixes });
 
   const eligible = report.sections.filter((s) => s.findings.some((f) => f.status === "fail" || f.status === "warn"));
+  const missing = eligible.filter((s) => !cachedMap.has(s.id));
+
+  const bulkMut = useMutation({
+    mutationFn: () => bulk({
+      data: {
+        report_id: report.id,
+        report_type: report.type as ReportType,
+        sections: eligible.map((s) => ({
+          slug: s.id,
+          title: s.title,
+          findings: s.findings.map((f) => ({
+            label: f.label,
+            status: f.status,
+            detail: f.detail,
+            value: (typeof f.value === "string" || typeof f.value === "number" || f.value === null) ? f.value : undefined,
+          })),
+        })),
+      },
+    }),
+    onSuccess: (r) => {
+      qc.invalidateQueries({ queryKey: ["ai-recs", report.type, report.id] });
+      if (r.failed && r.errors.length) toast.warning(`${r.generated} generated · ${r.failed} failed. ${r.errors[0]}`);
+      else toast.success(`Generated ${r.generated} section${r.generated === 1 ? "" : "s"} · ${r.skipped} already cached. Included in PDF export.`);
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed to generate recommendations"),
+  });
+
   if (!eligible.length) {
     return (
       <Card className="p-5 flex items-center gap-3">
@@ -36,10 +65,20 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Sparkles className="h-4 w-4 text-primary" />
         <h2 className="text-sm font-semibold">AI recommendations</h2>
         <Badge variant="outline" className="text-[10px]">{eligible.length} section{eligible.length === 1 ? "" : "s"} with issues</Badge>
+        {cached && cached.length > 0 && <Badge variant="secondary" className="text-[10px]">{cached.filter((r) => r.fixes.length > 0).length} cached</Badge>}
+        <div className="ml-auto">
+          <Button size="sm" onClick={() => bulkMut.mutate()} disabled={bulkMut.isPending || missing.length === 0}>
+            {bulkMut.isPending
+              ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating {missing.length}…</>
+              : missing.length === 0
+                ? <><Sparkles className="h-3 w-3 mr-1" />All generated · in PDF</>
+                : <><Sparkles className="h-3 w-3 mr-1" />Generate all ({missing.length}) &amp; save to PDF</>}
+          </Button>
+        </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
         {eligible.map((section) => (
@@ -52,7 +91,7 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
 
 function SectionRecs({ report, section, initial }: { report: NormalizedReport; section: Section; initial?: { summary: string; fixes: Fix[] } }) {
   const [open, setOpen] = useState(false);
-  const [state, setState] = useState<{ summary: string; fixes: Fix[] } | null>(initial ?? null);
+  const state = initial ?? null;
   const qc = useQueryClient();
   const gen = useServerFn(generateSectionRecommendations);
   const mut = useMutation({
@@ -70,8 +109,7 @@ function SectionRecs({ report, section, initial }: { report: NormalizedReport; s
         })),
       },
     }),
-    onSuccess: (r) => {
-      setState({ summary: r.summary, fixes: r.fixes });
+    onSuccess: () => {
       setOpen(true);
       qc.invalidateQueries({ queryKey: ["ai-recs", report.type, report.id] });
     },
