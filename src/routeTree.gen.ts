@@ -59,6 +59,7 @@ import { Route as AuthenticatedCrawlerIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAuditNewRouteImport } from './routes/_authenticated/audit.new'
 import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authenticated/audit.bulk'
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
+import { Route as ApiReportsIdPdfRouteImport } from './routes/api/reports.$id.pdf'
 import { Route as ApiPublicHooksRunScheduledAuditsRouteImport } from './routes/api/public/hooks/run-scheduled-audits'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
@@ -334,6 +335,11 @@ const AuthenticatedAuditIdRoute = AuthenticatedAuditIdRouteImport.update({
   path: '/audit/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiReportsIdPdfRoute = ApiReportsIdPdfRouteImport.update({
+  id: '/api/reports/$id/pdf',
+  path: '/api/reports/$id/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksRunScheduledAuditsRoute =
   ApiPublicHooksRunScheduledAuditsRouteImport.update({
     id: '/api/public/hooks/run-scheduled-audits',
@@ -392,6 +398,7 @@ export interface FileRoutesByFullPath {
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
+  '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -444,6 +451,7 @@ export interface FileRoutesByTo {
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
+  '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -498,6 +506,7 @@ export interface FileRoutesById {
   '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/_authenticated/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
+  '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -552,6 +561,7 @@ export interface FileRouteTypes {
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
     | '/api/public/hooks/run-scheduled-audits'
+    | '/api/reports/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -604,6 +614,7 @@ export interface FileRouteTypes {
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
     | '/api/public/hooks/run-scheduled-audits'
+    | '/api/reports/$id/pdf'
   id:
     | '__root__'
     | '/'
@@ -657,6 +668,7 @@ export interface FileRouteTypes {
     | '/_authenticated/site-audit/$id'
     | '/_authenticated/tools/robots-txt-generator'
     | '/api/public/hooks/run-scheduled-audits'
+    | '/api/reports/$id/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -666,6 +678,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   ApiPublicHooksRunScheduledAuditsRoute: typeof ApiPublicHooksRunScheduledAuditsRoute
+  ApiReportsIdPdfRoute: typeof ApiReportsIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1020,6 +1033,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/reports/$id/pdf': {
+      id: '/api/reports/$id/pdf'
+      path: '/api/reports/$id/pdf'
+      fullPath: '/api/reports/$id/pdf'
+      preLoaderRoute: typeof ApiReportsIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/run-scheduled-audits': {
       id: '/api/public/hooks/run-scheduled-audits'
       path: '/api/public/hooks/run-scheduled-audits'
@@ -1167,6 +1187,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   ApiPublicHooksRunScheduledAuditsRoute: ApiPublicHooksRunScheduledAuditsRoute,
+  ApiReportsIdPdfRoute: ApiReportsIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
