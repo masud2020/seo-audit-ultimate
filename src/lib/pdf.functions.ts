@@ -43,6 +43,37 @@ export const generateCrawlPdf = createServerFn({ method: "POST" })
     return { base64: toBase64(pdf), filename: `crawl-${row.start_url.replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}.pdf` };
   });
 
+export const generateSiteAuditPdf = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { site_audit_id: string }) => z.object({ site_audit_id: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const { data: row, error } = await context.supabase.from("site_audits").select("*").eq("id", data.site_audit_id).single();
+    if (error || !row) throw new Error(error?.message ?? "Site audit not found");
+    if (row.status !== "complete") throw new Error("Site audit is not complete yet.");
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: recRows } = await (context.supabase as any)
+      .from("report_recommendations")
+      .select("section_slug,summary,fixes")
+      .eq("report_id", data.site_audit_id)
+      .eq("report_type", "site_audit");
+    const recs = ((recRows ?? []) as Array<{ section_slug: string; summary: string; fixes: Array<{ title: string; impact?: string; effort?: string; steps: string[] }> }>).map(r => ({
+      section: r.section_slug, summary: r.summary, fixes: r.fixes ?? [],
+    }));
+
+    const { buildSiteAuditPdf } = await import("./pdf.server");
+    const pdf = await buildSiteAuditPdf({
+      start_url: row.start_url,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      summary: (row.summary ?? {}) as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      pages: (row.pages ?? []) as any,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      issues: (row.issues ?? []) as any,
+    }, recs);
+    return { base64: toBase64(pdf), filename: `site-audit-${row.start_url.replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}.pdf` };
+  });
+
 // Send audit PDF via Brevo (connector gateway). Requires BREVO_API_KEY (connector connected)
 // and sender_email/sender_name saved in api_settings.
 export const emailAuditPdf = createServerFn({ method: "POST" })
