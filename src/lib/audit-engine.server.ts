@@ -239,6 +239,17 @@ export async function runAudit(rawUrl: string): Promise<AuditReport> {
   ];
   sections.push({ id: "ssl", title: "SSL & Security Headers", checks: sslChecks, score: scoreFromChecks(sslChecks) });
 
+  // ==== Expanded security headers ====
+  const xfo = res.headers.get("x-frame-options");
+  const permPolicy = res.headers.get("permissions-policy");
+  const coop = res.headers.get("cross-origin-opener-policy");
+  const secExtra: Check[] = [
+    { id: "xfo", label: "X-Frame-Options / frame-ancestors", status: xfo || /frame-ancestors/i.test(csp || "") ? "pass" : "warn", value: xfo || (csp && /frame-ancestors/i.test(csp) ? "via CSP" : "") },
+    { id: "perm-policy", label: "Permissions-Policy", status: permPolicy ? "pass" : "warn", value: permPolicy || "" },
+    { id: "coop", label: "Cross-Origin-Opener-Policy", status: coop ? "pass" : "info", value: coop || "" },
+  ];
+  sections.push({ id: "security", title: "Additional Security Headers", checks: secExtra, score: scoreFromChecks(secExtra) });
+
   // ==== Performance / page weight / DOM ====
   const bytes = new TextEncoder().encode(html).length;
   const domNodes = (html.match(/<[a-zA-Z][^>]*>/g) || []).length;
