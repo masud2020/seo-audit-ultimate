@@ -32,18 +32,52 @@ async function assertAdmin(ctx: { supabase: any; userId: string }) {
 export const getMyProfile = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<ProfileRow> => {
-    const { data, error } = await context.supabase
+    const cols = "user_id,display_name,avatar_url,bio,company,website,updated_at";
+
+    // Try as the signed-in user first (respects RLS).
+    const first = await context.supabase
       .from("profiles")
-      .select("user_id,display_name,avatar_url,bio,company,website,updated_at")
+      .select(cols)
       .eq("user_id", context.userId)
       .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (data) return data as ProfileRow;
-    // Fallback: create if missing (e.g. pre-trigger user)
-    const { data: created, error: insErr } = await context.supabase
+
+    // If RBAC (has_role) is misconfigured, RLS policies that call it fail
+    // with "permission denied for function has_role". Fall back to the admin
+    // client scoped strictly to the caller's own row so profile still renders.
+    const isRbacError =
+      first.error &&
+      /permission denied|has_role/i.test(first.error.message ?? "");
+
+    let row = first.data as ProfileRow | null;
+    let usedAdminFallback = false;
+
+    if (first.error && !isRbacError) {
+      throw new Error(first.error.message);
+    }
+
+    if (isRbacError) {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: adminRow, error: adminErr } = await supabaseAdmin
+        .from("profiles")
+        .select(cols)
+        .eq("user_id", context.userId)
+        .maybeSingle();
+      if (adminErr) throw new Error(adminErr.message);
+      row = (adminRow as ProfileRow) ?? null;
+      usedAdminFallback = true;
+      console.warn("[getMyProfile] RLS/has_role permission error, used admin fallback:", first.error?.message);
+    }
+
+    if (row) return row;
+
+    // No row yet — create one (scoped to the caller).
+    const insertClient = usedAdminFallback
+      ? (await import("@/integrations/supabase/client.server")).supabaseAdmin
+      : context.supabase;
+    const { data: created, error: insErr } = await insertClient
       .from("profiles")
       .insert({ user_id: context.userId })
-      .select("user_id,display_name,avatar_url,bio,company,website,updated_at")
+      .select(cols)
       .single();
     if (insErr) throw new Error(insErr.message);
     return created as ProfileRow;
