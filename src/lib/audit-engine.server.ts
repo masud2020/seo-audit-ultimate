@@ -280,6 +280,44 @@ export async function runAudit(rawUrl: string): Promise<AuditReport> {
   ];
   sections.push({ id: "mobile", title: "Mobile & Analytics", checks: mobileChecks, score: scoreFromChecks(mobileChecks) });
 
+  // ==== Accessibility basics ====
+  const inputTagsA11y = all(html, /<input\b[^>]*>/gi).map((m) => m[0]);
+  const inputsLabelable = inputTagsA11y.filter((t) => /\baria-label\s*=/i.test(t) || /\baria-labelledby\s*=/i.test(t) || /\bid\s*=/i.test(t)).length;
+  const buttonBlocks = all(html, /<button\b([^>]*)>([\s\S]*?)<\/button>/gi);
+  const buttonsNamed = buttonBlocks.filter((m) => m[2].replace(/<[^>]+>/g, "").trim().length > 0 || /\baria-label\s*=/i.test(m[1])).length;
+  const skipLink = /<a[^>]*href=["']#(?:main|content|skip)/i.test(html);
+  const emptyLinks = all(html, /<a\b[^>]*>\s*<\/a>/gi).length;
+  const accessibility: Check[] = [
+    { id: "lang-a11y", label: "Document language declared", status: lang ? "pass" : "fail", value: lang || "missing" },
+    { id: "img-alt-cov", label: "Image alt coverage", status: imgs.length === 0 ? "info" : imgsWithoutAlt === 0 ? "pass" : imgsWithoutAlt < imgs.length / 2 ? "warn" : "fail", detail: `${imgs.length - imgsWithoutAlt}/${imgs.length} have alt text` },
+    { id: "input-labels", label: "Form inputs are labelable", status: inputTagsA11y.length === 0 ? "info" : inputsLabelable === inputTagsA11y.length ? "pass" : "warn", detail: `${inputsLabelable}/${inputTagsA11y.length} inputs have id/aria-label` },
+    { id: "button-names", label: "Buttons have accessible names", status: buttonBlocks.length === 0 ? "info" : buttonsNamed === buttonBlocks.length ? "pass" : "warn", detail: `${buttonsNamed}/${buttonBlocks.length} buttons have text or aria-label` },
+    { id: "skip-link", label: "Skip-to-content link", status: skipLink ? "pass" : "info" },
+    { id: "empty-links", label: "No empty <a> elements", status: emptyLinks === 0 ? "pass" : "warn", detail: `${emptyLinks} empty link(s)` },
+  ];
+  sections.push({ id: "accessibility", title: "Accessibility Basics", checks: accessibility, score: scoreFromChecks(accessibility) });
+
+  // ==== International SEO / hreflang ====
+  const hreflangs = all(html, /<link\b[^>]*rel=["']alternate["'][^>]*hreflang=["']([^"']+)["'][^>]*href=["']([^"']+)["']/gi).map((m) => ({ hreflang: m[1], href: m[2] }));
+  const hasXDefault = hreflangs.some((h) => h.hreflang.toLowerCase() === "x-default");
+  const canonicalSelf = canonical ? (() => { try { return new URL(canonical, finalUrl).toString() === finalUrl; } catch { return false; } })() : false;
+  const i18nChecks: Check[] = [
+    { id: "hreflang", label: "hreflang alternates", status: hreflangs.length > 0 ? "pass" : "info", detail: `${hreflangs.length} alternate(s)` },
+    { id: "xdefault", label: "hreflang x-default present", status: hreflangs.length === 0 ? "info" : hasXDefault ? "pass" : "warn" },
+    { id: "canonical-self", label: "Canonical points to the same URL", status: !canonical ? "warn" : canonicalSelf ? "pass" : "info", detail: canonical ? (canonicalSelf ? "self-canonical" : `points to ${canonical}`) : "no canonical set" },
+  ];
+  sections.push({ id: "i18n", title: "International SEO", checks: i18nChecks, score: scoreFromChecks(i18nChecks), data: { hreflangs } });
+
+  // ==== Render-blocking / performance additions ====
+  const stylesheets = (html.match(/<link\b[^>]*rel\s*=\s*["']stylesheet["']/gi) ?? []).length;
+  const headBlock = html.match(/<head\b[\s\S]*?<\/head>/i)?.[0] ?? "";
+  const headScripts = (headBlock.match(/<script\b(?![^>]*\b(?:async|defer)\b)[^>]*>/gi) ?? []).length;
+  const perfExtras: Check[] = [
+    { id: "stylesheets", label: "External stylesheets", status: stylesheets <= 3 ? "pass" : stylesheets <= 6 ? "warn" : "fail", detail: `${stylesheets} <link rel="stylesheet">` },
+    { id: "blocking-js", label: "Render-blocking scripts in <head>", status: headScripts === 0 ? "pass" : headScripts <= 2 ? "warn" : "fail", detail: `${headScripts} sync script(s) in <head>` },
+  ];
+  sections.push({ id: "performance-extra", title: "Render Blocking", checks: perfExtras, score: scoreFromChecks(perfExtras) });
+
   const overall = Math.round(sections.reduce((a,s)=>a+s.score,0) / sections.length);
 
   return {
