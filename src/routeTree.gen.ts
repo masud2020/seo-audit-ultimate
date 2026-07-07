@@ -65,6 +65,7 @@ import { Route as AuthenticatedAuditBulkRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAuditIdRouteImport } from './routes/_authenticated/audit.$id'
 import { Route as ApiReportsIdPdfRouteImport } from './routes/api/reports.$id.pdf'
 import { Route as ApiPublicHooksRunScheduledAuditsRouteImport } from './routes/api/public/hooks/run-scheduled-audits'
+import { Route as ApiPublicHooksBkashWebhookRouteImport } from './routes/api/public/hooks/bkash-webhook'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -371,6 +372,12 @@ const ApiPublicHooksRunScheduledAuditsRoute =
     path: '/api/public/hooks/run-scheduled-audits',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBkashWebhookRoute =
+  ApiPublicHooksBkashWebhookRouteImport.update({
+    id: '/api/public/hooks/bkash-webhook',
+    path: '/api/public/hooks/bkash-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -426,6 +433,7 @@ export interface FileRoutesByFullPath {
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/shared/report/$token': typeof SharedReportTokenRoute
+  '/api/public/hooks/bkash-webhook': typeof ApiPublicHooksBkashWebhookRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
   '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
@@ -483,6 +491,7 @@ export interface FileRoutesByTo {
   '/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/shared/report/$token': typeof SharedReportTokenRoute
+  '/api/public/hooks/bkash-webhook': typeof ApiPublicHooksBkashWebhookRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
   '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
@@ -542,6 +551,7 @@ export interface FileRoutesById {
   '/_authenticated/site-audit/$id': typeof AuthenticatedSiteAuditIdRoute
   '/_authenticated/tools/robots-txt-generator': typeof AuthenticatedToolsRobotsTxtGeneratorRoute
   '/shared/report/$token': typeof SharedReportTokenRoute
+  '/api/public/hooks/bkash-webhook': typeof ApiPublicHooksBkashWebhookRoute
   '/api/public/hooks/run-scheduled-audits': typeof ApiPublicHooksRunScheduledAuditsRoute
   '/api/reports/$id/pdf': typeof ApiReportsIdPdfRoute
 }
@@ -601,6 +611,7 @@ export interface FileRouteTypes {
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
     | '/shared/report/$token'
+    | '/api/public/hooks/bkash-webhook'
     | '/api/public/hooks/run-scheduled-audits'
     | '/api/reports/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
@@ -658,6 +669,7 @@ export interface FileRouteTypes {
     | '/site-audit/$id'
     | '/tools/robots-txt-generator'
     | '/shared/report/$token'
+    | '/api/public/hooks/bkash-webhook'
     | '/api/public/hooks/run-scheduled-audits'
     | '/api/reports/$id/pdf'
   id:
@@ -716,6 +728,7 @@ export interface FileRouteTypes {
     | '/_authenticated/site-audit/$id'
     | '/_authenticated/tools/robots-txt-generator'
     | '/shared/report/$token'
+    | '/api/public/hooks/bkash-webhook'
     | '/api/public/hooks/run-scheduled-audits'
     | '/api/reports/$id/pdf'
   fileRoutesById: FileRoutesById
@@ -728,6 +741,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   CheckoutSlugRoute: typeof CheckoutSlugRoute
   SharedReportTokenRoute: typeof SharedReportTokenRoute
+  ApiPublicHooksBkashWebhookRoute: typeof ApiPublicHooksBkashWebhookRoute
   ApiPublicHooksRunScheduledAuditsRoute: typeof ApiPublicHooksRunScheduledAuditsRoute
   ApiReportsIdPdfRoute: typeof ApiReportsIdPdfRoute
 }
@@ -1126,6 +1140,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRunScheduledAuditsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/bkash-webhook': {
+      id: '/api/public/hooks/bkash-webhook'
+      path: '/api/public/hooks/bkash-webhook'
+      fullPath: '/api/public/hooks/bkash-webhook'
+      preLoaderRoute: typeof ApiPublicHooksBkashWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1274,6 +1295,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   CheckoutSlugRoute: CheckoutSlugRoute,
   SharedReportTokenRoute: SharedReportTokenRoute,
+  ApiPublicHooksBkashWebhookRoute: ApiPublicHooksBkashWebhookRoute,
   ApiPublicHooksRunScheduledAuditsRoute: ApiPublicHooksRunScheduledAuditsRoute,
   ApiReportsIdPdfRoute: ApiReportsIdPdfRoute,
 }
