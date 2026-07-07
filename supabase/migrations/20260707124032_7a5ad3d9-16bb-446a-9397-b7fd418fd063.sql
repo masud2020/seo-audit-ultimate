@@ -1,0 +1,1 @@
+ALTER TABLE public.api_settings ADD COLUMN IF NOT EXISTS psi_key text;

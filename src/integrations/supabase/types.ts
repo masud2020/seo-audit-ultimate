@@ -139,6 +139,7 @@ export type Database = {
           openai_key: string | null
           perplexity_key: string | null
           provider: string
+          psi_key: string | null
           semrush_key: string | null
           sender_email: string | null
           sender_name: string | null
@@ -157,6 +158,7 @@ export type Database = {
           openai_key?: string | null
           perplexity_key?: string | null
           provider?: string
+          psi_key?: string | null
           semrush_key?: string | null
           sender_email?: string | null
           sender_name?: string | null
@@ -175,6 +177,7 @@ export type Database = {
           openai_key?: string | null
           perplexity_key?: string | null
           provider?: string
+          psi_key?: string | null
           semrush_key?: string | null
           sender_email?: string | null
           sender_name?: string | null
