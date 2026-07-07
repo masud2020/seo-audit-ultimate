@@ -1374,7 +1374,9 @@ async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: numb
     const f = opts.bold ? bold : font;
     const c = opts.color ?? [0.1, 0.1, 0.1];
     const lines = wrap(t, f, size, W - M * 2);
-    for (const line of lines) { ensure(size + 4); page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) }); y -= size + 3; }
+    const asc = ascentOf(f, size);
+    const lh = lineAdvanceOf(f, size);
+    for (const line of lines) { ensure(lh); page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) }); y -= lh; }
   };
 
   text("Site Crawl Report", { size: 22, bold: true });
