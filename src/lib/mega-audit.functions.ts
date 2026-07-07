@@ -32,10 +32,12 @@ export const startMegaAudit = createServerFn({ method: "POST" })
     try {
       // Pull user's Semrush key + verified GSC sites so orchestrator can use them.
       const [semKey, gscR] = await Promise.all([
-        supabase.from("api_settings").select("semrush_key").eq("user_id", userId).maybeSingle(),
+        supabase.from("api_settings").select("semrush_key,psi_key").eq("user_id", userId).maybeSingle(),
         supabase.from("gsc_verifications").select("site_url,verified").eq("user_id", userId).eq("verified", true),
       ]);
-      const semrushKey = (semKey.data as { semrush_key?: string } | null)?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+      const settings = semKey.data as { semrush_key?: string; psi_key?: string } | null;
+      const semrushKey = settings?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+      const psiKey = settings?.psi_key || process.env.PSI_API_KEY || null;
       const verifiedSites = ((gscR.data ?? []) as Array<{ site_url: string }>).map((s) => s.site_url);
 
       const { runMegaAudit } = await import("./mega-audit.server");
@@ -45,6 +47,7 @@ export const startMegaAudit = createServerFn({ method: "POST" })
         targetKeyword: data.target_keyword || null,
         maxPages: data.max_pages,
         semrushKey,
+        psiKey,
         verifiedSites,
         onProgress: async ({ pct, message }) => {
           try { await supabase.from("mega_audits").update({ progress: pct, status_message: message }).eq("id", id); } catch { /* ignore */ }

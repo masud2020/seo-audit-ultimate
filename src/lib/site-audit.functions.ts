@@ -27,15 +27,17 @@ export const startSiteAudit = createServerFn({ method: "POST" })
       const { runSiteAudit } = await import("./site-audit.server");
       // Look up user's Semrush key + verified GSC sites for site-wide signal pulls.
       const [semrushKeyRow, gscRow] = await Promise.all([
-        supabase.from("api_settings").select("semrush_key").eq("user_id", userId).maybeSingle(),
+        supabase.from("api_settings").select("semrush_key,psi_key").eq("user_id", userId).maybeSingle(),
         supabase.from("gsc_verifications").select("site_url,verified").eq("user_id", userId).eq("verified", true),
       ]);
-      const semrushKey = (semrushKeyRow.data as { semrush_key?: string } | null)?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+      const settings = semrushKeyRow.data as { semrush_key?: string; psi_key?: string } | null;
+      const semrushKey = settings?.semrush_key || process.env.SEMRUSH_API_KEY || null;
+      const psiKey = settings?.psi_key || process.env.PSI_API_KEY || null;
       const verifiedSites = ((gscRow.data ?? []) as Array<{ site_url: string }>).map((s) => s.site_url);
       const result = await runSiteAudit(data.start_url, data.max_pages, async (n) => {
         // Best-effort progress; ignore write errors.
         try { await supabase.from("site_audits").update({ pages_audited: n }).eq("id", id); } catch { /* ignore */ }
-      }, { semrushKey, verifiedSites });
+      }, { semrushKey, psiKey, verifiedSites });
       await supabase.from("site_audits").update({
         status: "complete",
         pages_audited: result.pages.length,

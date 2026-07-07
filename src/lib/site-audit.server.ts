@@ -57,7 +57,7 @@ export async function runSiteAudit(
   startUrl: string,
   maxPages: number,
   onProgress?: (n: number) => Promise<void> | void,
-  signalsOpts?: { semrushKey?: string | null; verifiedSites: string[] },
+  signalsOpts?: { semrushKey?: string | null; psiKey?: string | null; verifiedSites: string[] },
 ): Promise<{ pages: SitePageAudit[]; issues: SiteIssue[]; summary: SiteAuditSummary }> {
   // 1. Discovery via existing crawler
   const { pages: crawlPages, issues: crawlIssues } = await runCrawl(startUrl, maxPages);
@@ -140,7 +140,7 @@ export async function runSiteAudit(
   if (signalsOpts) {
     try {
       const { siteSignals } = await import("./audit-signals.server");
-      site_signals = await siteSignals({ startUrl, semrushKey: signalsOpts.semrushKey, verifiedSites: signalsOpts.verifiedSites });
+      site_signals = await siteSignals({ startUrl, semrushKey: signalsOpts.semrushKey, psiKey: signalsOpts.psiKey, verifiedSites: signalsOpts.verifiedSites });
     } catch (e) {
       console.error("Site signals failed", e);
     }

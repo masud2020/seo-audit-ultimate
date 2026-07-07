@@ -170,7 +170,7 @@ export const getApiSettings = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
     const { data } = await context.supabase.from("api_settings").select("*").eq("user_id", context.userId).maybeSingle();
-    return data ?? { provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "" };
+    return data ?? { provider: "lovable", groq_key: "", gemini_key: "", openai_key: "", perplexity_key: "", claude_key: "", psi_key: "" };
   });
 
 export const saveApiSettings = createServerFn({ method: "POST" })
@@ -186,6 +186,7 @@ export const saveApiSettings = createServerFn({ method: "POST" })
     semrush_key: z.string().max(500).optional().default(""),
     moz_token: z.string().max(1000).optional().default(""),
     majestic_key: z.string().max(500).optional().default(""),
+    psi_key: z.string().max(500).optional().default(""),
     sender_email: z.string().email().optional().or(z.literal("")),
     sender_name: z.string().max(200).optional().default(""),
     dataforseo_login: z.string().max(200).optional().default(""),
