@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Sparkles, Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Sparkles, Loader2, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +27,11 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
   const missing = eligible.filter((s) => !cachedMap.has(s.id));
 
   const bulkMut = useMutation({
-    mutationFn: () => bulk({
+    mutationFn: (opts: { force: boolean }) => bulk({
       data: {
         report_id: report.id,
         report_type: report.type as ReportType,
+        force: opts.force,
         sections: eligible.map((s) => ({
           slug: s.id,
           title: s.title,
@@ -70,14 +71,35 @@ export function AiRecommendationsPanel({ report }: { report: NormalizedReport })
         <h2 className="text-sm font-semibold">AI recommendations</h2>
         <Badge variant="outline" className="text-[10px]">{eligible.length} section{eligible.length === 1 ? "" : "s"} with issues</Badge>
         {cached && cached.length > 0 && <Badge variant="secondary" className="text-[10px]">{cached.filter((r) => r.fixes.length > 0).length} cached</Badge>}
-        <div className="ml-auto">
-          <Button size="sm" onClick={() => bulkMut.mutate()} disabled={bulkMut.isPending || missing.length === 0}>
-            {bulkMut.isPending
+        <div className="ml-auto flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => bulkMut.mutate({ force: false })}
+            disabled={bulkMut.isPending || missing.length === 0}
+          >
+            {bulkMut.isPending && !bulkMut.variables?.force
               ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating {missing.length}…</>
               : missing.length === 0
                 ? <><Sparkles className="h-3 w-3 mr-1" />All generated · in PDF</>
-                : <><Sparkles className="h-3 w-3 mr-1" />Generate all ({missing.length}) &amp; save to PDF</>}
+                : <><Sparkles className="h-3 w-3 mr-1" />Generate missing ({missing.length})</>}
           </Button>
+          {(cached?.length ?? 0) > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                if (confirm(`Regenerate all ${eligible.length} sections? This overwrites existing recommendations.`)) {
+                  bulkMut.mutate({ force: true });
+                }
+              }}
+              disabled={bulkMut.isPending}
+              title="Overwrite cached recommendations with fresh ones"
+            >
+              {bulkMut.isPending && bulkMut.variables?.force
+                ? <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Regenerating {eligible.length}…</>
+                : <><RefreshCw className="h-3 w-3 mr-1" />Regenerate all</>}
+            </Button>
+          )}
         </div>
       </div>
       <div className="grid gap-3 md:grid-cols-2">
