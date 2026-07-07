@@ -216,6 +216,27 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
   text("How to read this report", { size: 12, bold: true });
   spacer(2);
   text("Each check is tagged PASS (looks good), WARN (worth improving), FAIL (fix soon) or INFO (context only). Sections are scored 0-100 - 80+ is good, 60-79 needs work, below 60 is a serious problem.", { size: 9, color: [0.35, 0.35, 0.35] });
+  spacer(6);
+  // ---- Status colour legend ----
+  {
+    const legend: { label: string; desc: string; color: [number, number, number] }[] = [
+      { label: "PASS", desc: "Check meets best practice.",       color: [0.2, 0.6, 0.3] },
+      { label: "WARN", desc: "Worth improving soon.",             color: [0.85, 0.6, 0.1] },
+      { label: "FAIL", desc: "Fix as soon as possible.",          color: [0.8, 0.2, 0.2] },
+      { label: "INFO", desc: "Context only, no action required.", color: [0.55, 0.55, 0.6] },
+    ];
+    ensure(legend.length * 16 + 6);
+    page.drawText("Status colour key", { x: M, y: y - 10, size: 10, font: bold, color: rgb(0.2, 0.2, 0.2) });
+    y -= 16;
+    for (const item of legend) {
+      ensure(14);
+      // colour swatch
+      page.drawRectangle({ x: M, y: y - 10, width: 10, height: 10, color: rgb(item.color[0], item.color[1], item.color[2]) });
+      page.drawText(item.label, { x: M + 16, y: y - 9, size: 9, font: bold, color: rgb(item.color[0], item.color[1], item.color[2]) });
+      page.drawText(item.desc, { x: M + 56, y: y - 9, size: 9, font, color: rgb(0.35, 0.35, 0.35) });
+      y -= 14;
+    }
+  }
 
   // ============ PRIORITY ISSUES ============
   if (priority.length) {
