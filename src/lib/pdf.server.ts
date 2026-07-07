@@ -101,6 +101,97 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     page.drawText(scoreStr, { x: W - M - sw, y: y - 16, size: 12, font: bold, color: rgb(col[0], col[1], col[2]) });
     y -= barH + 6;
   };
+  // Anchors so Priority Issues can link into Detailed Findings.
+  const checkAnchors = new Map<Check, { page: PDFPage; y: number }>();
+  const pendingCrossLinks: { page: PDFPage; rect: [number, number, number, number]; check: Check }[] = [];
+
+  // Static "how to fix" guidance: summary + 3-5 step checklist per check ID.
+  type FixGuidance = { summary: string; steps: string[] };
+  const FIX_HINTS: Record<string, FixGuidance> = {
+    title: { summary: "Write a unique <title> tag 30-60 characters long that describes the page and includes your main keyword.", steps: ["Draft a title that names the page's main topic in 30-60 characters.", "Front-load the primary keyword or product name.", "Keep it unique across every page on the site.", "Add the brand name at the end after a separator (| or -).", "Preview in a SERP simulator to confirm it isn't truncated."] },
+    desc: { summary: "Add a unique meta description 120-160 characters long that summarises the page and invites a click.", steps: ["Summarise the page value in 120-160 characters.", "Include the primary keyword naturally.", "End with a clear call to action (Learn more, Get started).", "Make it unique - no duplicates across pages.", "Verify it renders correctly in Google's SERP preview."] },
+    canonical: { summary: "Add a <link rel=\"canonical\"> pointing to the preferred URL for this page to prevent duplicate content.", steps: ["Pick the single preferred URL for the page (https, trailing slash, casing).", "Add <link rel=\"canonical\" href=\"...\"> inside <head>.", "Use an absolute URL, not a relative path.", "Ensure the canonical points to a 200 OK page, not a redirect.", "Re-crawl to confirm duplicates now resolve to the canonical."] },
+    "canonical-self": { summary: "Set the canonical tag to the page's own final URL to avoid ambiguity.", steps: ["Compare rel=canonical href with the page's final URL after redirects.", "Update the tag to match the final URL exactly.", "Include https and the correct hostname.", "Redeploy and re-crawl with Google Search Console's URL Inspection tool."] },
+    hreflang: { summary: "Add hreflang tags for each language/region variant, including an x-default fallback.", steps: ["List every localised URL for this page.", "Add <link rel=\"alternate\" hreflang=\"xx-YY\" href=\"...\"> for each.", "Include a reciprocal hreflang on every variant.", "Add an x-default entry for the fallback language.", "Validate with an hreflang checker."] },
+    xdefault: { summary: "Add an hreflang=\"x-default\" tag pointing to the default language version.", steps: ["Identify the fallback URL for users whose language isn't matched.", "Add <link rel=\"alternate\" hreflang=\"x-default\" href=\"...\">.", "Ensure the URL returns 200 OK.", "Validate the full hreflang cluster."] },
+    lang: { summary: "Set <html lang=\"xx\"> so browsers and search engines know the page language.", steps: ["Add lang=\"en\" (or your ISO code) to the <html> tag.", "Use region codes for localised variants (e.g. en-GB).", "Ensure it matches the actual content language.", "Redeploy and re-test with an accessibility checker."] },
+    charset: { summary: "Add <meta charset=\"utf-8\"> as the first tag inside <head>.", steps: ["Insert <meta charset=\"utf-8\"> as the first element inside <head>.", "Remove any conflicting charset declarations.", "Confirm the server also sends Content-Type: text/html; charset=utf-8."] },
+    viewport: { summary: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> so the page is mobile-friendly.", steps: ["Add the viewport meta tag inside <head>.", "Set content=\"width=device-width, initial-scale=1\".", "Do not disable pinch-to-zoom (avoid user-scalable=no).", "Test on a real phone or Chrome device emulator."] },
+    favicon: { summary: "Add a favicon so browsers and search results display your brand icon.", steps: ["Create a 32x32 and 180x180 icon (PNG or ICO).", "Add <link rel=\"icon\" href=\"/favicon.ico\">.", "Add <link rel=\"apple-touch-icon\" href=\"/apple-touch-icon.png\">.", "Verify /favicon.ico returns 200 in DevTools Network tab."] },
+    h1: { summary: "Add exactly one clear <h1> that describes the page's main topic.", steps: ["Audit the page for zero or multiple H1s.", "Choose the phrase that best describes the page's topic.", "Wrap it in a single <h1> tag.", "Demote extra H1s to H2s.", "Re-run the audit."] },
+    headings: { summary: "Use headings in order (H1 > H2 > H3) without skipping levels, and make sure each section has a heading.", steps: ["Outline the page as a hierarchy.", "Use one H1 for the page topic.", "Use H2 for main sections, H3 for sub-sections.", "Don't jump from H2 to H4.", "Ensure headings describe the section, not styling."] },
+    content: { summary: "Add more unique, useful body copy - aim for at least 300-500 well-structured words on key pages.", steps: ["Identify pages under 300 words.", "Expand with genuinely useful information (FAQs, examples, specs).", "Break content into short paragraphs with subheadings.", "Ensure the content is unique - not copied from other pages.", "Re-audit after publishing."] },
+    "word-count": { summary: "Increase the page's word count with genuinely useful information relevant to the query.", steps: ["Research what the top-ranking pages cover.", "Add missing sub-topics as H2 sections.", "Include original insights, data, or examples.", "Aim for 500+ words on important landing pages.", "Avoid padding with fluff."] },
+    flesch: { summary: "Simplify writing: shorter sentences, common words, and clear paragraphs to improve readability.", steps: ["Aim for a Flesch score of 60+.", "Break long sentences (>20 words) into two.", "Replace jargon with plain language.", "Use bullet lists for enumerations.", "Read the page aloud to check flow."] },
+    "keyword-diversity": { summary: "Broaden the vocabulary around your topic - mix synonyms and related terms instead of repeating one keyword.", steps: ["Research related terms (Google auto-suggest, People Also Ask).", "Weave synonyms into headings and body.", "Cover related sub-topics (LSI keywords).", "Avoid keyword stuffing.", "Recheck density is natural (<2%)."] },
+    alt: { summary: "Add descriptive alt text to every meaningful <img>. Use alt=\"\" only for purely decorative images.", steps: ["List every <img> without alt text.", "Write a short description of what the image conveys.", "Include the keyword only if it accurately describes the image.", "Use alt=\"\" for purely decorative images.", "Re-audit to confirm 100% coverage."] },
+    "img-alt-cov": { summary: "Audit all images and add alt text where it is missing.", steps: ["Run an accessibility scan to list images missing alt.", "Prioritise images above the fold and in main content.", "Write descriptive, human-readable alt text.", "Mark decorative images with alt=\"\".", "Retest until coverage hits 100%."] },
+    "img-count": { summary: "Reduce the number of images or lazy-load them so the page stays fast.", steps: ["Remove non-essential images.", "Combine multiple images into a sprite where possible.", "Add loading=\"lazy\" to below-the-fold images.", "Serve modern formats (WebP, AVIF).", "Retest LCP and page weight."] },
+    lazy: { summary: "Add loading=\"lazy\" to below-the-fold images so they don't block first paint.", steps: ["Identify images below the fold.", "Add loading=\"lazy\" and decoding=\"async\".", "Keep hero/LCP images eager (loading=\"eager\").", "Retest LCP with PageSpeed Insights."] },
+    images: { summary: "Compress images (use WebP/AVIF) and add width/height attributes to reduce layout shift.", steps: ["Compress all images (Squoosh, ImageOptim).", "Convert to WebP or AVIF with a fallback.", "Add explicit width and height attributes.", "Serve responsive images with srcset.", "Retest with Lighthouse."] },
+    links: { summary: "Fix broken links, add descriptive anchor text, and make sure important pages are linked internally.", steps: ["Run a link checker to find 4xx/5xx links.", "Fix or remove each broken link.", "Rewrite generic anchor text (\"click here\") to be descriptive.", "Add contextual internal links between related pages.", "Re-audit until zero broken links."] },
+    broken: { summary: "Fix or remove 404/broken links - use a link checker to catch new breakages regularly.", steps: ["Run a crawler (Screaming Frog, Sitebulb).", "Export the list of 4xx/5xx URLs.", "Fix or 301-redirect each one.", "Update source pages to point to the new URL.", "Schedule a monthly recheck."] },
+    "empty-links": { summary: "Give every link visible anchor text (or an aria-label) instead of leaving it blank.", steps: ["Find all <a> tags with no visible text.", "Add descriptive text inside the link.", "For icon links, add aria-label=\"...\".", "Ensure the link's purpose is clear without context.", "Retest with an accessibility tool."] },
+    "internal-links": { summary: "Add more internal links between related pages so search engines can crawl your site.", steps: ["Identify orphan pages (no inbound internal links).", "Add contextual links from related content.", "Update navigation and footer to expose key pages.", "Use descriptive anchor text.", "Aim for 3+ internal links per page."] },
+    "external-links": { summary: "Only link out to reputable sources; add rel=\"nofollow sponsored\" where appropriate.", steps: ["Audit outbound links for spammy or low-quality domains.", "Remove or replace low-quality links.", "Add rel=\"nofollow\" to untrusted links.", "Add rel=\"sponsored\" for paid links.", "Add rel=\"ugc\" for user-generated content."] },
+    robots: { summary: "Publish a /robots.txt file that allows crawling of important pages and points to your sitemap.", steps: ["Create /robots.txt at the site root.", "Allow crawling of public content (User-agent: *  Allow: /).", "Disallow private/admin paths.", "Add \"Sitemap: https://example.com/sitemap.xml\".", "Validate with Google Search Console's robots.txt tester."] },
+    "robots-exists": { summary: "Create a /robots.txt file at the site root.", steps: ["Create a plain-text file named robots.txt.", "Put it at the site root (https://example.com/robots.txt).", "Add a basic User-agent: * rule.", "Reference your sitemap.", "Verify it returns 200 OK."] },
+    "robots-open": { summary: "Make sure robots.txt does not accidentally block search engines from your public pages.", steps: ["Open your current robots.txt.", "Check for \"Disallow: /\" or overly broad rules.", "Remove rules that block important paths.", "Test key URLs with Google's robots.txt Tester.", "Re-request indexing after fixing."] },
+    "robots-meta": { summary: "Remove any noindex/nofollow meta robots tags from pages you want indexed.", steps: ["Search the HTML for <meta name=\"robots\" ...>.", "Remove noindex from public pages.", "Remove nofollow unless intentional.", "Rebuild and redeploy.", "Request re-indexing in Search Console."] },
+    "robots-sitemap": { summary: "Add a `Sitemap:` line in robots.txt pointing to your XML sitemap.", steps: ["Open robots.txt.", "Append \"Sitemap: https://example.com/sitemap.xml\" on its own line.", "Use an absolute URL.", "Deploy and verify with curl.", "Resubmit the sitemap in Google Search Console."] },
+    sitemap: { summary: "Publish an XML sitemap and reference it from robots.txt and Google Search Console.", steps: ["Generate an XML sitemap of all canonical URLs.", "Publish it at /sitemap.xml.", "Reference it in robots.txt.", "Submit it in Google Search Console.", "Automate regeneration on publish."] },
+    "sitemap-exists": { summary: "Generate an XML sitemap at /sitemap.xml listing all indexable URLs.", steps: ["Use your CMS or a generator to build sitemap.xml.", "Include only canonical, indexable URLs.", "Deploy to https://your-domain/sitemap.xml.", "Confirm it returns 200 with correct XML.", "Submit in Google Search Console."] },
+    "sitemap-urls": { summary: "Include all canonical, indexable URLs in the sitemap and remove noindex/404 pages.", steps: ["Regenerate the sitemap from your live URL list.", "Exclude URLs with noindex or 4xx status.", "Include lastmod dates.", "Split into multiple sitemaps if over 50k URLs.", "Resubmit in Search Console."] },
+    jsonld: { summary: "Add JSON-LD structured data (Article, Product, Organization, FAQ, etc.) matching your content.", steps: ["Identify the schema type that matches this page.", "Generate JSON-LD (schema.org's generator or a plugin).", "Insert inside <script type=\"application/ld+json\">.", "Test with Google's Rich Results Test.", "Fix warnings and redeploy."] },
+    structured: { summary: "Add and validate schema.org structured data with Google's Rich Results Test.", steps: ["Pick the most relevant schema type.", "Add JSON-LD markup in <head>.", "Include all required fields.", "Validate with the Rich Results Test.", "Monitor rich-result impressions in Search Console."] },
+    https: { summary: "Serve every URL over HTTPS and 301-redirect http:// requests to https://.", steps: ["Install a valid SSL certificate on the origin.", "Force HTTPS with a 301 redirect from http.", "Update internal links to https://.", "Update canonical tags and sitemap to https.", "Verify with an SSL checker."] },
+    ssl: { summary: "Install a valid SSL certificate (e.g. Let's Encrypt) and renew it before expiry.", steps: ["Provision an SSL cert (Let's Encrypt is free).", "Configure the web server to serve it.", "Enable auto-renewal (certbot, hosting panel).", "Verify no mixed-content warnings.", "Test with ssllabs.com."] },
+    hsts: { summary: "Add a Strict-Transport-Security header with a long max-age.", steps: ["Confirm HTTPS is fully working first.", "Add header: Strict-Transport-Security: max-age=31536000; includeSubDomains.", "Test with securityheaders.com.", "Once stable, submit to hstspreload.org.", "Monitor for issues on subdomains."] },
+    csp: { summary: "Add a Content-Security-Policy header to restrict which scripts, styles, and frames can load.", steps: ["Inventory external scripts, styles, images, and frames.", "Draft a CSP allowing only those origins.", "Deploy in Content-Security-Policy-Report-Only first.", "Review violation reports and tighten.", "Switch to enforcing mode."] },
+    xfo: { summary: "Add X-Frame-Options: SAMEORIGIN (or a frame-ancestors CSP) to block clickjacking.", steps: ["Add header X-Frame-Options: SAMEORIGIN.", "Or prefer CSP: frame-ancestors 'self'.", "Redeploy.", "Test with securityheaders.com."] },
+    xcto: { summary: "Add X-Content-Type-Options: nosniff.", steps: ["Add header X-Content-Type-Options: nosniff.", "Ensure Content-Type is set correctly on every response.", "Redeploy.", "Verify with curl -I."] },
+    referrer: { summary: "Add Referrer-Policy: strict-origin-when-cross-origin (or stricter).", steps: ["Add header Referrer-Policy: strict-origin-when-cross-origin.", "Verify analytics still receive expected referrer data.", "Redeploy.", "Retest with securityheaders.com."] },
+    "perm-policy": { summary: "Add a Permissions-Policy header to disable browser features you don't use.", steps: ["List browser features the site uses (camera, mic, geolocation, etc.).", "Disable everything else in a Permissions-Policy header.", "Example: Permissions-Policy: camera=(), microphone=(), geolocation=().", "Redeploy.", "Verify with securityheaders.com."] },
+    coop: { summary: "Add Cross-Origin-Opener-Policy: same-origin for extra isolation.", steps: ["Add header Cross-Origin-Opener-Policy: same-origin.", "Test any window.open flows still work.", "Consider pairing with COEP for full isolation.", "Redeploy."] },
+    security: { summary: "Review your security headers - add HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy.", steps: ["Scan the site with securityheaders.com.", "Add each missing header.", "Prioritise HSTS, CSP, and X-Content-Type-Options.", "Re-scan until you hit an A grade.", "Automate a monthly re-scan."] },
+    performance: { summary: "Improve Core Web Vitals: compress images, defer non-critical JS, cache aggressively, and use a CDN.", steps: ["Run PageSpeed Insights and note failing metrics.", "Compress images and serve WebP/AVIF.", "Defer or async non-critical JavaScript.", "Add long cache headers to static assets.", "Serve via a CDN."] },
+    "performance-extra": { summary: "Preload critical assets, minify CSS/JS, and remove unused code to speed things up.", steps: ["Preload key fonts and the LCP image.", "Minify and gzip/brotli-compress CSS and JS.", "Tree-shake unused code from the JS bundle.", "Split code and lazy-load routes.", "Re-run Lighthouse."] },
+    cwv: { summary: "Optimise Core Web Vitals (LCP, INP, CLS) - fix slow images, blocking scripts, and layout shifts.", steps: ["Identify the LCP element and speed it up (preload, smaller image).", "Reduce JS work to improve INP (code split, defer).", "Reserve space for images/ads/fonts to fix CLS.", "Retest with real-user data in CrUX.", "Iterate until all vitals are green."] },
+    ttfb: { summary: "Reduce Time To First Byte - use faster hosting, caching, and CDN edge delivery.", steps: ["Measure TTFB from multiple regions.", "Move to faster hosting or a nearby region.", "Enable full-page caching where possible.", "Serve HTML through a CDN (Cloudflare, Fastly).", "Cache database queries."] },
+    size: { summary: "Reduce page weight - compress assets, split code, and remove unused libraries.", steps: ["Audit the page's transfer size in DevTools.", "Compress all images.", "Enable gzip or brotli on the server.", "Remove unused JS/CSS.", "Aim for under 1MB total."] },
+    dom: { summary: "Simplify DOM: fewer nested elements and total nodes to help rendering and interactivity.", steps: ["Measure DOM node count in DevTools.", "Remove unnecessary wrapper elements.", "Virtualise long lists.", "Split massive components.", "Aim for under 1500 nodes."] },
+    "blocking-js": { summary: "Defer or async non-critical <script> tags so they don't block the initial render.", steps: ["Identify render-blocking <script> tags in <head>.", "Add async or defer attributes.", "Move analytics tags to the end of <body>.", "Retest LCP and FCP.", "Fix any script that depends on load order."] },
+    stylesheets: { summary: "Inline critical CSS and defer the rest so the page paints faster.", steps: ["Extract the above-the-fold CSS.", "Inline it in <head>.", "Load the rest via <link rel=\"preload\" as=\"style\" onload=...>.", "Remove unused CSS.", "Retest with Lighthouse."] },
+    cdn: { summary: "Serve static assets through a CDN so users get them from a nearby edge.", steps: ["Sign up for a CDN (Cloudflare, Bunny, Fastly).", "Point your DNS or origin to it.", "Cache static assets aggressively.", "Verify assets serve from CDN edges.", "Monitor cache hit ratio."] },
+    mobile: { summary: "Test on real devices - use a responsive layout, tap targets 48x48+, and no horizontal scroll.", steps: ["Test the page on a real phone.", "Set viewport meta correctly.", "Use responsive layouts (flex/grid, media queries).", "Ensure tap targets are 48x48px+.", "Fix any horizontal scroll."] },
+    accessibility: { summary: "Fix WCAG violations - colour contrast, focus states, keyboard navigation, and ARIA labels.", steps: ["Run axe DevTools or Lighthouse Accessibility.", "Fix colour contrast issues.", "Add visible focus states.", "Ensure keyboard navigation works.", "Add ARIA labels to icon-only buttons."] },
+    "button-names": { summary: "Give every <button> visible text or an aria-label so screen readers can announce it.", steps: ["Find <button> elements with no text.", "Add descriptive visible text where possible.", "Otherwise add aria-label=\"...\".", "For icon buttons, describe the action, not the icon.", "Retest with a screen reader."] },
+    "input-labels": { summary: "Associate every <input> with a <label> (via for/id) so forms are accessible.", steps: ["Find inputs without a matching <label>.", "Add <label for=\"input-id\">.", "Or wrap the input inside the label.", "For hidden labels, use aria-label instead of removing them.", "Retest with an accessibility tool."] },
+    "skip-link": { summary: "Add a visually-hidden \"Skip to main content\" link as the first focusable element.", steps: ["Add <a href=\"#main\" class=\"skip-link\">Skip to main content</a> as the first element in <body>.", "Style it to be visually hidden until focused.", "Make sure #main matches a landmark on the page.", "Test with Tab key.", "Retest with axe."] },
+    meta: { summary: "Fill in missing meta tags (title, description, viewport, charset, Open Graph, Twitter card).", steps: ["Audit <head> for missing tags.", "Add a unique title and meta description.", "Add viewport and charset.", "Add Open Graph and Twitter card tags.", "Retest with a metadata inspector."] },
+    onpage: { summary: "Tighten on-page basics: unique title, meta description, one H1, and clear body content.", steps: ["Review the page's title, description, and H1.", "Make sure each is unique and describes the page.", "Ensure exactly one H1.", "Add enough useful body content.", "Re-run the audit."] },
+    ga: { summary: "Install web analytics (Google Analytics 4, Plausible, etc.) so you can measure improvements.", steps: ["Pick an analytics tool (GA4, Plausible, Fathom).", "Add the tracking snippet to every page.", "Set up key conversion events.", "Verify data is arriving in real time.", "Bookmark a weekly report."] },
+    notfound: { summary: "Serve a helpful 404 page with search and links back to key sections.", steps: ["Design a friendly 404 template.", "Include site search and top navigation.", "Link to popular pages.", "Ensure the response status is actually 404.", "Log 404s to spot broken links."] },
+  };
+  const GENERIC_FIX: FixGuidance = {
+    summary: "Address this issue - the AI Recommendations section has more detail.",
+    steps: [
+      "Read the finding's detail and value to understand what triggered it.",
+      "Check the AI Recommendations section for a tailored fix.",
+      "Implement the change on staging and re-run this audit to confirm.",
+    ],
+  };
+  function fixHint(c: Check): FixGuidance {
+    const direct = FIX_HINTS[c.id];
+    if (direct) return direct;
+    const lower = (c.label || "").toLowerCase();
+    if (lower.includes("open graph") || lower.includes("og:")) return { summary: "Add Open Graph tags for rich social previews.", steps: ["Add og:title, og:description, og:image, og:url, og:type in <head>.", "Use an absolute URL for og:image (1200x630 recommended).", "Keep og:title under 60 characters.", "Validate with Facebook's Sharing Debugger."] };
+    if (lower.includes("twitter")) return { summary: "Add Twitter Card tags.", steps: ["Add twitter:card (summary_large_image).", "Add twitter:title, twitter:description, twitter:image.", "Use an absolute URL for twitter:image.", "Validate with Twitter/X's Card Validator."] };
+    if (lower.includes("gsc") || lower.includes("search console")) return { summary: "Connect Google Search Console and act on its data.", steps: ["Verify the domain in Google Search Console.", "Submit your XML sitemap.", "Review Coverage report and fix reported issues.", "Monitor Performance for CTR and position drops."] };
+    if (lower.includes("ai")) return { summary: "Improve on-page clarity, add schema, and publish authoritative content so AI answer engines can cite you.", steps: ["Add clear H2/H3 subheadings that mirror common questions.", "Add FAQ or HowTo schema where relevant.", "Cite primary sources with descriptive anchor text.", "Publish an About/Author page to establish E-E-A-T."] };
+    return GENERIC_FIX;
+  }
+
   // A check row with a badge on the left and wrapped label/detail on the right.
   const drawCheck = (c: Check) => {
     const meta = statusMeta(c.status);
@@ -111,10 +202,23 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
     const detailLines = c.detail ? wrap(c.detail, font, 9, maxW) : [];
     const valStr = c.value != null && c.value !== "" ? String(c.value).slice(0, 240) : "";
     const valueLines = valStr ? wrap(valStr, font, 9, maxW) : [];
-    const hint = (c.status === "fail" || c.status === "warn") ? fixHint(c) : "";
-    const hintLines = hint ? wrap(`How to fix: ${hint}`, font, 9, maxW) : [];
-    const rowH = Math.max(16, labelLines.length * 13 + detailLines.length * 12 + valueLines.length * 12 + hintLines.length * 12 + 4);
+    const showFix = c.status === "fail" || c.status === "warn";
+    const guidance = showFix ? fixHint(c) : null;
+    const hintLines = guidance ? wrap(`How to fix (rule: ${c.id}): ${guidance.summary}`, font, 9, maxW) : [];
+    const stepLines: string[][] = guidance ? guidance.steps.map(s => wrap(`- ${s}`, font, 9, maxW - 10)) : [];
+    const stepsTotal = stepLines.reduce((n, arr) => n + arr.length, 0);
+    const rowH = Math.max(16,
+      labelLines.length * 13
+      + detailLines.length * 12
+      + valueLines.length * 12
+      + hintLines.length * 12
+      + stepsTotal * 12
+      + 4,
+    );
     ensure(rowH + 4);
+    // Record the row's anchor BEFORE drawing so cross-links land at the top of the row.
+    const anchorY = y + 4;
+    checkAnchors.set(c, { page, y: anchorY });
     drawBadge(M, y, meta.label, meta.color, meta.bg);
     let ly = y;
     for (const line of labelLines) {
@@ -134,87 +238,14 @@ export async function buildAuditPdf(report: Report, recs: AiRec[]): Promise<Uint
       page.drawText(hintLines[i], { x: textX, y: ly - 9, size: 9, font: i === 0 ? bold : font, color: rgb(col[0], col[1], col[2]) });
       ly -= 12;
     }
+    for (const step of stepLines) {
+      for (const line of step) {
+        page.drawText(line, { x: textX + 10, y: ly - 9, size: 9, font, color: rgb(0.25, 0.25, 0.3) });
+        ly -= 12;
+      }
+    }
     y -= rowH + 4;
   };
-
-  // Static "how to fix" guidance mapped from common check IDs, with fallbacks by keyword.
-  const FIX_HINTS: Record<string, string> = {
-    title: "Write a unique <title> tag 30-60 characters long that describes the page and includes your main keyword.",
-    desc: "Add a unique meta description 120-160 characters long that summarises the page and invites a click.",
-    canonical: "Add a <link rel=\"canonical\" href=\"...\"> pointing to the preferred URL for this page to prevent duplicate content.",
-    "canonical-self": "Set the canonical tag to the page's own final URL to avoid ambiguity.",
-    hreflang: "Add hreflang tags for each language/region variant, including an x-default fallback.",
-    xdefault: "Add an hreflang=\"x-default\" tag pointing to the default language version.",
-    lang: "Set <html lang=\"xx\"> so browsers and search engines know the page language.",
-    charset: "Add <meta charset=\"utf-8\"> as the first tag inside <head>.",
-    viewport: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> so the page is mobile-friendly.",
-    favicon: "Add a favicon (<link rel=\"icon\" ...>) so browsers and search results display your brand icon.",
-    h1: "Add exactly one clear <h1> that describes the page's main topic.",
-    headings: "Use headings in order (H1 > H2 > H3) without skipping levels, and make sure each section has a heading.",
-    content: "Add more unique, useful body copy - aim for at least 300-500 well-structured words on key pages.",
-    "word-count": "Increase the page's word count with genuinely useful information relevant to the query.",
-    flesch: "Simplify writing: shorter sentences, common words, and clear paragraphs to improve readability.",
-    "keyword-diversity": "Broaden the vocabulary around your topic - mix synonyms and related terms instead of repeating one keyword.",
-    alt: "Add descriptive alt text to every meaningful <img>. Use alt=\"\" only for purely decorative images.",
-    "img-alt-cov": "Audit all images and add alt text where it is missing.",
-    "img-count": "Reduce the number of images or lazy-load them so the page stays fast.",
-    lazy: "Add loading=\"lazy\" to below-the-fold images so they don't block first paint.",
-    images: "Compress images (use WebP/AVIF) and add width/height attributes to reduce layout shift.",
-    links: "Fix broken links, add descriptive anchor text, and make sure important pages are linked internally.",
-    broken: "Fix or remove 404/broken links - use a link checker to catch new breakages regularly.",
-    "empty-links": "Give every link visible anchor text (or an aria-label) instead of leaving it blank.",
-    "internal-links": "Add more internal links between related pages so search engines can crawl your site.",
-    "external-links": "Only link out to reputable sources; add rel=\"nofollow sponsored\" where appropriate.",
-    robots: "Publish a /robots.txt file that allows crawling of important pages and points to your sitemap.",
-    "robots-exists": "Create a /robots.txt file at the site root.",
-    "robots-open": "Make sure robots.txt does not accidentally block search engines from your public pages.",
-    "robots-meta": "Remove any noindex/nofollow meta robots tags from pages you want indexed.",
-    "robots-sitemap": "Add a `Sitemap:` line in robots.txt pointing to your XML sitemap.",
-    sitemap: "Publish an XML sitemap and reference it from robots.txt and Google Search Console.",
-    "sitemap-exists": "Generate an XML sitemap at /sitemap.xml listing all indexable URLs.",
-    "sitemap-urls": "Include all canonical, indexable URLs in the sitemap and remove noindex/404 pages.",
-    jsonld: "Add JSON-LD structured data (Article, Product, Organization, FAQ, etc.) matching your content.",
-    structured: "Add and validate schema.org structured data with Google's Rich Results Test.",
-    https: "Serve every URL over HTTPS and 301-redirect http:// requests to https://.",
-    ssl: "Install a valid SSL certificate (e.g. Let's Encrypt) and renew it before expiry.",
-    hsts: "Add a Strict-Transport-Security header with a long max-age (e.g. 31536000; includeSubDomains).",
-    csp: "Add a Content-Security-Policy header to restrict which scripts, styles, and frames can load.",
-    xfo: "Add X-Frame-Options: SAMEORIGIN (or a frame-ancestors CSP) to block clickjacking.",
-    xcto: "Add X-Content-Type-Options: nosniff.",
-    referrer: "Add Referrer-Policy: strict-origin-when-cross-origin (or stricter).",
-    "perm-policy": "Add a Permissions-Policy header to disable browser features you don't use (camera, geolocation, etc.).",
-    coop: "Add Cross-Origin-Opener-Policy: same-origin for extra isolation.",
-    security: "Review your security headers - add HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy.",
-    performance: "Improve Core Web Vitals: compress images, defer non-critical JS, cache aggressively, and use a CDN.",
-    "performance-extra": "Preload critical assets, minify CSS/JS, and remove unused code to speed things up.",
-    cwv: "Optimise Core Web Vitals (LCP, INP, CLS) - fix slow images, blocking scripts, and layout shifts.",
-    ttfb: "Reduce Time To First Byte - use faster hosting, caching, and CDN edge delivery.",
-    size: "Reduce page weight - compress assets, split code, and remove unused libraries.",
-    dom: "Simplify DOM: fewer nested elements and total nodes to help rendering and interactivity.",
-    "blocking-js": "Defer or async non-critical <script> tags so they don't block the initial render.",
-    stylesheets: "Inline critical CSS and defer the rest so the page paints faster.",
-    cdn: "Serve static assets through a CDN so users get them from a nearby edge.",
-    mobile: "Test on real devices - use a responsive layout, tap targets 48x48+, and no horizontal scroll.",
-    accessibility: "Fix WCAG violations - colour contrast, focus states, keyboard navigation, and ARIA labels.",
-    "button-names": "Give every <button> visible text or an aria-label so screen readers can announce it.",
-    "input-labels": "Associate every <input> with a <label> (via for/id) so forms are accessible.",
-    "skip-link": "Add a visually-hidden \"Skip to main content\" link as the first focusable element.",
-    meta: "Fill in missing meta tags (title, description, viewport, charset, Open Graph, Twitter card).",
-    onpage: "Tighten on-page basics: unique title, meta description, one H1, and clear body content.",
-    ga: "Install web analytics (Google Analytics 4, Plausible, etc.) so you can measure improvements.",
-    notfound: "Serve a helpful 404 page with search and links back to key sections.",
-  };
-  function fixHint(c: Check): string {
-    const direct = FIX_HINTS[c.id];
-    if (direct) return direct;
-    const lower = (c.label || "").toLowerCase();
-    if (lower.includes("open graph") || lower.includes("og:")) return "Add Open Graph tags (og:title, og:description, og:image, og:url, og:type) for rich social previews.";
-    if (lower.includes("twitter")) return "Add Twitter Card tags (twitter:card, twitter:title, twitter:description, twitter:image).";
-    if (lower.includes("gsc") || lower.includes("search console")) return "Connect Google Search Console, verify ownership, and act on the coverage/performance data it reports.";
-    if (lower.includes("ai")) return "Improve on-page clarity, add schema, and publish authoritative content so AI answer engines can cite you.";
-    if (c.status === "fail") return "Address this issue - it directly hurts SEO. See the AI Recommendations section for step-by-step guidance.";
-    return "Improve this item when you have time - it holds back your SEO potential.";
-  }
 
   // Totals
   const totals = { pass: 0, warn: 0, fail: 0, info: 0 };
