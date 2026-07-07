@@ -1,7 +1,7 @@
 // Server-only helper to log a tool run into public.tool_runs.
 // Called from within createServerFn handlers that already have `supabase` + userId.
 
-export type ToolKey = "broken_links" | "backlink_monitor" | "ai_detection" | "ai_citations" | "ai_potential" | "seo_news" | "keyword_discovery" | "people_also_search" | "people_also_ask" | "ai_search_rank" | "ai_search_comparison" | "backlink_checker" | "website_speed" | "responsive_check" | "html_validator" | "schema_validator";
+export type ToolKey = "broken_links" | "backlink_monitor" | "ai_detection" | "ai_citations" | "ai_potential" | "seo_news" | "keyword_discovery" | "people_also_search" | "people_also_ask" | "ai_search_rank" | "ai_search_comparison" | "backlink_checker" | "website_speed" | "responsive_check" | "html_validator" | "schema_validator" | "domain_metrics";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupaLike = any;
