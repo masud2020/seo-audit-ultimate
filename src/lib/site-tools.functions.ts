@@ -371,12 +371,12 @@ export const runSchemaValidator = createServerFn({ method: "POST" })
     score = Math.max(0, Math.min(100, score));
 
     const result: SchemaResult = { url: r.finalUrl, blocks, by_format, by_type, errors, score, suggestions };
-    await logToolRun({
+    const run_id = await logToolRun({
       supabase, userId, tool: "schema_validator", status: "success",
       label: `${new URL(r.finalUrl).host} · ${blocks.length} block(s)`,
       input: data as unknown as Record<string, unknown>,
       result: result as unknown as Record<string, unknown>,
       duration_ms: Date.now() - started,
     });
-    return result;
+    return { ...result, run_id };
   });
