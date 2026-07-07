@@ -172,9 +172,9 @@ async function runProvider(provider: Provider, system: string, user: string, key
 
 async function loadKeys(supabase: Ctx["supabase"], userId: string): Promise<Keys> {
   const { data } = await supabase.from("api_settings").select("perplexity_key,openai_key,claude_key,gemini_key").eq("user_id", userId).maybeSingle();
-  const row = (data ?? {}) as Keys;
+  const row = (data ?? {}) as { perplexity_key?: string; openai_key?: string; claude_key?: string; gemini_key?: string };
   return {
-    perplexity: row.perplexity || null,
+    perplexity: row.perplexity_key || null,
     openai: row.openai_key || null,
     claude: row.claude_key || null,
     gemini: row.gemini_key || null,
