@@ -29,6 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getProfileByUserId, updateProfileAsAdmin } from "@/lib/profile.functions";
 import { useEffect } from "react";
 import { listActivityLogs, type ActivityLogRow } from "@/lib/activity.functions";
+import { listApprovals, setUserApproval, type ApprovalListItem } from "@/lib/approval.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   // Authorization is enforced by the in-page AdminGate and by assertAdmin
@@ -224,6 +225,7 @@ function UsersPanel() {
       )}
     </Card>
     <ActivityLogsPanel />
+    <ApprovalsPanel />
     </div>
   );
 }
@@ -391,6 +393,162 @@ function ActivityLogsPanel() {
               ))}
               {filtered.length === 0 && (
                 <TableRow><TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">No activity yet</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function ApprovalsPanel() {
+  const list = useServerFn(listApprovals);
+  const setApproval = useServerFn(setUserApproval);
+  const qc = useQueryClient();
+  const [q, setQ] = useState("");
+  const [filter, setFilter] = useState<"all" | "pending" | "expired" | "approved" | "rejected">("pending");
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["admin-approvals"],
+    queryFn: () => list(),
+  });
+
+  const mut = useMutation({
+    mutationFn: (v: { userId: string; action: "approve" | "reject" | "revoke" | "extend"; months?: number; note?: string | null }) =>
+      setApproval({ data: { userId: v.userId, action: v.action, months: v.months ?? 1, note: v.note ?? null } }),
+    onSuccess: (_r, v) => {
+      toast.success(
+        v.action === "approve" ? "User approved for 1 month"
+        : v.action === "extend" ? `Extended by ${v.months ?? 1} month(s)`
+        : v.action === "reject" ? "User rejected"
+        : "Approval revoked",
+      );
+      qc.invalidateQueries({ queryKey: ["admin-approvals"] });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Failed"),
+  });
+
+  const items: ApprovalListItem[] = data?.items ?? [];
+  const filtered = items.filter((i) => {
+    if (filter === "pending" && i.status !== "pending") return false;
+    if (filter === "expired" && !i.expired) return false;
+    if (filter === "approved" && !(i.status === "approved" && !i.expired)) return false;
+    if (filter === "rejected" && i.status !== "rejected") return false;
+    if (!q) return true;
+    const s = q.toLowerCase();
+    return (i.email ?? "").toLowerCase().includes(s) || i.user_id.includes(s);
+  });
+
+  const counts = {
+    pending: items.filter((i) => i.status === "pending").length,
+    expired: items.filter((i) => i.expired).length,
+    approved: items.filter((i) => i.status === "approved" && !i.expired).length,
+    rejected: items.filter((i) => i.status === "rejected").length,
+  };
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold">Account Approvals</h2>
+          <p className="text-sm text-muted-foreground">
+            Approve new signups and renew monthly access.
+            {" "}Pending: {counts.pending} · Expired: {counts.expired} · Active: {counts.approved} · Rejected: {counts.rejected}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as typeof filter)}
+            className="h-9 rounded-md border bg-background px-2 text-sm"
+          >
+            <option value="pending">Pending</option>
+            <option value="expired">Expired</option>
+            <option value="approved">Active</option>
+            <option value="rejected">Rejected</option>
+            <option value="all">All</option>
+          </select>
+          <div className="relative w-64">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search email or id" className="pl-8 h-9" />
+          </div>
+        </div>
+      </div>
+
+      {isLoading && <div className="p-6 text-sm text-muted-foreground">Loading approvals…</div>}
+      {error && <div className="p-4 text-sm text-destructive">{error instanceof Error ? error.message : "Failed to load"}</div>}
+
+      {!isLoading && !error && (
+        <div className="rounded border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Approved until</TableHead>
+                <TableHead>Signed up</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((i) => {
+                const busy = mut.isPending;
+                const badge = i.is_admin
+                  ? <Badge className="gap-1"><ShieldCheck className="h-3 w-3" />Admin</Badge>
+                  : i.status === "rejected"
+                    ? <Badge variant="destructive">Rejected</Badge>
+                    : i.expired
+                      ? <Badge variant="secondary">Expired</Badge>
+                      : i.status === "approved"
+                        ? <Badge className="gap-1"><CheckCircle2 className="h-3 w-3" />Active</Badge>
+                        : <Badge variant="outline">Pending</Badge>;
+                return (
+                  <TableRow key={i.user_id}>
+                    <TableCell className="text-xs">
+                      <div className="font-sans text-sm">{i.email ?? "—"}</div>
+                      <div className="font-mono text-muted-foreground">{i.user_id.slice(0, 8)}…</div>
+                    </TableCell>
+                    <TableCell>{badge}</TableCell>
+                    <TableCell className="text-xs">
+                      {i.approved_until ? new Date(i.approved_until).toLocaleString() : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      {i.created_at ? new Date(i.created_at).toLocaleDateString() : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
+                        {!i.is_admin && (i.status !== "approved" || i.expired) && (
+                          <Button size="sm" onClick={() => mut.mutate({ userId: i.user_id, action: "approve", months: 1 })} disabled={busy}>
+                            Approve 1 mo
+                          </Button>
+                        )}
+                        {!i.is_admin && i.status === "approved" && (
+                          <>
+                            <Button size="sm" variant="outline" onClick={() => mut.mutate({ userId: i.user_id, action: "extend", months: 1 })} disabled={busy}>
+                              +1 mo
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={() => mut.mutate({ userId: i.user_id, action: "extend", months: 12 })} disabled={busy}>
+                              +12 mo
+                            </Button>
+                          </>
+                        )}
+                        {!i.is_admin && i.status !== "rejected" && (
+                          <Button size="sm" variant="ghost" className="text-destructive" onClick={() => mut.mutate({ userId: i.user_id, action: "reject" })} disabled={busy}>
+                            Reject
+                          </Button>
+                        )}
+                        {!i.is_admin && i.status !== "pending" && (
+                          <Button size="sm" variant="ghost" onClick={() => mut.mutate({ userId: i.user_id, action: "revoke" })} disabled={busy}>
+                            Reset
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {filtered.length === 0 && (
+                <TableRow><TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">Nothing to review</TableCell></TableRow>
               )}
             </TableBody>
           </Table>

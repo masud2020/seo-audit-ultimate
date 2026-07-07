@@ -33,6 +33,7 @@ import { Route as AuthenticatedPreferencesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedPingRouteImport } from './routes/_authenticated/ping'
 import { Route as AuthenticatedPeopleAlsoSearchRouteImport } from './routes/_authenticated/people-also-search'
 import { Route as AuthenticatedPeopleAlsoAskRouteImport } from './routes/_authenticated/people-also-ask'
+import { Route as AuthenticatedPendingApprovalRouteImport } from './routes/_authenticated/pending-approval'
 import { Route as AuthenticatedMegaAuditRouteImport } from './routes/_authenticated/mega-audit'
 import { Route as AuthenticatedLinkManagementRouteImport } from './routes/_authenticated/link-management'
 import { Route as AuthenticatedKeywordsRouteImport } from './routes/_authenticated/keywords'
@@ -195,6 +196,12 @@ const AuthenticatedPeopleAlsoAskRoute =
   AuthenticatedPeopleAlsoAskRouteImport.update({
     id: '/people-also-ask',
     path: '/people-also-ask',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPendingApprovalRoute =
+  AuthenticatedPendingApprovalRouteImport.update({
+    id: '/pending-approval',
+    path: '/pending-approval',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedMegaAuditRoute = AuthenticatedMegaAuditRouteImport.update({
@@ -422,6 +429,7 @@ export interface FileRoutesByFullPath {
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/link-management': typeof AuthenticatedLinkManagementRoute
   '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
+  '/pending-approval': typeof AuthenticatedPendingApprovalRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -482,6 +490,7 @@ export interface FileRoutesByTo {
   '/keywords': typeof AuthenticatedKeywordsRoute
   '/link-management': typeof AuthenticatedLinkManagementRoute
   '/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
+  '/pending-approval': typeof AuthenticatedPendingApprovalRoute
   '/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/ping': typeof AuthenticatedPingRoute
@@ -544,6 +553,7 @@ export interface FileRoutesById {
   '/_authenticated/keywords': typeof AuthenticatedKeywordsRoute
   '/_authenticated/link-management': typeof AuthenticatedLinkManagementRoute
   '/_authenticated/mega-audit': typeof AuthenticatedMegaAuditRouteWithChildren
+  '/_authenticated/pending-approval': typeof AuthenticatedPendingApprovalRoute
   '/_authenticated/people-also-ask': typeof AuthenticatedPeopleAlsoAskRoute
   '/_authenticated/people-also-search': typeof AuthenticatedPeopleAlsoSearchRoute
   '/_authenticated/ping': typeof AuthenticatedPingRoute
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/keywords'
     | '/link-management'
     | '/mega-audit'
+    | '/pending-approval'
     | '/people-also-ask'
     | '/people-also-search'
     | '/ping'
@@ -666,6 +677,7 @@ export interface FileRouteTypes {
     | '/keywords'
     | '/link-management'
     | '/mega-audit'
+    | '/pending-approval'
     | '/people-also-ask'
     | '/people-also-search'
     | '/ping'
@@ -727,6 +739,7 @@ export interface FileRouteTypes {
     | '/_authenticated/keywords'
     | '/_authenticated/link-management'
     | '/_authenticated/mega-audit'
+    | '/_authenticated/pending-approval'
     | '/_authenticated/people-also-ask'
     | '/_authenticated/people-also-search'
     | '/_authenticated/ping'
@@ -939,6 +952,13 @@ declare module '@tanstack/react-router' {
       path: '/people-also-ask'
       fullPath: '/people-also-ask'
       preLoaderRoute: typeof AuthenticatedPeopleAlsoAskRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/pending-approval': {
+      id: '/_authenticated/pending-approval'
+      path: '/pending-approval'
+      fullPath: '/pending-approval'
+      preLoaderRoute: typeof AuthenticatedPendingApprovalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/mega-audit': {
@@ -1255,6 +1275,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedKeywordsRoute: typeof AuthenticatedKeywordsRoute
   AuthenticatedLinkManagementRoute: typeof AuthenticatedLinkManagementRoute
   AuthenticatedMegaAuditRoute: typeof AuthenticatedMegaAuditRouteWithChildren
+  AuthenticatedPendingApprovalRoute: typeof AuthenticatedPendingApprovalRoute
   AuthenticatedPeopleAlsoAskRoute: typeof AuthenticatedPeopleAlsoAskRoute
   AuthenticatedPeopleAlsoSearchRoute: typeof AuthenticatedPeopleAlsoSearchRoute
   AuthenticatedPingRoute: typeof AuthenticatedPingRoute
@@ -1304,6 +1325,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedKeywordsRoute: AuthenticatedKeywordsRoute,
   AuthenticatedLinkManagementRoute: AuthenticatedLinkManagementRoute,
   AuthenticatedMegaAuditRoute: AuthenticatedMegaAuditRouteWithChildren,
+  AuthenticatedPendingApprovalRoute: AuthenticatedPendingApprovalRoute,
   AuthenticatedPeopleAlsoAskRoute: AuthenticatedPeopleAlsoAskRoute,
   AuthenticatedPeopleAlsoSearchRoute: AuthenticatedPeopleAlsoSearchRoute,
   AuthenticatedPingRoute: AuthenticatedPingRoute,

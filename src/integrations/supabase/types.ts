@@ -913,6 +913,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          approval_note: string | null
+          approval_status: string
+          approved_by: string | null
+          approved_until: string | null
           avatar_url: string | null
           bio: string | null
           company: string | null
@@ -923,6 +927,10 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_by?: string | null
+          approved_until?: string | null
           avatar_url?: string | null
           bio?: string | null
           company?: string | null
@@ -933,6 +941,10 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          approval_note?: string | null
+          approval_status?: string
+          approved_by?: string | null
+          approved_until?: string | null
           avatar_url?: string | null
           bio?: string | null
           company?: string | null
@@ -1379,6 +1391,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_user_approved: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
