@@ -28,6 +28,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { getProfileByUserId, updateProfileAsAdmin } from "@/lib/profile.functions";
 import { useEffect } from "react";
+import { listActivityLogs, type ActivityLogRow } from "@/lib/activity.functions";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   // Authorization is enforced by the in-page AdminGate and by assertAdmin
@@ -115,6 +116,7 @@ function UsersPanel() {
   const filtered = users.filter((u) => !q || (u.email ?? "").toLowerCase().includes(q.toLowerCase()) || u.id.includes(q));
 
   return (
+    <div className="space-y-6">
     <Card className="p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -221,6 +223,8 @@ function UsersPanel() {
         </div>
       )}
     </Card>
+    <ActivityLogsPanel />
+    </div>
   );
 }
 
