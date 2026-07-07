@@ -100,6 +100,121 @@ interface CrawlPage { url: string; status: number; title: string; description: s
 interface CrawlIssue { url: string; severity: "high"|"medium"|"low"; message: string; }
 
 export async function buildCrawlPdf(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }): Promise<Uint8Array> {
+  return buildCrawlPdfImpl(crawl);
+}
+
+interface SiteAuditPage { url: string; status: number; overall_score: number | null; duration_ms: number; section_scores?: Record<string, number>; top_issues?: { label: string; status: string; detail?: string }[]; error?: string }
+interface SiteAuditIssue { url: string; severity: "high"|"medium"|"low"; message: string; source?: string }
+interface SiteAuditSummary {
+  pages_audited: number;
+  pages_failed: number;
+  overall_score: number;
+  avg_by_section: Record<string, number>;
+  issue_counts: { high: number; medium: number; low: number };
+  top_problems: { message: string; count: number; severity: "high"|"medium"|"low" }[];
+  finished_at: string;
+}
+interface SiteAuditRec { section: string; summary?: string; fixes: { title: string; impact?: string; effort?: string; steps: string[] }[] }
+
+export async function buildSiteAuditPdf(
+  data: { start_url: string; summary: SiteAuditSummary; pages: SiteAuditPage[]; issues: SiteAuditIssue[] },
+  recs: SiteAuditRec[] = [],
+): Promise<Uint8Array> {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const W = 595, H = 842, M = 48;
+  let page: PDFPage = doc.addPage([W, H]);
+  let y = H - M;
+  const newPage = () => { page = doc.addPage([W, H]); y = H - M; };
+  const ensure = (n: number) => { if (y - n < M) newPage(); };
+  const text = (t: string, opts: { size?: number; bold?: boolean; color?: [number, number, number] } = {}) => {
+    const size = opts.size ?? 10;
+    const f = opts.bold ? bold : font;
+    const c = opts.color ?? [0.1, 0.1, 0.1];
+    for (const line of wrap(t, f, size, W - M * 2)) {
+      ensure(size + 4);
+      page.drawText(line, { x: M, y: y - size, size, font: f, color: rgb(c[0], c[1], c[2]) });
+      y -= size + 3;
+    }
+  };
+  const spacer = (n = 6) => { y -= n; };
+  const rule = () => { ensure(6); page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) }); y -= 8; };
+
+  const s = data.summary;
+  const scoreColor: [number, number, number] = s.overall_score >= 80 ? [0.2, 0.6, 0.3] : s.overall_score >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
+
+  text("Whole-Site SEO Audit", { size: 22, bold: true });
+  spacer(4);
+  text(data.start_url, { size: 11, color: [0.35, 0.35, 0.35] });
+  text(`Finished ${new Date(s.finished_at).toLocaleString()}  ·  ${s.pages_audited} pages  ·  ${s.pages_failed} failed`, { size: 9, color: [0.4, 0.4, 0.4] });
+  spacer(8);
+  text(`Overall Site Score: ${s.overall_score}/100`, { size: 16, bold: true, color: scoreColor });
+  spacer(4);
+  text(`Issues: ${s.issue_counts?.high ?? 0} high · ${s.issue_counts?.medium ?? 0} medium · ${s.issue_counts?.low ?? 0} low`, { size: 11, bold: true });
+  spacer(4);
+  rule();
+
+  text("Section averages", { size: 13, bold: true });
+  spacer(2);
+  for (const [id, score] of Object.entries(s.avg_by_section ?? {})) {
+    const col: [number, number, number] = score >= 80 ? [0.2, 0.6, 0.3] : score >= 60 ? [0.85, 0.6, 0.1] : [0.8, 0.2, 0.2];
+    text(`- ${id}: ${score}/100`, { size: 10, color: col });
+  }
+  spacer(6);
+  rule();
+
+  text("Top recurring problems", { size: 13, bold: true });
+  spacer(2);
+  if (!s.top_problems?.length) text("None detected.", { size: 10, color: [0.4, 0.4, 0.4] });
+  for (const p of s.top_problems ?? []) {
+    const tag = p.severity === "high" ? "[HIGH]" : p.severity === "medium" ? "[MED] " : "[LOW] ";
+    const col: [number, number, number] = p.severity === "high" ? [0.8, 0.2, 0.2] : p.severity === "medium" ? [0.85, 0.6, 0.1] : [0.4, 0.4, 0.4];
+    text(`${tag} ${p.message}  (${p.count} pages)`, { size: 10, bold: true, color: col });
+  }
+  spacer(6);
+  rule();
+
+  text(`Pages (${data.pages.length})`, { size: 13, bold: true });
+  spacer(2);
+  for (const p of data.pages.slice(0, 200)) {
+    const scoreTxt = p.overall_score == null ? "—" : `${p.overall_score}/100`;
+    text(`- [${p.status || "err"}] ${scoreTxt}  ${p.url}`, { size: 9 });
+    if (p.error) text(`      ${p.error}`, { size: 9, color: [0.8, 0.2, 0.2] });
+  }
+  spacer(6);
+  rule();
+
+  text(`All issues (${data.issues.length})`, { size: 13, bold: true });
+  spacer(2);
+  for (const i of data.issues.slice(0, 400)) {
+    const tag = i.severity === "high" ? "[HIGH]" : i.severity === "medium" ? "[MED] " : "[LOW] ";
+    const col: [number, number, number] = i.severity === "high" ? [0.8, 0.2, 0.2] : i.severity === "medium" ? [0.85, 0.6, 0.1] : [0.4, 0.4, 0.4];
+    text(`${tag} ${i.url}`, { size: 9, bold: true, color: col });
+    text(`      ${i.message}`, { size: 9, color: [0.35, 0.35, 0.35] });
+  }
+
+  if (recs.length) {
+    newPage();
+    text("AI Recommendations", { size: 16, bold: true });
+    spacer(6);
+    for (const r of recs) {
+      ensure(30);
+      text(r.section, { size: 12, bold: true });
+      if (r.summary) { spacer(2); text(r.summary, { size: 10, color: [0.35, 0.35, 0.35] }); }
+      for (const fix of r.fixes ?? []) {
+        spacer(4);
+        text(`- ${fix.title}${fix.impact ? `  [impact: ${fix.impact}]` : ""}${fix.effort ? `  [effort: ${fix.effort}]` : ""}`, { size: 10, bold: true });
+        for (const step of fix.steps ?? []) text(`    • ${step}`, { size: 9 });
+      }
+      spacer(8);
+    }
+  }
+
+  return await doc.save();
+}
+
+async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
