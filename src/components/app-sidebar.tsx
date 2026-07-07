@@ -38,7 +38,6 @@ const groups: { label: string; items: { title: string; url: string; icon: React.
     { title: "More Tools", url: "/tools", icon: Wrench },
   ]},
   { label: "AI", items: [
-    { title: "AI Visibility", url: "/ai-visibility", icon: Bot },
     { title: "Content Optimizer", url: "/content-optimizer", icon: Sparkles },
     { title: "AI Content Detection", url: "/ai-detection", icon: ScanText },
     { title: "AI Citation Checker", url: "/ai-citations", icon: Quote },
