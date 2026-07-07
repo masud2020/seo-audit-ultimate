@@ -42,6 +42,7 @@ import { Route as AuthenticatedHtmlValidatorRouteImport } from './routes/_authen
 import { Route as AuthenticatedHistoryRouteImport } from './routes/_authenticated/history'
 import { Route as AuthenticatedGscRouteImport } from './routes/_authenticated/gsc'
 import { Route as AuthenticatedGapsRouteImport } from './routes/_authenticated/gaps'
+import { Route as AuthenticatedDomainMetricsRouteImport } from './routes/_authenticated/domain-metrics'
 import { Route as AuthenticatedDisavowRouteImport } from './routes/_authenticated/disavow'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedContentOptimizerRouteImport } from './routes/_authenticated/content-optimizer'
@@ -247,6 +248,12 @@ const AuthenticatedGapsRoute = AuthenticatedGapsRouteImport.update({
   path: '/gaps',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDomainMetricsRoute =
+  AuthenticatedDomainMetricsRouteImport.update({
+    id: '/domain-metrics',
+    path: '/domain-metrics',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDisavowRoute = AuthenticatedDisavowRouteImport.update({
   id: '/disavow',
   path: '/disavow',
@@ -421,6 +428,7 @@ export interface FileRoutesByFullPath {
   '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/disavow': typeof AuthenticatedDisavowRoute
+  '/domain-metrics': typeof AuthenticatedDomainMetricsRoute
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -482,6 +490,7 @@ export interface FileRoutesByTo {
   '/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/disavow': typeof AuthenticatedDisavowRoute
+  '/domain-metrics': typeof AuthenticatedDomainMetricsRoute
   '/gaps': typeof AuthenticatedGapsRoute
   '/gsc': typeof AuthenticatedGscRoute
   '/history': typeof AuthenticatedHistoryRoute
@@ -545,6 +554,7 @@ export interface FileRoutesById {
   '/_authenticated/content-optimizer': typeof AuthenticatedContentOptimizerRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/disavow': typeof AuthenticatedDisavowRoute
+  '/_authenticated/domain-metrics': typeof AuthenticatedDomainMetricsRoute
   '/_authenticated/gaps': typeof AuthenticatedGapsRoute
   '/_authenticated/gsc': typeof AuthenticatedGscRoute
   '/_authenticated/history': typeof AuthenticatedHistoryRoute
@@ -608,6 +618,7 @@ export interface FileRouteTypes {
     | '/content-optimizer'
     | '/dashboard'
     | '/disavow'
+    | '/domain-metrics'
     | '/gaps'
     | '/gsc'
     | '/history'
@@ -669,6 +680,7 @@ export interface FileRouteTypes {
     | '/content-optimizer'
     | '/dashboard'
     | '/disavow'
+    | '/domain-metrics'
     | '/gaps'
     | '/gsc'
     | '/history'
@@ -731,6 +743,7 @@ export interface FileRouteTypes {
     | '/_authenticated/content-optimizer'
     | '/_authenticated/dashboard'
     | '/_authenticated/disavow'
+    | '/_authenticated/domain-metrics'
     | '/_authenticated/gaps'
     | '/_authenticated/gsc'
     | '/_authenticated/history'
@@ -1017,6 +1030,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGapsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/domain-metrics': {
+      id: '/_authenticated/domain-metrics'
+      path: '/domain-metrics'
+      fullPath: '/domain-metrics'
+      preLoaderRoute: typeof AuthenticatedDomainMetricsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/disavow': {
       id: '/_authenticated/disavow'
       path: '/disavow'
@@ -1267,6 +1287,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedContentOptimizerRoute: typeof AuthenticatedContentOptimizerRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDisavowRoute: typeof AuthenticatedDisavowRoute
+  AuthenticatedDomainMetricsRoute: typeof AuthenticatedDomainMetricsRoute
   AuthenticatedGapsRoute: typeof AuthenticatedGapsRoute
   AuthenticatedGscRoute: typeof AuthenticatedGscRoute
   AuthenticatedHistoryRoute: typeof AuthenticatedHistoryRoute
@@ -1317,6 +1338,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedContentOptimizerRoute: AuthenticatedContentOptimizerRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDisavowRoute: AuthenticatedDisavowRoute,
+  AuthenticatedDomainMetricsRoute: AuthenticatedDomainMetricsRoute,
   AuthenticatedGapsRoute: AuthenticatedGapsRoute,
   AuthenticatedGscRoute: AuthenticatedGscRoute,
   AuthenticatedHistoryRoute: AuthenticatedHistoryRoute,
