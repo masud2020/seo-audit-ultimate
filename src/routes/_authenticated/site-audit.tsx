@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Play, Trash2, Eye, Globe } from "lucide-react";
+import { Loader2, Play, Trash2, Eye, Globe, FileText } from "lucide-react";
+import { generateSiteAuditPdf } from "@/lib/pdf.functions";
 
 type SiteAuditRow = { id: string; start_url: string; status: string; overall_score: number | null; pages_audited: number; max_pages: number; created_at: string; error: string | null };
 
@@ -25,6 +26,7 @@ function SiteAuditPage() {
   const start = useServerFn(startSiteAudit);
   const list = useServerFn(listSiteAudits);
   const del = useServerFn(deleteSiteAudit);
+  const sitePdf = useServerFn(generateSiteAuditPdf);
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { data } = useQuery({ queryKey: ["site-audits"], queryFn: () => list() });
@@ -36,6 +38,26 @@ function SiteAuditPage() {
     onError: (e) => toast.error(e instanceof Error ? e.message : "Site audit failed"),
   });
   const mDel = useMutation({ mutationFn: (id: string) => del({ data: { id } }), onSuccess: () => qc.invalidateQueries({ queryKey: ["site-audits"] }) });
+  const [pdfBusyId, setPdfBusyId] = useState<string | null>(null);
+  const downloadPdf = async (id: string) => {
+    setPdfBusyId(id);
+    try {
+      const { base64, filename } = await sitePdf({ data: { site_audit_id: id } });
+      const bin = atob(base64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const blob = new Blob([bytes], { type: "application/pdf" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to generate PDF");
+    } finally {
+      setPdfBusyId(null);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -75,6 +97,9 @@ function SiteAuditPage() {
                 <td className="px-4 py-2">
                   <div className="flex gap-1">
                     <Button asChild size="sm" variant="ghost"><Link to="/site-audit/$id" params={{ id: row.id }}><Eye className="h-3.5 w-3.5" /></Link></Button>
+                    <Button size="sm" variant="ghost" disabled={row.status !== "complete" || pdfBusyId === row.id} onClick={() => downloadPdf(row.id)} title="Download PDF report">
+                      {pdfBusyId === row.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileText className="h-3.5 w-3.5" />}
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => mDel.mutate(row.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
                   </div>
                 </td>
