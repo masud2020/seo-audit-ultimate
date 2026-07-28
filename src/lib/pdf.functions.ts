@@ -11,6 +11,20 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
+// Load per-user branding for PDFs. Errors/missing rows fall back to null so
+// PDF generation never fails because of branding.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function loadBrand(supabase: any, userId: string) {
+  try {
+    const { data } = await supabase
+      .from("brand_settings")
+      .select("app_name,logo_url,primary_color,accent_color,support_email,footer_text")
+      .eq("user_id", userId)
+      .maybeSingle();
+    return data ?? null;
+  } catch { return null; }
+}
+
 export const generateAuditPdf = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { audit_id: string }) => z.object({ audit_id: z.string().uuid() }).parse(d))
@@ -19,8 +33,9 @@ export const generateAuditPdf = createServerFn({ method: "POST" })
     if (error || !row) throw new Error(error?.message ?? "Audit not found");
     if (row.status !== "complete") throw new Error("Audit is not complete yet.");
     const { buildAuditPdf } = await import("./pdf.server");
+    const brand = await loadBrand(context.supabase, context.userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdf = await buildAuditPdf(row.sections as any, (row.ai_recommendations ?? []) as any);
+    const pdf = await buildAuditPdf(row.sections as any, (row.ai_recommendations ?? []) as any, brand);
     return { base64: toBase64(pdf), filename: `audit-${row.url.replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}.pdf` };
   });
 
@@ -31,6 +46,7 @@ export const generateCrawlPdf = createServerFn({ method: "POST" })
     const { data: row, error } = await context.supabase.from("site_crawls").select("*").eq("id", data.crawl_id).single();
     if (error || !row) throw new Error(error?.message ?? "Crawl not found");
     const { buildCrawlPdf } = await import("./pdf.server");
+    const brand = await loadBrand(context.supabase, context.userId);
     const pdf = await buildCrawlPdf({
       start_url: row.start_url,
       pages_crawled: row.pages_crawled ?? 0,
@@ -39,7 +55,7 @@ export const generateCrawlPdf = createServerFn({ method: "POST" })
       pages: (row.pages ?? []) as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       issues: (row.issues ?? []) as any,
-    });
+    }, brand);
     return { base64: toBase64(pdf), filename: `crawl-${row.start_url.replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}.pdf` };
   });
 
@@ -62,6 +78,7 @@ export const generateSiteAuditPdf = createServerFn({ method: "POST" })
     }));
 
     const { buildSiteAuditPdf } = await import("./pdf.server");
+    const brand = await loadBrand(context.supabase, context.userId);
     const pdf = await buildSiteAuditPdf({
       start_url: row.start_url,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -70,7 +87,7 @@ export const generateSiteAuditPdf = createServerFn({ method: "POST" })
       pages: (row.pages ?? []) as any,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       issues: (row.issues ?? []) as any,
-    }, recs);
+    }, recs, brand);
     return { base64: toBase64(pdf), filename: `site-audit-${row.start_url.replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}.pdf` };
   });
 
@@ -83,8 +100,9 @@ export const generateMegaAuditPdf = createServerFn({ method: "POST" })
     if (error || !row) throw new Error(error?.message ?? "Mega audit not found");
     if (row.status !== "complete" || !row.results) throw new Error("Mega audit is not complete yet.");
     const { buildMegaAuditPdf } = await import("./pdf.server");
+    const brand = await loadBrand(context.supabase, context.userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdf = await buildMegaAuditPdf(row.results as any);
+    const pdf = await buildMegaAuditPdf(row.results as any, brand);
     return { base64: toBase64(pdf), filename: `mega-audit-${row.target_url.replace(/[^a-z0-9]+/gi, "-").slice(0, 40)}.pdf` };
   });
 
@@ -111,8 +129,9 @@ export const emailAuditPdf = createServerFn({ method: "POST" })
     if (row.status !== "complete") throw new Error("Audit is not complete yet.");
 
     const { buildAuditPdf } = await import("./pdf.server");
+    const brand = await loadBrand(context.supabase, context.userId);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdf = await buildAuditPdf(row.sections as any, (row.ai_recommendations ?? []) as any);
+    const pdf = await buildAuditPdf(row.sections as any, (row.ai_recommendations ?? []) as any, brand);
     const base64 = toBase64(pdf);
 
     const html = `<div style="font-family:system-ui,sans-serif;line-height:1.5;color:#222">
