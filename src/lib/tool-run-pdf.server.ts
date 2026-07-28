@@ -1,4 +1,14 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import type { Brand } from "./pdf.server";
+
+function hexToRgb(hex: string | null | undefined, fallback: [number, number, number]): [number, number, number] {
+  if (!hex) return fallback;
+  const m = hex.trim().replace(/^#/, "");
+  const full = m.length === 3 ? m.split("").map(c => c + c).join("") : m;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return fallback;
+  return [parseInt(full.slice(0,2),16)/255, parseInt(full.slice(2,4),16)/255, parseInt(full.slice(4,6),16)/255];
+}
+function brandName(b?: Brand | null): string { return (b?.app_name || "SEO Audit Tool").trim(); }
 
 function sanitize(s: string): string {
   return (s || "").replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2014|\u2013/g, "-").replace(/[^\x20-\x7E\n]/g, "");
@@ -31,15 +41,16 @@ export interface ToolRunRow {
   error: string | null; created_at: string; finished_at: string | null; duration_ms: number | null;
 }
 
-export async function buildToolRunPdf(run: ToolRunRow): Promise<Uint8Array> {
+export async function buildToolRunPdf(run: ToolRunRow, brand?: Brand | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const W = 595, H = 842, M = 48;
+  const FOOTER_Y = 28;
   let page: PDFPage = doc.addPage([W, H]);
   let y = H - M;
   const newPage = () => { page = doc.addPage([W, H]); y = H - M; };
-  const ensure = (n: number) => { if (y - n < M) newPage(); };
+  const ensure = (n: number) => { if (y - n < M + FOOTER_Y) newPage(); };
   const text = (t: string, opts: { size?: number; bold?: boolean; color?: [number, number, number] } = {}) => {
     const size = opts.size ?? 10;
     const f = opts.bold ? bold : font;
@@ -55,13 +66,40 @@ export async function buildToolRunPdf(run: ToolRunRow): Promise<Uint8Array> {
   const spacer = (n = 6) => { y -= n; };
   const rule = () => { ensure(6); page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) }); y -= 8; };
 
-  text(`${TOOL_LABEL[run.tool] ?? run.tool} Run`, { size: 22, bold: true });
-  spacer(4);
-  if (run.label) text(run.label, { size: 11, color: [0.35, 0.35, 0.35] });
-  text(`Started ${new Date(run.created_at).toLocaleString()}${run.duration_ms ? `  ·  ${run.duration_ms} ms` : ""}`, { size: 9, color: [0.4, 0.4, 0.4] });
+  // Branded cover band
+  const bp = hexToRgb(brand?.primary_color, [0.10, 0.14, 0.25]);
+  const ba = hexToRgb(brand?.accent_color, [0.30, 0.55, 0.95]);
+  const bandH = 90;
+  page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: rgb(bp[0], bp[1], bp[2]) });
+  page.drawRectangle({ x: 0, y: H - bandH - 3, width: W, height: 3, color: rgb(ba[0], ba[1], ba[2]) });
+  page.drawText(brandName(brand).toUpperCase(), { x: M, y: H - 34, size: 10, font: bold, color: rgb(0.85, 0.90, 1) });
+  page.drawText(`${TOOL_LABEL[run.tool] ?? run.tool} Report`, { x: M, y: H - 66, size: 22, font: bold, color: rgb(1, 1, 1) });
+  const dateTag = new Date(run.created_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  const dtW = font.widthOfTextAtSize(dateTag, 10);
+  page.drawText(dateTag, { x: W - M - dtW, y: H - 34, size: 10, font, color: rgb(0.75, 0.82, 0.95) });
+  y = H - bandH - 24;
+
+  if (run.label) { text(run.label, { size: 12, bold: true }); spacer(2); }
   const statusColor: [number, number, number] = run.status === "success" ? [0.2, 0.6, 0.3] : run.status === "error" ? [0.8, 0.2, 0.2] : [0.85, 0.6, 0.1];
-  text(`Status: ${run.status.toUpperCase()}`, { size: 11, bold: true, color: statusColor });
-  spacer(6); rule();
+  // At-a-glance meta panel
+  {
+    const panelH = 70;
+    const py = y - panelH;
+    page.drawRectangle({ x: M, y: py, width: W - M * 2, height: panelH, color: rgb(0.98, 0.98, 1), borderColor: rgb(0.88, 0.88, 0.92), borderWidth: 0.5 });
+    const rows: [string, string, [number, number, number]?][] = [
+      ["Status",   run.status.toUpperCase(), statusColor],
+      ["Started",  new Date(run.created_at).toLocaleString()],
+      ["Duration", run.duration_ms ? `${run.duration_ms} ms` : "—"],
+    ];
+    const colW = (W - M * 2) / rows.length;
+    rows.forEach(([k, v, col], i) => {
+      const cx = M + i * colW + 14;
+      page.drawText(k.toUpperCase(), { x: cx, y: py + panelH - 20, size: 8, font: bold, color: rgb(0.45, 0.45, 0.55) });
+      page.drawText(sanitize(v).slice(0, 42), { x: cx, y: py + 22, size: 13, font: bold, color: col ? rgb(col[0], col[1], col[2]) : rgb(0.15, 0.15, 0.2) });
+    });
+    y = py - 14;
+  }
+  rule();
 
   if (run.error) {
     text("Error", { size: 13, bold: true, color: [0.8, 0.2, 0.2] });
@@ -119,5 +157,17 @@ export async function buildToolRunPdf(run: ToolRunRow): Promise<Uint8Array> {
     text(JSON.stringify(r, null, 2).slice(0, 4000), { size: 9 });
   }
 
+  // Footer with page numbers
+  const finalPages = doc.getPages();
+  const genAt = new Date();
+  const footerLeft = `Generated ${genAt.toLocaleDateString()} by ${brandName(brand)}${brand?.footer_text ? " · " + brand.footer_text : ""}`;
+  for (let i = 0; i < finalPages.length; i++) {
+    const p = finalPages[i];
+    p.drawLine({ start: { x: M, y: FOOTER_Y + 12 }, end: { x: W - M, y: FOOTER_Y + 12 }, thickness: 0.3, color: rgb(0.85, 0.85, 0.88) });
+    p.drawText(footerLeft, { x: M, y: FOOTER_Y, size: 8, font, color: rgb(0.55, 0.55, 0.6) });
+    const ps = `Page ${i + 1} of ${finalPages.length}`;
+    const pw = font.widthOfTextAtSize(ps, 8);
+    p.drawText(ps, { x: W - M - pw, y: FOOTER_Y, size: 8, font, color: rgb(0.55, 0.55, 0.6) });
+  }
   return await doc.save();
 }
