@@ -987,8 +987,8 @@ export async function buildMegaAuditPdf(r: MegaResults, brand?: Brand | null): P
   return await doc.save();
 }
 
-export async function buildCrawlPdf(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }): Promise<Uint8Array> {
-  return buildCrawlPdfImpl(crawl);
+export async function buildCrawlPdf(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }, brand?: Brand | null): Promise<Uint8Array> {
+  return buildCrawlPdfImpl(crawl, brand);
 }
 
 interface SiteAuditPage { url: string; status: number; overall_score: number | null; duration_ms: number; section_scores?: Record<string, number>; top_issues?: { label: string; status: string; detail?: string }[]; error?: string }
@@ -1423,15 +1423,16 @@ export async function buildSiteAuditPdf(
   return await doc.save();
 }
 
-async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }): Promise<Uint8Array> {
+async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: number; created_at: string; pages: CrawlPage[]; issues: CrawlIssue[] }, brand?: Brand | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const W = 595, H = 842, M = 48;
+  const FOOTER_Y = 28;
   let page: PDFPage = doc.addPage([W, H]);
   let y = H - M;
   const newPage = () => { page = doc.addPage([W, H]); y = H - M; };
-  const ensure = (n: number) => { if (y - n < M) newPage(); };
+  const ensure = (n: number) => { if (y - n < M + FOOTER_Y) newPage(); };
   const text = (t: string, opts: { size?: number; bold?: boolean; color?: [number, number, number] } = {}) => {
     const size = opts.size ?? 10;
     const f = opts.bold ? bold : font;
@@ -1442,9 +1443,18 @@ async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: numb
     for (const line of lines) { ensure(lh); page.drawText(line, { x: M, y: y - asc, size, font: f, color: rgb(c[0], c[1], c[2]) }); y -= lh; }
   };
 
-  text("Site Crawl Report", { size: 22, bold: true });
-  y -= 4;
-  text(crawl.start_url, { size: 11, color: [0.35, 0.35, 0.35] });
+  // Branded header band
+  {
+    const bp = brandPrimary(brand);
+    const ba = brandAccent(brand);
+    const bandH = 90;
+    page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: rgb(bp[0], bp[1], bp[2]) });
+    page.drawRectangle({ x: 0, y: H - bandH - 3, width: W, height: 3, color: rgb(ba[0], ba[1], ba[2]) });
+    page.drawText(brandName(brand).toUpperCase(), { x: M, y: H - 34, size: 10, font: bold, color: rgb(0.85, 0.90, 1) });
+    page.drawText("Site Crawl Report", { x: M, y: H - 66, size: 22, font: bold, color: rgb(1, 1, 1) });
+    y = H - bandH - 24;
+  }
+  text(sanitize(crawl.start_url), { size: 12, color: [0.35, 0.35, 0.35] });
   text(`Crawled ${crawl.pages_crawled} pages on ${new Date(crawl.created_at).toLocaleString()}`, { size: 9, color: [0.4, 0.4, 0.4] });
   y -= 8;
 
@@ -1475,5 +1485,17 @@ async function buildCrawlPdfImpl(crawl: { start_url: string; pages_crawled: numb
     text(`      ${i.message}`, { size: 9, color: [0.35, 0.35, 0.35] });
   }
 
+  // Footer with page numbers
+  const finalPages = doc.getPages();
+  const genAt = new Date();
+  const footerLeft = `Generated ${genAt.toLocaleDateString()} by ${brandName(brand)}${brand?.footer_text ? " · " + brand.footer_text : ""}`;
+  for (let i = 0; i < finalPages.length; i++) {
+    const p = finalPages[i];
+    p.drawLine({ start: { x: M, y: FOOTER_Y + 12 }, end: { x: W - M, y: FOOTER_Y + 12 }, thickness: 0.3, color: rgb(0.85, 0.85, 0.88) });
+    p.drawText(sanitize(footerLeft), { x: M, y: FOOTER_Y, size: 8, font, color: rgb(0.55, 0.55, 0.6) });
+    const ps = `Page ${i + 1} of ${finalPages.length}`;
+    const pw = font.widthOfTextAtSize(ps, 8);
+    p.drawText(ps, { x: W - M - pw, y: FOOTER_Y, size: 8, font, color: rgb(0.55, 0.55, 0.6) });
+  }
   return await doc.save();
 }
