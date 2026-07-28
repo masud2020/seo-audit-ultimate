@@ -87,7 +87,12 @@ export const exportToolRunPdf = createServerFn({ method: "POST" })
       (run.result as Record<string, unknown>).items = items ?? [];
     }
     const { buildToolRunPdf } = await import("./tool-run-pdf.server");
-    const bytes = await buildToolRunPdf(run as Parameters<typeof buildToolRunPdf>[0]);
+    let brand = null;
+    try {
+      const { data } = await supabase.from("brand_settings").select("app_name,logo_url,primary_color,accent_color,support_email,footer_text").eq("user_id", userId).maybeSingle();
+      brand = data ?? null;
+    } catch { /* ignore */ }
+    const bytes = await buildToolRunPdf(run as Parameters<typeof buildToolRunPdf>[0], brand);
     const stamp = new Date(run.created_at).toISOString().slice(0, 10);
     const filename = `${run.tool}-${stamp}.pdf`;
     return { base64: toBase64(bytes), filename };
