@@ -817,15 +817,16 @@ interface MegaResults {
   priority_actions: { severity: "high"|"medium"|"low"; message: string; count?: number; source: string }[];
 }
 
-export async function buildMegaAuditPdf(r: MegaResults): Promise<Uint8Array> {
+export async function buildMegaAuditPdf(r: MegaResults, brand?: Brand | null): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const font = await doc.embedFont(StandardFonts.Helvetica);
   const bold = await doc.embedFont(StandardFonts.HelveticaBold);
   const W = 595, H = 842, M = 48;
+  const FOOTER_Y = 28;
   let page: PDFPage = doc.addPage([W, H]);
   let y = H - M;
   const newPage = () => { page = doc.addPage([W, H]); y = H - M; };
-  const ensure = (n: number) => { if (y - n < M) newPage(); };
+  const ensure = (n: number) => { if (y - n < M + FOOTER_Y) newPage(); };
   const text = (t: string, opts: { size?: number; bold?: boolean; color?: [number, number, number] } = {}) => {
     const size = opts.size ?? 10;
     const f = opts.bold ? bold : font;
@@ -861,19 +862,35 @@ export async function buildMegaAuditPdf(r: MegaResults): Promise<Uint8Array> {
     rule();
   };
 
-  // Cover
-  text("Mega SEO Audit Report", { size: 24, bold: true });
-  spacer(6);
-  text(r.target_url, { size: 12, color: [0.35, 0.35, 0.35] });
+  // Cover with branded header band
+  const bp = brandPrimary(brand);
+  const ba = brandAccent(brand);
+  const bandH = 90;
+  page.drawRectangle({ x: 0, y: H - bandH, width: W, height: bandH, color: rgb(bp[0], bp[1], bp[2]) });
+  page.drawRectangle({ x: 0, y: H - bandH - 3, width: W, height: 3, color: rgb(ba[0], ba[1], ba[2]) });
+  page.drawText(brandName(brand).toUpperCase(), { x: M, y: H - 34, size: 10, font: bold, color: rgb(0.85, 0.90, 1) });
+  page.drawText("Mega SEO Audit Report", { x: M, y: H - 66, size: 24, font: bold, color: rgb(1, 1, 1) });
+  const finishedTag = new Date(r.finished_at).toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+  const ftW = font.widthOfTextAtSize(finishedTag, 10);
+  page.drawText(finishedTag, { x: W - M - ftW, y: H - 34, size: 10, font, color: rgb(0.75, 0.82, 0.95) });
+  y = H - bandH - 28;
+  text(sanitize(r.target_url), { size: 14, bold: true });
+  spacer(2);
   text(`Finished ${new Date(r.finished_at).toLocaleString()}`, { size: 9, color: [0.5, 0.5, 0.5] });
   if (r.competitor_url) text(`Competitor: ${r.competitor_url}`, { size: 10, color: [0.35, 0.35, 0.35] });
   if (r.target_keyword) text(`Target keyword: ${r.target_keyword}`, { size: 10, color: [0.35, 0.35, 0.35] });
-  spacer(12);
+  spacer(14);
+  // Big score panel
+  const oc = scoreColor(r.mega_score);
+  const panelH = 100;
+  const panelY = y - panelH;
+  page.drawRectangle({ x: M, y: panelY, width: W - M * 2, height: panelH, color: rgb(0.98, 0.98, 1), borderColor: rgb(0.88, 0.88, 0.92), borderWidth: 0.5 });
+  page.drawText("MEGA SCORE", { x: M + 24, y: panelY + panelH - 22, size: 10, font: bold, color: rgb(0.4, 0.4, 0.5) });
+  page.drawText(String(r.mega_score), { x: M + 24, y: panelY + 26, size: 48, font: bold, color: rgb(oc[0], oc[1], oc[2]) });
+  const slw = bold.widthOfTextAtSize(String(r.mega_score), 48);
+  page.drawText("/ 100", { x: M + 24 + slw + 6, y: panelY + 30, size: 14, font, color: rgb(0.5, 0.5, 0.55) });
+  y = panelY - 18;
   rule();
-  text("Mega Score", { size: 12, bold: true, color: [0.35, 0.35, 0.35] });
-  spacer(2);
-  text(`${r.mega_score} / 100`, { size: 28, bold: true, color: scoreColor(r.mega_score) });
-  spacer(10);
 
   text("Score Breakdown", { size: 13, bold: true });
   spacer(2);
@@ -955,6 +972,18 @@ export async function buildMegaAuditPdf(r: MegaResults): Promise<Uint8Array> {
     if (r.competitor.ai) renderSection(r.competitor.ai);
   }
 
+  // Page-numbered footer on every page
+  const finalPages = doc.getPages();
+  const generatedAt = new Date();
+  const footerLeft = `Generated ${generatedAt.toLocaleDateString()} by ${brandName(brand)}${brand?.footer_text ? " · " + brand.footer_text : ""}`;
+  for (let i = 0; i < finalPages.length; i++) {
+    const p = finalPages[i];
+    p.drawLine({ start: { x: M, y: FOOTER_Y + 12 }, end: { x: W - M, y: FOOTER_Y + 12 }, thickness: 0.3, color: rgb(0.85, 0.85, 0.88) });
+    p.drawText(sanitize(footerLeft), { x: M, y: FOOTER_Y, size: 8, font, color: rgb(0.55, 0.55, 0.6) });
+    const ps = `Page ${i + 1} of ${finalPages.length}`;
+    const pw = font.widthOfTextAtSize(ps, 8);
+    p.drawText(ps, { x: W - M - pw, y: FOOTER_Y, size: 8, font, color: rgb(0.55, 0.55, 0.6) });
+  }
   return await doc.save();
 }
 
