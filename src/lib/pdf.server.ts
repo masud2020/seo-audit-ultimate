@@ -5,6 +5,26 @@ interface Section { id: string; title: string; score: number; checks: Check[]; }
 interface Report { url: string; final_url: string; fetched_at: string; overall_score: number; sections: Section[]; meta: { status_code: number; duration_ms: number; bytes: number } }
 interface AiRec { section: string; title: string; recommendations: string[] }
 
+// Optional branding pulled from brand_settings; every field is nullable so PDFs
+// still render cleanly for users who haven't configured branding.
+export interface Brand {
+  app_name?: string | null;
+  primary_color?: string | null;   // hex like #3b82f6
+  accent_color?: string | null;    // hex
+  support_email?: string | null;
+  footer_text?: string | null;
+}
+function hexToRgb(hex: string | null | undefined, fallback: [number, number, number]): [number, number, number] {
+  if (!hex) return fallback;
+  const m = hex.trim().replace(/^#/, "");
+  const full = m.length === 3 ? m.split("").map(c => c + c).join("") : m;
+  if (!/^[0-9a-fA-F]{6}$/.test(full)) return fallback;
+  return [parseInt(full.slice(0,2),16)/255, parseInt(full.slice(2,4),16)/255, parseInt(full.slice(4,6),16)/255];
+}
+function brandName(b?: Brand | null): string { return (b?.app_name || "SEO Audit Tool").trim(); }
+function brandPrimary(b?: Brand | null): [number, number, number] { return hexToRgb(b?.primary_color, [0.10, 0.14, 0.25]); }
+function brandAccent(b?: Brand | null): [number, number, number] { return hexToRgb(b?.accent_color, [0.30, 0.55, 0.95]); }
+
 function sanitize(s: string): string {
   // pdf-lib WinAnsi encoder can't render smart quotes/emoji.
   return (s || "").replace(/[\u2018\u2019]/g, "'").replace(/[\u201C\u201D]/g, '"').replace(/\u2014|\u2013/g, "-").replace(/[^\x20-\x7E\n]/g, "");
