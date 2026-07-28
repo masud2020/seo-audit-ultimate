@@ -168,6 +168,7 @@ function BrandingCard() {
           </div>
         </div>
         <BrandPreview form={form} />
+        <PdfPreview form={form} />
       </Card>
 
       <Card className="p-6 space-y-4">
@@ -212,6 +213,128 @@ function BrandPreview({ form }: { form: typeof emptyForm }) {
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function PdfPreview({ form }: { form: typeof emptyForm }) {
+  const primary = form.primary_color || "#3b82f6";
+  const accent = form.accent_color || "#9333ea";
+  const appName = form.app_name || "SEO Audit";
+  const generatedAt = new Date().toLocaleDateString();
+  const footerLeft = `Generated ${generatedAt} by ${appName}${form.footer_text ? " · " + form.footer_text : ""}`;
+  return (
+    <div className="rounded-lg border p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground">PDF report preview</div>
+        <div className="text-[10px] text-muted-foreground">Cover &amp; footer</div>
+      </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {/* Cover mock */}
+        <div className="rounded-md border bg-white shadow-sm overflow-hidden aspect-[8.5/11] flex flex-col">
+          <div className="relative" style={{ background: primary, height: "18%" }}>
+            <div className="absolute inset-x-0 bottom-0" style={{ background: accent, height: 3 }} />
+            <div className="p-3 flex items-center gap-2 h-full">
+              {form.logo_url ? (
+                <img src={form.logo_url} alt="" className="h-6 w-6 rounded object-cover bg-white/20" />
+              ) : (
+                <div className="h-6 w-6 rounded bg-white/30" />
+              )}
+              <div className="text-white text-[11px] font-semibold truncate">{appName}</div>
+              <div className="ml-auto text-white/80 text-[9px]">SEO Audit Report</div>
+            </div>
+          </div>
+          <div className="p-3 flex-1 flex flex-col gap-2">
+            <div className="text-[10px] text-gray-500">example.com</div>
+            <div className="text-[13px] font-semibold text-gray-900 leading-tight">Website SEO Audit</div>
+            <div className="mt-1 rounded-md border p-2 flex items-center gap-2">
+              <div
+                className="h-10 w-10 rounded-full grid place-items-center text-white text-xs font-bold"
+                style={{ background: primary }}
+              >
+                82
+              </div>
+              <div className="flex-1">
+                <div className="text-[9px] uppercase tracking-wide text-gray-500">Overall score</div>
+                <div className="text-[10px] text-gray-700">Good — minor issues</div>
+              </div>
+            </div>
+            <div className="grid grid-cols-4 gap-1 mt-1">
+              {[
+                ["PASS", "#16a34a"],
+                ["WARN", "#eab308"],
+                ["FAIL", "#dc2626"],
+                ["INFO", "#7c3aed"],
+              ].map(([label, c]) => (
+                <div key={label} className="rounded border p-1 text-center">
+                  <div className="mx-auto h-1.5 w-full rounded" style={{ background: c as string }} />
+                  <div className="mt-0.5 text-[8px] text-gray-500">{label}</div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-auto space-y-1">
+              <div className="h-1.5 rounded bg-gray-100 overflow-hidden flex">
+                <div style={{ width: "55%", background: "#16a34a" }} />
+                <div style={{ width: "20%", background: "#eab308" }} />
+                <div style={{ width: "15%", background: "#dc2626" }} />
+                <div style={{ width: "10%", background: "#7c3aed" }} />
+              </div>
+              <div className="text-[8px] text-gray-500">Score distribution</div>
+            </div>
+          </div>
+          <PdfFooterStrip appName={appName} footerText={footerLeft} pageLabel="Page 1 of 12" />
+        </div>
+
+        {/* Interior page mock */}
+        <div className="rounded-md border bg-white shadow-sm overflow-hidden aspect-[8.5/11] flex flex-col">
+          <div className="px-3 py-2 border-b flex items-center justify-between text-[9px] text-gray-500">
+            <span className="truncate">SEO Audit — example.com</span>
+            <span>{appName}</span>
+          </div>
+          <div className="p-3 flex-1 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="h-4 w-1 rounded" style={{ background: primary }} />
+              <div className="text-[11px] font-semibold text-gray-900">Priority issues</div>
+            </div>
+            {[
+              ["FAIL", "#dc2626", "Missing meta description"],
+              ["WARN", "#eab308", "H1 not unique on 3 pages"],
+              ["FAIL", "#dc2626", "Broken internal links (5)"],
+            ].map(([badge, c, title]) => (
+              <div key={title} className="rounded border p-2 flex gap-2 items-start">
+                <div className="w-1 self-stretch rounded" style={{ background: c as string }} />
+                <div className="flex-1">
+                  <div className="flex items-center gap-1">
+                    <span
+                      className="text-white text-[8px] font-bold px-1 rounded"
+                      style={{ background: c as string }}
+                    >
+                      {badge}
+                    </span>
+                    <span className="text-[10px] font-medium text-gray-900 truncate">{title}</span>
+                  </div>
+                  <div className="mt-0.5 h-1 rounded bg-gray-100 w-11/12" />
+                  <div className="mt-1 h-1 rounded bg-gray-100 w-8/12" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <PdfFooterStrip appName={appName} footerText={footerLeft} pageLabel="Page 4 of 12" />
+        </div>
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Live preview of how your cover, header band, and footer will appear on exported PDF reports. Update the fields
+        above to see changes instantly.
+      </p>
+    </div>
+  );
+}
+
+function PdfFooterStrip({ appName, footerText, pageLabel }: { appName: string; footerText: string; pageLabel: string }) {
+  return (
+    <div className="px-3 py-1.5 border-t flex items-center justify-between text-[8px] text-gray-500 gap-2">
+      <span className="truncate flex-1" title={footerText}>{footerText}</span>
+      <span className="whitespace-nowrap">{pageLabel}</span>
     </div>
   );
 }
